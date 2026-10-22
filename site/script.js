@@ -48,6 +48,8 @@
     return clone.textContent.replace(/\s+$/, '') + '\n';
   }
 
+  var status = document.getElementById('copy-status');
+
   document.addEventListener('click', function (event) {
     var button = event.target.closest('[data-copy]');
     if (!button) return;
@@ -60,9 +62,11 @@
       button.setAttribute('data-label', label);
       button.textContent = 'copied';
       button.classList.add('copied');
+      if (status) status.textContent = 'Copied to clipboard';
       window.setTimeout(function () {
         button.textContent = label;
         button.classList.remove('copied');
+        if (status) status.textContent = '';
       }, 1400);
     };
     var failed = function () {

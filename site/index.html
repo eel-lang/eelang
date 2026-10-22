@@ -62,15 +62,15 @@
           </div>
         </div>
         <div class="panels">
-          <pre id="panel-ee" role="tabpanel" aria-labelledby="tab-ee"><span class="ln">1</span><span class="k">def</span> <span class="fn">hello</span>():
-<span class="ln">2</span>    <span class="s">"hi"</span>
-<span class="ln">3</span>
-<span class="ln">4</span><span class="c"># .ee → abstract forms → .beam</span></pre>
-          <pre id="panel-erl" role="tabpanel" aria-labelledby="tab-erl" hidden><span class="ln">1</span><span class="k">-module</span>(hello).
-<span class="ln">2</span><span class="k">-export</span>([hello/<span class="n">0</span>]).
+          <pre id="panel-ee" role="tabpanel" aria-labelledby="tab-ee"><span class="ln" aria-hidden="true">1</span><span class="k">def</span> <span class="fn">hello</span>():
+<span class="ln" aria-hidden="true">2</span>    <span class="s">"hi"</span>
+<span class="ln" aria-hidden="true">3</span>
+<span class="ln" aria-hidden="true">4</span><span class="c"># .ee → abstract forms → .beam</span></pre>
+          <pre id="panel-erl" role="tabpanel" aria-labelledby="tab-erl" hidden><span class="ln" aria-hidden="true">1</span><span class="k">-module</span>(hello).
+<span class="ln" aria-hidden="true">2</span><span class="k">-export</span>([hello/<span class="n">0</span>]).
 
-<span class="ln">3</span><span class="fn">hello</span>() -&gt;
-<span class="ln">4</span>    <span class="s">&lt;&lt;"hi"/utf8&gt;&gt;</span>.</pre>
+<span class="ln" aria-hidden="true">3</span><span class="fn">hello</span>() -&gt;
+<span class="ln" aria-hidden="true">4</span>    <span class="s">&lt;&lt;"hi"/utf8&gt;&gt;</span>.</pre>
         </div>
         <p class="term"><span class="prompt">1&gt;</span> hello:hello(). <span class="out">&lt;&lt;"hi"&gt;&gt;</span></p>
       </div>
@@ -107,10 +107,10 @@
           <span class="tab static">loops.ee</span>
           <span class="badge">compile error</span>
         </div>
-<pre><span class="ln">1</span><span class="k">for</span> <span class="strike">x</span> <span class="k">in</span> <span class="strike">xs</span>:        <span class="c"># no loops</span>
-<span class="ln">2</span>    <span class="strike">total += x</span>       <span class="c"># no mutation</span>
-<span class="ln">3</span>
-<span class="ln">4</span>total = total + <span class="n">1</span>  <span class="c"># rebinding: X@1 = X + 1</span></pre>
+<pre><span class="ln" aria-hidden="true">1</span><span class="k">for</span> <span class="strike">x</span> <span class="k">in</span> <span class="strike">xs</span>:        <span class="c"># no loops</span>
+<span class="ln" aria-hidden="true">2</span>    <span class="strike">total += x</span>       <span class="c"># no mutation</span>
+<span class="ln" aria-hidden="true">3</span>
+<span class="ln" aria-hidden="true">4</span>total = total + <span class="n">1</span>  <span class="c"># rebinding: X@1 = X + 1</span></pre>
       </div>
     </article>
 
@@ -129,15 +129,15 @@
             <button class="tool" type="button" data-copy="fib-src" aria-label="Copy the fib example">copy</button>
           </div>
         </div>
-<pre id="fib-src"><span class="ln">1</span><span class="k">def</span> <span class="fn">fib</span>(n):
-<span class="ln">2</span>    <span class="k">match</span> n:
-<span class="ln">3</span>        <span class="k">case</span> <span class="n">0</span>:
-<span class="ln">4</span>            r = <span class="n">0</span>
-<span class="ln">5</span>        <span class="k">case</span> <span class="n">1</span>:
-<span class="ln">6</span>            r = <span class="n">1</span>
-<span class="ln">7</span>        <span class="k">case</span> _:
-<span class="ln">8</span>            r = fib(n - <span class="n">1</span>) + fib(n - <span class="n">2</span>)
-<span class="ln">9</span>    r</pre>
+<pre id="fib-src"><span class="ln" aria-hidden="true">1</span><span class="k">def</span> <span class="fn">fib</span>(n):
+<span class="ln" aria-hidden="true">2</span>    <span class="k">match</span> n:
+<span class="ln" aria-hidden="true">3</span>        <span class="k">case</span> <span class="n">0</span>:
+<span class="ln" aria-hidden="true">4</span>            r = <span class="n">0</span>
+<span class="ln" aria-hidden="true">5</span>        <span class="k">case</span> <span class="n">1</span>:
+<span class="ln" aria-hidden="true">6</span>            r = <span class="n">1</span>
+<span class="ln" aria-hidden="true">7</span>        <span class="k">case</span> _:
+<span class="ln" aria-hidden="true">8</span>            r = fib(n - <span class="n">1</span>) + fib(n - <span class="n">2</span>)
+<span class="ln" aria-hidden="true">9</span>    r</pre>
       </div>
     </article>
 
@@ -151,9 +151,9 @@
       </div>
       <div class="card dark">
         <div class="card-bar"><span class="tab static">eshell</span></div>
-<pre><span class="ln">1</span><span class="prompt">1&gt;</span> shapes:shift(nope, <span class="n">3</span>).
-<span class="ln">2</span><span class="err">** exception error: no case clause matching nope</span>
-<span class="ln">3</span><span class="err">     in function  shapes:shift/2 (src/shapes.ee:6)</span></pre>
+<pre><span class="ln" aria-hidden="true">1</span><span class="prompt">1&gt;</span> shapes:shift(nope, <span class="n">3</span>).
+<span class="ln" aria-hidden="true">2</span><span class="err">** exception error: no case clause matching nope</span>
+<span class="ln" aria-hidden="true">3</span><span class="err">     in function  shapes:shift/2 (src/shapes.ee:6)</span></pre>
       </div>
     </article>
 
@@ -167,10 +167,10 @@
       </div>
       <div class="card dark">
         <div class="card-bar"><span class="tab static">values.ee</span></div>
-<pre><span class="ln">1</span><span class="k">def</span> <span class="fn">pair</span>():
-<span class="ln">2</span>    (<span class="a">'ok'</span>, <span class="s">"ok"</span>, <span class="k">True</span>, <span class="k">None</span>, {<span class="a">'k'</span>: <span class="n">1</span>})
-<span class="ln">3</span>
-<span class="ln">4</span><span class="c"># {ok, &lt;&lt;"ok"&gt;&gt;, true, nil, #{k =&gt; 1}}</span></pre>
+<pre><span class="ln" aria-hidden="true">1</span><span class="k">def</span> <span class="fn">pair</span>():
+<span class="ln" aria-hidden="true">2</span>    (<span class="a">'ok'</span>, <span class="s">"ok"</span>, <span class="k">True</span>, <span class="k">None</span>, {<span class="a">'k'</span>: <span class="n">1</span>})
+<span class="ln" aria-hidden="true">3</span>
+<span class="ln" aria-hidden="true">4</span><span class="c"># {ok, &lt;&lt;"ok"&gt;&gt;, true, nil, #{k =&gt; 1}}</span></pre>
       </div>
     </article>
   </section>
@@ -334,7 +334,7 @@
 user = {<span class="a">'age'</span>: <span class="n">36</span>}
 user = with_name(user)</pre>
         <p class="term term-block"><span class="prompt">Out [3]</span><br>
-          <span class="out">#{age =&gt; 36, name =&gt; 'Ada'}</span></p>
+          <span class="out">#{name =&gt; 'Ada', age =&gt; 36}</span></p>
       </div>
     </div>
   </section>
@@ -434,6 +434,8 @@ user = with_name(user)</pre>
     </nav>
   </div>
 </footer>
+
+<p id="copy-status" class="sr-only" role="status" aria-live="polite"></p>
 
 <script src="script.js" defer></script>
 </body>
