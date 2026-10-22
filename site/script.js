@@ -119,7 +119,7 @@
   /* ---------- reveal on scroll ---------- */
   if (!reduced && 'IntersectionObserver' in window) {
     var candidates = document.querySelectorAll(
-      '.sec-head, .principle, .feat, .stats, .split > *, .step, .status-col, .parity > *, .card-shared, .note'
+      '.big-head, .square, .step, .status-col, .minute > *, .cta > *, .strip, .matrix-note, .viewer, .terminal'
     );
     var observer = new IntersectionObserver(function (entries) {
       entries.forEach(function (entry) {
