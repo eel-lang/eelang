@@ -1,0 +1,440 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light">
+<meta name="theme-color" content="#fbf8f4">
+<title>squeal — Python's syntax, Erlang's semantics</title>
+<meta name="description" content="squeal compiles .ee files straight to the BEAM: Python's syntax with Gleam's model — immutable by default, no loops, let it crash.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%2315151b'/%3E%3Ctext x='16' y='22' font-family='monospace' font-size='15' font-weight='700' fill='%23ff2e94' text-anchor='middle'%3Eee%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="nav">
+  <div class="wrap">
+    <a class="brand" href="#top">squeal<span class="ee">.ee</span></a>
+    <nav class="nav-links" aria-label="Sections">
+      <a href="#principles">Principles</a>
+      <a href="#language">Language</a>
+      <a href="#parity">Parity</a>
+      <a href="#notebook">Notebook</a>
+      <a href="#quickstart">Quick start</a>
+    </nav>
+    <div class="nav-end">
+      <span class="version">v0.1 · milestone 1</span>
+      <a class="btn btn-primary" href="#quickstart">Quick start</a>
+    </div>
+  </div>
+</header>
+
+<main id="top">
+<div class="wrap">
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-copy">
+      <p class="kicker">a language for the BEAM</p>
+      <h1>Python's syntax.<br><span class="accent">Erlang's semantics.</span></h1>
+      <p class="lede">squeal compiles <code>.ee</code> files straight to the BEAM. You write the Python
+        you already know — without loops, without mutation — and get immutable, fault-tolerant
+        Erlang underneath.</p>
+      <div class="cta-row">
+        <a class="btn btn-primary" href="#quickstart">Quick start →</a>
+        <a class="btn btn-ghost" href="#principles">Why squeal</a>
+      </div>
+      <p class="meta-row">
+        <span>squeal 0.1</span><span class="dot">·</span>
+        <span>milestone 1</span><span class="dot">·</span>
+        <span>Python 3.15</span><span class="dot">·</span>
+        <span>OTP 29</span>
+      </p>
+    </div>
+
+    <div class="hero-code">
+      <div class="card dark" data-tabs>
+        <div class="card-bar" role="tablist" aria-label="hello, compiled">
+          <button class="tab" id="tab-ee" role="tab" aria-selected="true" aria-controls="panel-ee" type="button">hello.ee</button>
+          <button class="tab" id="tab-erl" role="tab" aria-selected="false" aria-controls="panel-erl" tabindex="-1" type="button">hello.erl</button>
+          <div class="card-tools">
+            <button class="tool" type="button" data-copy="panel-ee" aria-label="Copy the squeal source">copy</button>
+          </div>
+        </div>
+        <div class="panels">
+          <pre id="panel-ee" role="tabpanel" aria-labelledby="tab-ee"><span class="ln">1</span><span class="k">def</span> <span class="fn">hello</span>():
+<span class="ln">2</span>    <span class="s">"hi"</span>
+<span class="ln">3</span>
+<span class="ln">4</span><span class="c"># .ee → abstract forms → .beam</span></pre>
+          <pre id="panel-erl" role="tabpanel" aria-labelledby="tab-erl" hidden><span class="ln">1</span><span class="k">-module</span>(hello).
+<span class="ln">2</span><span class="k">-export</span>([hello/<span class="n">0</span>]).
+
+<span class="ln">3</span><span class="fn">hello</span>() -&gt;
+<span class="ln">4</span>    <span class="s">&lt;&lt;"hi"/utf8&gt;&gt;</span>.</pre>
+        </div>
+        <p class="term"><span class="prompt">1&gt;</span> hello:hello(). <span class="out">&lt;&lt;"hi"&gt;&gt;</span></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- STATS -->
+  <div class="stats">
+    <div class="stat"><b>19</b><span>parity pairs with Gleam</span></div>
+    <div class="stat"><b>104</b><span>tests in the suite</span></div>
+    <div class="stat"><b>0</b><span>runtime dependencies</span></div>
+    <div class="stat"><b>OTP 29</b><span>Erlang/OTP target</span></div>
+  </div>
+
+  <!-- PRINCIPLES -->
+  <section id="principles">
+    <div class="sec-head">
+      <p class="kicker">01 — principles</p>
+      <h2>Python-shaped code, without the mutation.</h2>
+      <p class="sec-lede">Everything you can mutate in Python is a compile error here. What is left reads
+        like Python and behaves like Erlang — the compiler is strict, the runtime is Erlang's.</p>
+    </div>
+
+    <article class="principle">
+      <div>
+        <span class="pnum">01 / immutability</span>
+        <h3>Rebinding, not mutation.</h3>
+        <p>No <code>for</code>, no <code>while</code>, no <code>+=</code>, no assignment to an index or
+          attribute. Rebinding a name is allowed, and the compiler gives it a fresh Erlang variable —
+          exactly the way Gleam does it.</p>
+      </div>
+      <div class="card dark card-rejected">
+        <div class="card-bar">
+          <span class="tab static">loops.ee</span>
+          <span class="badge">compile error</span>
+        </div>
+<pre><span class="ln">1</span><span class="k">for</span> <span class="strike">x</span> <span class="k">in</span> <span class="strike">xs</span>:        <span class="c"># no loops</span>
+<span class="ln">2</span>    <span class="strike">total += x</span>       <span class="c"># no mutation</span>
+<span class="ln">3</span>
+<span class="ln">4</span>total = total + <span class="n">1</span>  <span class="c"># rebinding: X@1 = X + 1</span></pre>
+      </div>
+    </article>
+
+    <article class="principle">
+      <div>
+        <span class="pnum">02 / expressions</span>
+        <h3>Branches produce a value.</h3>
+        <p><code>if</code> and <code>match</code> are expressions: every branch ends by assigning the same
+          variable, and that assignment is the result. The compiler checks the shape, so a branch cannot
+          quietly return nothing.</p>
+      </div>
+      <div class="card dark">
+        <div class="card-bar">
+          <span class="tab static">fib.ee</span>
+          <div class="card-tools">
+            <button class="tool" type="button" data-copy="fib-src" aria-label="Copy the fib example">copy</button>
+          </div>
+        </div>
+<pre id="fib-src"><span class="ln">1</span><span class="k">def</span> <span class="fn">fib</span>(n):
+<span class="ln">2</span>    <span class="k">match</span> n:
+<span class="ln">3</span>        <span class="k">case</span> <span class="n">0</span>:
+<span class="ln">4</span>            r = <span class="n">0</span>
+<span class="ln">5</span>        <span class="k">case</span> <span class="n">1</span>:
+<span class="ln">6</span>            r = <span class="n">1</span>
+<span class="ln">7</span>        <span class="k">case</span> _:
+<span class="ln">8</span>            r = fib(n - <span class="n">1</span>) + fib(n - <span class="n">2</span>)
+<span class="ln">9</span>    r</pre>
+      </div>
+    </article>
+
+    <article class="principle">
+      <div>
+        <span class="pnum">03 / failure</span>
+        <h3>Let it crash.</h3>
+        <p>A <code>match</code> that matches nothing raises <code>{case_clause, V}</code> in the process,
+          like Erlang — not a returned error code. Exhaustiveness is a suggestion, not a requirement:
+          Gleam refuses to compile such code, squeal lets the process fail.</p>
+      </div>
+      <div class="card dark">
+        <div class="card-bar"><span class="tab static">eshell</span></div>
+<pre><span class="ln">1</span><span class="prompt">1&gt;</span> shapes:shift(nope, <span class="n">3</span>).
+<span class="ln">2</span><span class="err">** exception error: no case clause matching nope</span>
+<span class="ln">3</span><span class="err">     in function  shapes:shift/2 (src/shapes.ee:6)</span></pre>
+      </div>
+    </article>
+
+    <article class="principle">
+      <div>
+        <span class="pnum">04 / values</span>
+        <h3>Quotes decide the type.</h3>
+        <p><code>'ok'</code> is an atom, <code>"ok"</code> is a UTF-8 binary. <code>True</code> becomes
+          <code>true</code>, <code>None</code> becomes <code>nil</code>, tuples and lists keep their
+          Erlang shapes, and dicts become maps.</p>
+      </div>
+      <div class="card dark">
+        <div class="card-bar"><span class="tab static">values.ee</span></div>
+<pre><span class="ln">1</span><span class="k">def</span> <span class="fn">pair</span>():
+<span class="ln">2</span>    (<span class="a">'ok'</span>, <span class="s">"ok"</span>, <span class="k">True</span>, <span class="k">None</span>, {<span class="a">'k'</span>: <span class="n">1</span>})
+<span class="ln">3</span>
+<span class="ln">4</span><span class="c"># {ok, &lt;&lt;"ok"&gt;&gt;, true, nil, #{k =&gt; 1}}</span></pre>
+      </div>
+    </article>
+  </section>
+
+  <!-- LANGUAGE -->
+  <section id="language">
+    <div class="sec-head">
+      <p class="kicker">02 — language</p>
+      <h2>Six things worth knowing before you write a line.</h2>
+      <p class="sec-lede">The syntax is stock CPython 3.15 — no new grammar, no macros, no build step
+        beyond the compiler. Which means your editor already knows how to indent it.</p>
+    </div>
+
+    <div class="grid-3">
+      <article class="feat">
+        <h3>Classes are tagged tuples</h3>
+        <p>A class with an atom payload compiles to a tuple tagged with its snake_case name — and its
+          constructor is inlined, not called.</p>
+<pre class="chip"><span class="k">class</span> <span class="fn">Point</span>(StartingWithAtom):
+    x: <span class="fn">int</span>
+    y: <span class="fn">int</span>
+
+<span class="c"># Point(1, 2) → {point, 1, 2}</span></pre>
+      </article>
+
+      <article class="feat">
+        <h3>Patterns, everywhere</h3>
+        <p>Destructuring assignment, constructor patterns, guards and or-patterns compile to the same
+          Erlang patterns Gleam emits.</p>
+<pre class="chip">head, *rest = xs
+
+<span class="k">match</span> p:
+    <span class="k">case</span> Point(x, y) <span class="k">if</span> x &gt; <span class="n">0</span>:
+        q = Point(x, y)</pre>
+      </article>
+
+      <article class="feat">
+        <h3>Comprehensions, 1:1</h3>
+        <p>List and dict comprehensions map onto Erlang list and map comprehensions, filters and nesting
+          included.</p>
+<pre class="chip">[x * <span class="n">2</span> <span class="k">for</span> x <span class="k">in</span> xs <span class="k">if</span> x % <span class="n">2</span> == <span class="n">0</span>]
+<span class="c"># [X * 2 || X &lt;- squeal_iter(Xs), …]</span></pre>
+      </article>
+
+      <article class="feat">
+        <h3>Hierarchical modules</h3>
+        <p>The module is the path: <code>src/a/b/c.ee</code> becomes <code>a@b@c</code>. Imports are
+          Python imports with the same rules as Gleam.</p>
+<pre class="chip"><span class="k">from</span> my.app.math <span class="k">import</span> add
+<span class="c"># → my@app@math:add(…)</span></pre>
+      </article>
+
+      <article class="feat">
+        <h3>Maps that merge</h3>
+        <p>The one mutation-looking operator that is not mutation: <code>|=</code> merges a map into a
+          new one via <code>maps:merge/2</code>.</p>
+<pre class="chip">user |= {<span class="a">'name'</span>: <span class="a">'Ada'</span>}
+<span class="c"># maps:merge(User, #{name =&gt; 'Ada'})</span></pre>
+      </article>
+
+      <article class="feat">
+        <h3>Python's arithmetic</h3>
+        <p><code>//</code>, <code>%</code> and <code>**</code> keep Python's semantics, not Erlang's;
+          <code>==</code> coerces like Python, so <code>1 == 1.0</code> is true.</p>
+<pre class="chip"><span class="n">7</span> // <span class="n">-2</span>   <span class="c"># -4, floored</span>
+<span class="n">-7</span> % <span class="n">2</span>    <span class="c"># 1, sign of divisor</span>
+<span class="n">1</span> == <span class="n">1.0</span>   <span class="c"># true</span></pre>
+      </article>
+    </div>
+  </section>
+
+  <!-- PARITY -->
+  <section id="parity">
+    <div class="sec-head">
+      <p class="kicker">03 — parity</p>
+      <h2>The same shape as Gleam.</h2>
+      <p class="sec-lede">Gleam compiles to Erlang abstract forms. So does squeal. When two programs mean
+        the same thing, both compilers must emit the same forms — and the test suite checks exactly that,
+        pair by pair, after normalising line annotations.</p>
+    </div>
+
+    <div class="parity">
+      <div>
+        <span class="parity-label">squeal</span>
+        <div class="card dark">
+          <div class="card-bar"><span class="tab static">shapes.ee</span></div>
+<pre><span class="k">class</span> <span class="fn">Point</span>(StartingWithAtom):
+    x: <span class="fn">int</span>
+    y: <span class="fn">int</span>
+
+<span class="k">def</span> <span class="fn">shift</span>(p, dx):
+    <span class="k">match</span> p:
+        <span class="k">case</span> Point(x, y):
+            q = Point(x + dx, y)
+    q</pre>
+        </div>
+      </div>
+      <div>
+        <span class="parity-label">gleam</span>
+        <div class="card dark">
+          <div class="card-bar"><span class="tab static">shapes.gleam</span></div>
+<pre><span class="k">pub type</span> Point {
+  Point(x: <span class="fn">Int</span>, y: <span class="fn">Int</span>)
+}
+
+<span class="k">pub fn</span> <span class="fn">shift</span>(p: Point, dx: <span class="fn">Int</span>) {
+  <span class="k">let</span> q = <span class="k">case</span> p {
+    Point(x, y) -&gt; Point(x + dx, y)
+  }
+  q
+}</pre>
+        </div>
+      </div>
+    </div>
+
+    <div class="card dark card-shared">
+      <div class="card-bar">
+        <span class="tab static">shapes.erl</span>
+        <span class="shared">same abstract forms</span>
+      </div>
+<pre><span class="k">-export</span>([shift/<span class="n">2</span>]).
+
+<span class="fn">shift</span>(P, Dx) -&gt;
+    Q = <span class="k">case</span> P <span class="k">of</span>
+            {point, X, Y} -&gt; {point, X + Dx, Y}
+        <span class="k">end</span>,
+    Q.</pre>
+    </div>
+
+    <p class="note">Where Gleam has no equivalent — <code>|=</code> merge, <code>.items()</code>,
+      non-exhaustive <code>match</code>, comprehensions — behaviour is pinned by ordinary tests instead:
+      19 pairs and 104 tests in total, run with <code>pytest</code>.</p>
+  </section>
+
+  <!-- NOTEBOOK -->
+  <section id="notebook">
+    <div class="split">
+      <div>
+        <p class="kicker">04 — notebook</p>
+        <h2>Your Jupyter notebook, on the BEAM.</h2>
+        <p class="sec-lede">No custom kernel. Cells stay Python text, so plain Python autocomplete and
+          linting keep working; a hook compiles each cell to Erlang and evaluates it in a persistent
+          <code>erl</code> session.</p>
+        <ul class="checks">
+          <li><span class="tick" aria-hidden="true"></span><span><b>Bindings survive between cells.</b>
+            Rebinding continues the <code>X@N</code> sequence, so running a cell twice is safe.</span></li>
+          <li><span class="tick" aria-hidden="true"></span><span><b>Definitions become named funs.</b>
+            Cells compile in shell mode, so <code>def</code> stays callable and recursive.</span></li>
+          <li><span class="tick" aria-hidden="true"></span><span><b>The Erlang shows through.</b>
+            Comprehensions print their equivalent as
+            <code>erl: [X * 2 || X &lt;- squeal_iter(Xs)]</code>.</span></li>
+        </ul>
+      </div>
+      <div class="card dark">
+        <div class="card-bar">
+          <span class="tab static">notebook cell</span>
+          <span class="tab static dim">In [3]</span>
+        </div>
+<pre><span class="k">from</span> users <span class="k">import</span> with_name
+
+user = {<span class="a">'age'</span>: <span class="n">36</span>}
+user = with_name(user)</pre>
+        <p class="term term-block"><span class="prompt">Out [3]</span><br>
+          <span class="out">#{age =&gt; 36, name =&gt; 'Ada'}</span></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- QUICK START -->
+  <section id="quickstart">
+    <div class="sec-head">
+      <p class="kicker">05 — quick start</p>
+      <h2>Four commands to a running module.</h2>
+      <p class="sec-lede">squeal is pre-release and runs from a checkout: Python 3.15 for the compiler,
+        Erlang/OTP 29 to run what it builds.</p>
+    </div>
+
+    <div class="steps">
+      <div class="step">
+        <div>
+          <h3>Create the project tree</h3>
+          <p>The module is the file path under <code>src/</code>.</p>
+<pre class="slab">my_app/
+└── src/
+    └── hello.ee</pre>
+        </div>
+      </div>
+      <div class="step">
+        <div>
+          <h3>Write <code>hello.ee</code></h3>
+          <p>Ordinary Python. Strings in double quotes, atoms in single quotes.</p>
+<pre class="slab"><span class="k">def</span> <span class="fn">hello</span>():
+    <span class="s">"hi"</span></pre>
+        </div>
+      </div>
+      <div class="step">
+        <div>
+          <h3>Build</h3>
+          <p>Compiles <code>src/**</code> to abstract Erlang forms and <code>.beam</code> files.</p>
+<pre class="slab"><span class="prompt">$</span> python3.15 -m squeal build my_app
+<span class="sub">build/dev/erlang/my_app/ebin/hello.beam</span></pre>
+        </div>
+      </div>
+      <div class="step">
+        <div>
+          <h3>Run it</h3>
+          <p>It is a normal Erlang module from here on.</p>
+<pre class="slab"><span class="prompt">$</span> erl -pa my_app/build/dev/erlang/my_app/ebin -noshell \
+    -eval 'io:format("~p~n", [hello:hello()]), halt().'
+<span class="out">&lt;&lt;"hi"&gt;&gt;</span></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- STATUS -->
+  <section id="status">
+    <div class="sec-head">
+      <p class="kicker">06 — status</p>
+      <h2>Honest about the stage.</h2>
+      <p class="sec-lede">This is milestone one: a compiler, a parity suite and a notebook. Types,
+        static analysis and syntax beyond Python are not here yet.</p>
+    </div>
+
+    <div class="status">
+      <div class="status-col">
+        <h3>Works today</h3>
+        <ul>
+          <li class="done"><span class="tag">done</span><span>Compiler from <code>.ee</code> to the BEAM
+            <small>Abstract Erlang forms, then <code>compile:forms</code> — the Gleam pipeline.</small></span></li>
+          <li class="done"><span class="tag">done</span><span>Parity suite against Gleam
+            <small>19 equivalence pairs, compared form by form.</small></span></li>
+          <li class="done"><span class="tag">done</span><span>Jupyter notebook and persistent REPL
+            <small>Shell-mode cells over a live Erlang session.</small></span></li>
+        </ul>
+      </div>
+      <div class="status-col">
+        <h3>Next</h3>
+        <ul>
+          <li><span class="tag">now</span><span>Annotations as documentation
+            <small>Type annotations are not checked by squeal — outside tools own that, as in Python.</small></span></li>
+          <li><span class="tag">next</span><span>Static analysis
+            <small>A forked Python analyzer, later.</small></span></li>
+          <li><span class="tag">later</span><span>Syntax beyond Python
+            <small>Pattern-matching syntax and pipelines.</small></span></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+</div>
+</main>
+
+<footer>
+  <div class="wrap">
+    <p><strong>squeal</strong> · Python syntax, Erlang semantics.</p>
+    <nav aria-label="Footer">
+      <a href="#principles">Principles</a>
+      <a href="#parity">Parity</a>
+      <a href="#quickstart">Quick start</a>
+    </nav>
+  </div>
+</footer>
+
+<script src="script.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+Bundled webfonts (latin subsets, variable):
+
+- Archivo — Copyright 2020 The Archivo Project Authors, SIL Open Font License 1.1
+  https://fonts.google.com/specimen/Archivo
+- Martian Mono — Copyright 2022 The Martian Mono Project Authors, SIL Open Font License 1.1
+  https://fonts.google.com/specimen/Martian+Mono
+
+Both are redistributed unmodified as WOFF2 under the SIL Open Font License 1.1:
+https://openfontlicense.org/
