@@ -53,7 +53,7 @@
     </div>
 
     <div class="hero-code">
-      <div class="card dark" data-tabs>
+      <div class="card" data-tabs>
         <div class="card-bar" role="tablist" aria-label="hello, compiled">
           <button class="tab" id="tab-ee" role="tab" aria-selected="true" aria-controls="panel-ee" type="button">hello.ee</button>
           <button class="tab" id="tab-erl" role="tab" aria-selected="false" aria-controls="panel-erl" tabindex="-1" type="button">hello.erl</button>
@@ -102,7 +102,7 @@
           attribute. Rebinding a name is allowed, and the compiler gives it a fresh Erlang variable —
           exactly the way Gleam does it.</p>
       </div>
-      <div class="card dark card-rejected">
+      <div class="card card-rejected">
         <div class="card-bar">
           <span class="tab static">loops.ee</span>
           <span class="badge">compile error</span>
@@ -122,7 +122,7 @@
           variable, and that assignment is the result. The compiler checks the shape, so a branch cannot
           quietly return nothing.</p>
       </div>
-      <div class="card dark">
+      <div class="card">
         <div class="card-bar">
           <span class="tab static">fib.ee</span>
           <div class="card-tools">
@@ -149,7 +149,7 @@
           like Erlang — not a returned error code. Exhaustiveness is a suggestion, not a requirement:
           Gleam refuses to compile such code, squeal lets the process fail.</p>
       </div>
-      <div class="card dark">
+      <div class="card">
         <div class="card-bar"><span class="tab static">eshell</span></div>
 <pre><span class="ln" aria-hidden="true">1</span><span class="prompt">1&gt;</span> shapes:shift(nope, <span class="n">3</span>).
 <span class="ln" aria-hidden="true">2</span><span class="err">** exception error: no case clause matching nope</span>
@@ -165,7 +165,7 @@
           <code>true</code>, <code>None</code> becomes <code>nil</code>, tuples and lists keep their
           Erlang shapes, and dicts become maps.</p>
       </div>
-      <div class="card dark">
+      <div class="card">
         <div class="card-bar"><span class="tab static">values.ee</span></div>
 <pre><span class="ln" aria-hidden="true">1</span><span class="k">def</span> <span class="fn">pair</span>():
 <span class="ln" aria-hidden="true">2</span>    (<span class="a">'ok'</span>, <span class="s">"ok"</span>, <span class="k">True</span>, <span class="k">None</span>, {<span class="a">'k'</span>: <span class="n">1</span>})
@@ -255,7 +255,7 @@
     <div class="parity">
       <div>
         <span class="parity-label">squeal</span>
-        <div class="card dark">
+        <div class="card">
           <div class="card-bar"><span class="tab static">shapes.ee</span></div>
 <pre><span class="k">class</span> <span class="fn">Point</span>(StartingWithAtom):
     x: <span class="fn">int</span>
@@ -270,7 +270,7 @@
       </div>
       <div>
         <span class="parity-label">gleam</span>
-        <div class="card dark">
+        <div class="card">
           <div class="card-bar"><span class="tab static">shapes.gleam</span></div>
 <pre><span class="k">pub type</span> Point {
   Point(x: <span class="fn">Int</span>, y: <span class="fn">Int</span>)
@@ -286,7 +286,7 @@
       </div>
     </div>
 
-    <div class="card dark card-shared">
+    <div class="card card-shared">
       <div class="card-bar">
         <span class="tab static">shapes.erl</span>
         <span class="shared">same abstract forms</span>
@@ -324,7 +324,7 @@
             <code>erl: [X * 2 || X &lt;- squeal_iter(Xs)]</code>.</span></li>
         </ul>
       </div>
-      <div class="card dark">
+      <div class="card">
         <div class="card-bar">
           <span class="tab static">notebook cell</span>
           <span class="tab static dim">In [3]</span>
