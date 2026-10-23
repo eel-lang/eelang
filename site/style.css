@@ -59,14 +59,6 @@ code,pre{font-family:var(--mono);font-stretch:88%;font-variant-ligatures:none}
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;
   clip:rect(0 0 0 0);white-space:nowrap;border:0}
 
-/* ---------- top bar ---------- */
-.topbar{background:#0c0c0c;color:#fff;text-align:center;padding:8px 16px;font-family:var(--mono);
-  font-stretch:88%;font-size:11.5px;letter-spacing:.02em;border-bottom:1px solid #000}
-.topbar b{font-weight:700}
-.topbar .sep{color:#6b6b6b;padding:0 4px}
-.topbar a{color:#fff;border-bottom:1px solid rgba(255,255,255,.35)}
-.topbar a:hover{color:var(--pink)}
-
 /* ---------- header ---------- */
 .head{position:sticky;top:0;z-index:30;background:rgba(255,255,255,.94);backdrop-filter:blur(12px);
   border-bottom:1px solid var(--line)}
@@ -322,6 +314,5 @@ footer nav a:hover{color:var(--pink-strong)}
   .strip{padding:13px 20px;gap:14px}
   .marks{gap:14px}
   .mark-item{font-size:.92rem}
-  .topbar{font-size:.6rem}
   footer .inner{flex-direction:column;gap:12px}
 }
