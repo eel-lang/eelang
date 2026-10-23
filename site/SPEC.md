@@ -43,9 +43,9 @@ parent: squeal-goal-and-requirements
 - **Палитра — токены bun.com.** Canvas `#fff`, линии `#e2e2e2`, текст `#0a0a0a`, акцент hot pink
   `#ff1f8f` (мелкий текст и ссылки — `#d60066`), бежевая подложка кода `#f8f4ee`. Код светлый:
   ключевые слова `#d60066`, строки `#0f7a4d`, атомы `#7b3fe4`, числа `#b45309`; тёмных слябов нет.
-- **Шрифты — из COSMIC (system76.com/cosmic).** Fira Sans (300/400/700) для текста и вордмарка
-  «Squeal» (Bold 700), Roboto Slab 700 для заголовков, Ubuntu Mono для кода и моно-подписей.
-  Взяты из Google Fonts, self-hosted; Fira Sans и Ubuntu Mono — OFL, Roboto Slab — Apache 2.0.
+- **Шрифты.** Archivo (заголовки, 800, плотный трекинг) и Martian Mono (код и моно-подписи) —
+  семейства bun.com, взяты из Google Fonts как OFL; вордмарк «Squeal» — Fira Sans 700, только он.
+  Все файлы self-hosted, внешних запросов нет.
 - **JS без зависимостей** (`script.js`): табы код-карточек с ARIA и стрелками, copy (clipboard с
   фолбэком через `execCommand`), scrollspy нава, появление секций через IntersectionObserver с
   уважением к `prefers-reduced-motion`. Без JS страница читается целиком: reveal-классы ставит сам скрипт.
