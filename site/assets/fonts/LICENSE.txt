@@ -2,6 +2,8 @@ Bundled webfonts (latin subsets, variable):
 
 - Archivo — Copyright 2020 The Archivo Project Authors, SIL Open Font License 1.1
   https://fonts.google.com/specimen/Archivo
+- Inter — Copyright 2016 The Inter Project Authors, SIL Open Font License 1.1
+  https://fonts.google.com/specimen/Inter
 - Martian Mono — Copyright 2022 The Martian Mono Project Authors, SIL Open Font License 1.1
   https://fonts.google.com/specimen/Martian+Mono
 
