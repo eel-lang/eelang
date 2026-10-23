@@ -7,10 +7,9 @@
   font-weight:100 900; font-stretch:62% 125%; font-style:normal; font-display:swap;
 }
 @font-face{
-  font-family:'Inter';
-  src:url('assets/fonts/inter.woff2') format('woff2-variations'),
-      url('assets/fonts/inter.woff2') format('woff2');
-  font-weight:100 900; font-style:normal; font-display:swap;
+  font-family:'Fira Sans';
+  src:url('assets/fonts/fira-sans-bold.woff2') format('woff2');
+  font-weight:700; font-style:normal; font-display:swap;
 }
 @font-face{
   font-family:'Martian Mono';
@@ -74,7 +73,7 @@ code,pre{font-family:var(--mono);font-stretch:88%;font-variant-ligatures:none}
   text-transform:uppercase;color:var(--muted);white-space:nowrap}
 .logo .mark{width:70px;height:70px;border-radius:50%;object-fit:cover;display:block;
   border:1px solid var(--line-warm);background:#fff}
-.logo .wordmark{font-family:'Inter',var(--sans);font-weight:800;font-size:2.175rem;letter-spacing:-.045em;
+.logo .wordmark{font-family:'Fira Sans',var(--sans);font-weight:700;font-size:2.175rem;letter-spacing:-.02em;
   line-height:1}
 .nav{display:flex;gap:24px;font-size:.875rem;color:#1f1f1f}
 .nav a{padding:4px 0;border-bottom:1px solid transparent;transition:.14s}
