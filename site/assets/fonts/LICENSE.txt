@@ -1,11 +1,10 @@
-Bundled webfonts (latin subsets, variable):
+Bundled webfonts (latin subsets):
 
-- Archivo — Copyright 2020 The Archivo Project Authors, SIL Open Font License 1.1
-  https://fonts.google.com/specimen/Archivo
-- Fira Sans — Copyright 2014 The Fira Sans Project Authors (Mozilla), SIL Open Font License 1.1
-  https://fonts.google.com/specimen/Fira+Sans
-- Martian Mono — Copyright 2022 The Martian Mono Project Authors, SIL Open Font License 1.1
-  https://fonts.google.com/specimen/Martian+Mono
+- Fira Sans — Copyright 2014 The Fira Sans Project Authors (Mozilla),
+  SIL Open Font License 1.1 · https://fonts.google.com/specimen/Fira+Sans
+- Roboto Slab — Copyright 2013 The Roboto Project Authors,
+  Apache License 2.0 · https://fonts.google.com/specimen/Roboto+Slab
+- Ubuntu Mono — Copyright 2011 Canonical Ltd.,
+  Ubuntu Font Licence 1.0 · https://fonts.google.com/specimen/Ubuntu+Mono
 
-Both are redistributed unmodified as WOFF2 under the SIL Open Font License 1.1:
-https://openfontlicense.org/
+All files are redistributed unmodified as WOFF2 from Google Fonts.

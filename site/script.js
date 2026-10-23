@@ -89,33 +89,6 @@
     document.body.removeChild(area);
   });
 
-  /* ---------- scroll spy ---------- */
-  var links = Array.prototype.slice.call(document.querySelectorAll('.nav-links a'));
-  var spy = links.map(function (link) {
-    return { link: link, section: document.querySelector(link.getAttribute('href')) };
-  }).filter(function (item) { return item.section; });
-
-  var ticking = false;
-  function markActive() {
-    ticking = false;
-    var line = window.scrollY + 120;
-    var current = null;
-    spy.forEach(function (item) {
-      if (item.section.offsetTop <= line) current = item;
-    });
-    spy.forEach(function (item) {
-      item.link.classList.toggle('active', item === current);
-    });
-  }
-  if (spy.length) {
-    window.addEventListener('scroll', function () {
-      if (ticking) return;
-      ticking = true;
-      window.requestAnimationFrame(markActive);
-    }, { passive: true });
-    markActive();
-  }
-
   /* ---------- reveal on scroll ---------- */
   if (!reduced && 'IntersectionObserver' in window) {
     var candidates = document.querySelectorAll(
