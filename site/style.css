@@ -8,6 +8,11 @@
 }
 @font-face{
   font-family:'Fira Sans';
+  src:url('assets/fonts/fira-sans-light.woff2') format('woff2');
+  font-weight:300; font-style:normal; font-display:swap;
+}
+@font-face{
+  font-family:'Fira Sans';
   src:url('assets/fonts/fira-sans-bold.woff2') format('woff2');
   font-weight:700; font-style:normal; font-display:swap;
 }
@@ -69,7 +74,7 @@ code,pre{font-family:var(--mono);font-stretch:88%;font-variant-ligatures:none}
   height:92px;padding:0 24px}
 .logo{display:flex;align-items:center;gap:12px}
 .brand-text{display:flex;align-items:baseline;gap:15px}
-.status{font-family:var(--display);font-weight:300;font-size:.63rem;letter-spacing:.2em;
+.status{font-family:'Fira Sans',var(--sans);font-weight:300;font-size:.63rem;letter-spacing:.2em;
   text-transform:uppercase;color:var(--muted);white-space:nowrap}
 .logo .mark{width:70px;height:70px;border-radius:50%;object-fit:cover;display:block;
   border:1px solid var(--line-warm);background:#fff}

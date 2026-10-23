@@ -44,7 +44,7 @@ parent: squeal-goal-and-requirements
   `#ff1f8f` (мелкий текст и ссылки — `#d60066`), бежевая подложка кода `#f8f4ee`. Код светлый:
   ключевые слова `#d60066`, строки `#0f7a4d`, атомы `#7b3fe4`, числа `#b45309`; тёмных слябов нет.
 - **Шрифты.** Archivo (заголовки, 800, плотный трекинг) и Martian Mono (код и моно-подписи) —
-  семейства bun.com, взяты из Google Fonts как OFL; вордмарк «Squeal» — Fira Sans 700, только он.
+  семейства bun.com, взяты из Google Fonts как OFL; вордмарк «Squeal» — Fira Sans 700, подпись STATUS: ALPHA — Fira Sans 300.
   Все файлы self-hosted, внешних запросов нет.
 - **JS без зависимостей** (`script.js`): табы код-карточек с ARIA и стрелками, copy (clipboard с
   фолбэком через `execCommand`), scrollspy нава, появление секций через IntersectionObserver с

@@ -2,7 +2,7 @@ Bundled webfonts (latin subsets, variable):
 
 - Archivo — Copyright 2020 The Archivo Project Authors, SIL Open Font License 1.1
   https://fonts.google.com/specimen/Archivo
-- Fira Sans — Copyright 2014 The Fira Sans Project Authors (Mozilla), SIL Open Font License 1.1
+- Fira Sans (300, 700) — Copyright 2014 The Fira Sans Project Authors (Mozilla), SIL Open Font License 1.1
   https://fonts.google.com/specimen/Fira+Sans
 - Martian Mono — Copyright 2022 The Martian Mono Project Authors, SIL Open Font License 1.1
   https://fonts.google.com/specimen/Martian+Mono
