@@ -65,7 +65,7 @@ code,pre{font-family:var(--mono);font-stretch:88%;font-variant-ligatures:none}
 .logo{display:flex;align-items:center;gap:12px}
 .logo .mark{width:70px;height:70px;border-radius:50%;object-fit:cover;display:block;
   border:1px solid var(--line-warm);background:#fff}
-.logo .wordmark{font-family:var(--display);font-weight:900;font-size:1.45rem;letter-spacing:-.048em;
+.logo .wordmark{font-family:var(--display);font-weight:900;font-size:2.175rem;letter-spacing:-.05em;
   font-stretch:100%;line-height:1}
 .nav{display:flex;gap:24px;font-size:.875rem;color:#1f1f1f}
 .nav a{padding:4px 0;border-bottom:1px solid transparent;transition:.14s}
@@ -74,10 +74,10 @@ code,pre{font-family:var(--mono);font-stretch:88%;font-variant-ligatures:none}
 .head-end{margin-left:auto;display:flex;align-items:center;gap:12px}
 .version{font-family:var(--mono);font-stretch:88%;font-size:.58rem;letter-spacing:.08em;text-transform:uppercase;
   color:var(--faint);border:1px solid var(--line);border-radius:3px;padding:5px 8px}
-.btn-dark{background:#0a0a0a;color:#fff;font-family:var(--mono);font-stretch:88%;font-size:.62rem;
-  letter-spacing:.08em;text-transform:uppercase;padding:9px 16px;border-radius:3px;border:1px solid #0a0a0a;
-  transition:.16s}
-.btn-dark:hover{background:var(--pink);border-color:var(--pink);color:#fff}
+.gh{display:grid;place-items:center;width:44px;height:44px;color:#0a0a0a;border-radius:3px;
+  transition:color .16s,background .16s}
+.gh .octocat{width:32px;height:32px;display:block}
+.gh:hover{color:var(--pink-strong);background:var(--paper)}
 
 /* ---------- frame ---------- */
 .frame{max-width:var(--container);margin-inline:auto;border-inline:1px solid var(--line)}
