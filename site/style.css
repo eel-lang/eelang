@@ -62,10 +62,11 @@ code,pre{font-family:var(--mono);font-stretch:88%;font-variant-ligatures:none}
   border-bottom:1px solid var(--line)}
 .head .inner{max-width:var(--container);margin-inline:auto;display:flex;align-items:center;gap:30px;
   height:63px;padding:0 24px}
-.logo{display:flex;align-items:center;gap:9px;font-family:var(--display);font-weight:800;font-size:1.22rem;
-  letter-spacing:-.045em;font-stretch:96%}
-.logo .mark{width:26px;height:26px;background:#0a0a0a;border-radius:3px;display:grid;place-items:center;
-  color:var(--pink);font-family:var(--mono);font-size:.6rem;font-weight:700;letter-spacing:0;font-stretch:95%}
+.logo{display:flex;align-items:center;gap:9px}
+.logo .mark{width:35px;height:35px;border-radius:50%;object-fit:cover;display:block;
+  border:1px solid var(--line-warm);background:#fff}
+.logo .wordmark{font-family:var(--display);font-weight:900;font-size:1.45rem;letter-spacing:-.048em;
+  font-stretch:100%;line-height:1}
 .nav{display:flex;gap:24px;font-size:.875rem;color:#1f1f1f}
 .nav a{padding:4px 0;border-bottom:1px solid transparent;transition:.14s}
 .nav a:hover{color:var(--pink-strong)}
