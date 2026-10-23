@@ -61,9 +61,9 @@ code,pre{font-family:var(--mono);font-stretch:88%;font-variant-ligatures:none}
 .head{position:sticky;top:0;z-index:30;background:rgba(255,255,255,.94);backdrop-filter:blur(12px);
   border-bottom:1px solid var(--line)}
 .head .inner{max-width:var(--container);margin-inline:auto;display:flex;align-items:center;gap:30px;
-  height:63px;padding:0 24px}
-.logo{display:flex;align-items:center;gap:9px}
-.logo .mark{width:35px;height:35px;border-radius:50%;object-fit:cover;display:block;
+  height:92px;padding:0 24px}
+.logo{display:flex;align-items:center;gap:12px}
+.logo .mark{width:70px;height:70px;border-radius:50%;object-fit:cover;display:block;
   border:1px solid var(--line-warm);background:#fff}
 .logo .wordmark{font-family:var(--display);font-weight:900;font-size:1.45rem;letter-spacing:-.048em;
   font-stretch:100%;line-height:1}
@@ -81,7 +81,7 @@ code,pre{font-family:var(--mono);font-stretch:88%;font-variant-ligatures:none}
 
 /* ---------- frame ---------- */
 .frame{max-width:var(--container);margin-inline:auto;border-inline:1px solid var(--line)}
-.frame section{border-bottom:1px solid var(--line)}
+.frame section{border-bottom:1px solid var(--line);scroll-margin-top:104px}
 
 /* ---------- hero ---------- */
 .hero{display:grid;grid-template-columns:1.04fr .96fr}
