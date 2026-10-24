@@ -35,11 +35,7 @@
   <!-- HERO -->
   <section class="hero">
     <div class="hero-left">
-      <div class="pill-row">
-        <span class="pill">new</span>
-        <span class="line">milestone 1 released</span>
-      </div>
-      <h1>squeal is a <em>Python&#8209;shaped</em> language for the <em>BEAM</em>.</h1>
+      <h1>A <em>Python&#8209;shaped</em> BEAM language, inspired by <em>Gleam</em>.</h1>
       <p class="hero-sub">Immutability, pattern matching, comprehensions and hierarchical modules —
         written in the Python you already know, compiled to Erlang abstract forms through the same
         pipeline Gleam uses.</p>
@@ -57,18 +53,38 @@
 
     <div class="hero-right">
       <div class="viewer" data-tabs>
-        <div class="viewer-tabs" role="tablist" aria-label="hello, compiled">
-          <button class="vtab" id="tab-ee" role="tab" aria-selected="true" aria-controls="panel-ee" type="button">hello.ee</button>
-          <button class="vtab" id="tab-erl" role="tab" aria-selected="false" aria-controls="panel-erl" tabindex="-1" type="button">hello.erl</button>
+        <div class="viewer-tabs" role="tablist" aria-label="fib, compiled">
+          <button class="vtab" id="tab-ee" role="tab" aria-selected="true" aria-controls="panel-ee" type="button">fib.ee</button>
+          <button class="vtab" id="tab-erl" role="tab" aria-selected="false" aria-controls="panel-erl" tabindex="-1" type="button">fib.erl</button>
         </div>
         <div class="viewer-body">
-          <pre id="panel-ee" role="tabpanel" aria-labelledby="tab-ee"><span class="ln" aria-hidden="true">1</span><span class="k">def</span> <span class="fn">hello</span>():
-<span class="ln" aria-hidden="true">2</span>    <span class="s">"hi"</span></pre>
-          <pre id="panel-erl" role="tabpanel" aria-labelledby="tab-erl" hidden><span class="ln" aria-hidden="true">1</span><span class="k">-module</span>(hello).
-<span class="ln" aria-hidden="true">2</span><span class="k">-export</span>([hello/<span class="n">0</span>]).
-
-<span class="ln" aria-hidden="true">3</span><span class="fn">hello</span>() -&gt;
-<span class="ln" aria-hidden="true">4</span>    <span class="s">&lt;&lt;"hi"/utf8&gt;&gt;</span>.</pre>
+          <pre id="panel-ee" role="tabpanel" aria-labelledby="tab-ee"><span class="ln" aria-hidden="true">1</span><span class="k">def</span> <span class="fn">fib</span>(n, current, next):
+<span class="ln" aria-hidden="true">2</span>    <span class="k">match</span> n:
+<span class="ln" aria-hidden="true">3</span>        <span class="k">case</span> <span class="n">0</span>:
+<span class="ln" aria-hidden="true">4</span>            r = current
+<span class="ln" aria-hidden="true">5</span>
+<span class="ln" aria-hidden="true">6</span>        <span class="k">case</span> _ <span class="k">if</span> n &gt; <span class="n">0</span>:
+<span class="ln" aria-hidden="true">7</span>            r = fib(n - <span class="n">1</span>, next, current + next)
+<span class="ln" aria-hidden="true">8</span>
+<span class="ln" aria-hidden="true">9</span>    r
+<span class="ln" aria-hidden="true">10</span>
+<span class="ln" aria-hidden="true">11</span>
+<span class="ln" aria-hidden="true">12</span><span class="k">def</span> <span class="fn">fib</span>(n):
+<span class="ln" aria-hidden="true">13</span>    r = fib(n, <span class="n">0</span>, <span class="n">1</span>)</pre>
+          <pre id="panel-erl" role="tabpanel" aria-labelledby="tab-erl" hidden><span class="ln" aria-hidden="true">1</span><span class="k">-module</span>(fib).
+<span class="ln" aria-hidden="true">2</span><span class="k">-export</span>([fib/<span class="n">3</span>,fib/<span class="n">1</span>]).
+<span class="ln" aria-hidden="true">3</span>
+<span class="ln" aria-hidden="true">4</span><span class="fn">fib</span>(N, Current, Next) -&gt;
+<span class="ln" aria-hidden="true">5</span>    R = <span class="k">case</span> N <span class="k">of</span>
+<span class="ln" aria-hidden="true">6</span>            <span class="n">0</span> -&gt;
+<span class="ln" aria-hidden="true">7</span>                Current;
+<span class="ln" aria-hidden="true">8</span>            _ <span class="k">when</span> N &gt; <span class="n">0</span> -&gt;
+<span class="ln" aria-hidden="true">9</span>                fib(N - <span class="n">1</span>, Next, Current + Next)
+<span class="ln" aria-hidden="true">10</span>        <span class="k">end</span>,
+<span class="ln" aria-hidden="true">11</span>    R.
+<span class="ln" aria-hidden="true">12</span>
+<span class="ln" aria-hidden="true">13</span><span class="fn">fib</span>(N) -&gt;
+<span class="ln" aria-hidden="true">14</span>    R = fib(N, <span class="n">0</span>, <span class="n">1</span>).</pre>
         </div>
         <p class="viewer-caption">real output · build/dev/erlang/my_app/ebin</p>
       </div>
