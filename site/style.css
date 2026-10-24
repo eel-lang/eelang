@@ -118,8 +118,8 @@ h1 em{font-style:normal;color:var(--pink)}
   padding:9px 14px;color:var(--faint);background:none;border:0;border-right:1px solid var(--line-warm);
   border-bottom:1px solid transparent;margin-bottom:-1px;cursor:pointer;transition:.14s;white-space:nowrap}
 .vtab:hover{color:var(--ink)}
-.vtab[aria-selected="true"]{color:var(--ink);background:#fff;border-color:var(--line-warm);
-  border-bottom-color:#fff}
+.vtab[aria-selected="true"],.vtab[aria-current="true"]{color:var(--ink);background:#fff;
+  border-color:var(--line-warm);border-bottom-color:#fff}
 .viewer-body{min-height:170px;background:#fff}
 .viewer-caption{margin:0;padding:9px 14px;border-top:1px solid var(--line-warm);background:var(--subtle);
   font-family:var(--mono);font-stretch:88%;font-size:.52rem;letter-spacing:.09em;text-transform:uppercase;

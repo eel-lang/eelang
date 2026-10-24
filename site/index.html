@@ -52,44 +52,23 @@
     </div>
 
     <div class="hero-right">
-      <div class="viewer" data-tabs>
-        <div class="viewer-tabs" role="tablist" aria-label="fib, compiled">
-          <button class="vtab" id="tab-ee" role="tab" aria-selected="true" aria-controls="panel-ee" type="button">fib.ee</button>
-          <button class="vtab" id="tab-erl" role="tab" aria-selected="false" aria-controls="panel-erl" tabindex="-1" type="button">fib.erl</button>
-        </div>
+      <div class="viewer">
+        <div class="viewer-tabs"><span class="vtab" aria-current="true">fib.ee</span></div>
         <div class="viewer-body">
-          <pre id="panel-ee" role="tabpanel" aria-labelledby="tab-ee"><span class="ln" aria-hidden="true">1</span><span class="k">def</span> <span class="fn">fib</span>(n, current, next):
+          <pre id="panel-ee"><span class="ln" aria-hidden="true">1</span><span class="k">def</span> <span class="fn">fib</span>(n, current, next):
 <span class="ln" aria-hidden="true">2</span>    <span class="k">match</span> n:
 <span class="ln" aria-hidden="true">3</span>        <span class="k">case</span> <span class="n">0</span>:
-<span class="ln" aria-hidden="true">4</span>            r = current
+<span class="ln" aria-hidden="true">4</span>            current
 <span class="ln" aria-hidden="true">5</span>
 <span class="ln" aria-hidden="true">6</span>        <span class="k">case</span> _ <span class="k">if</span> n &gt; <span class="n">0</span>:
-<span class="ln" aria-hidden="true">7</span>            r = fib(n - <span class="n">1</span>, next, current + next)
+<span class="ln" aria-hidden="true">7</span>            fib(n - <span class="n">1</span>, next, current + next)
 <span class="ln" aria-hidden="true">8</span>
-<span class="ln" aria-hidden="true">9</span>    r
-<span class="ln" aria-hidden="true">10</span>
-<span class="ln" aria-hidden="true">11</span>
-<span class="ln" aria-hidden="true">12</span><span class="k">def</span> <span class="fn">fib</span>(n):
-<span class="ln" aria-hidden="true">13</span>    r = fib(n, <span class="n">0</span>, <span class="n">1</span>)</pre>
-          <pre id="panel-erl" role="tabpanel" aria-labelledby="tab-erl" hidden><span class="ln" aria-hidden="true">1</span><span class="k">-module</span>(fib).
-<span class="ln" aria-hidden="true">2</span><span class="k">-export</span>([fib/<span class="n">3</span>,fib/<span class="n">1</span>]).
-<span class="ln" aria-hidden="true">3</span>
-<span class="ln" aria-hidden="true">4</span><span class="fn">fib</span>(N, Current, Next) -&gt;
-<span class="ln" aria-hidden="true">5</span>    R = <span class="k">case</span> N <span class="k">of</span>
-<span class="ln" aria-hidden="true">6</span>            <span class="n">0</span> -&gt;
-<span class="ln" aria-hidden="true">7</span>                Current;
-<span class="ln" aria-hidden="true">8</span>            _ <span class="k">when</span> N &gt; <span class="n">0</span> -&gt;
-<span class="ln" aria-hidden="true">9</span>                fib(N - <span class="n">1</span>, Next, Current + Next)
-<span class="ln" aria-hidden="true">10</span>        <span class="k">end</span>,
-<span class="ln" aria-hidden="true">11</span>    R.
-<span class="ln" aria-hidden="true">12</span>
-<span class="ln" aria-hidden="true">13</span><span class="fn">fib</span>(N) -&gt;
-<span class="ln" aria-hidden="true">14</span>    R = fib(N, <span class="n">0</span>, <span class="n">1</span>).</pre>
+<span class="ln" aria-hidden="true">9</span>
+<span class="ln" aria-hidden="true">10</span><span class="k">def</span> <span class="fn">fib</span>(n):
+<span class="ln" aria-hidden="true">11</span>    fib(n, <span class="n">0</span>, <span class="n">1</span>)</pre>
         </div>
-        <p class="viewer-caption">real output · build/dev/erlang/my_app/ebin</p>
+        <p class="viewer-caption">example · squeal syntax, not in the compiler yet</p>
       </div>
-      <div class="slab slab-term"><span class="prompt">&gt;</span> fib:fib(<span class="n">10</span>).
-        <span class="out">55</span></div>
     </div>
   </section>
 
@@ -104,73 +83,67 @@
     </div>
   </section>
 
-  <!-- SIX SQUARES -->
+  <!-- SIX PRINCIPLES -->
   <section id="language">
     <div class="big-head">
-      <h2>Six rules,<br><span class="muted">baked into the compiler.</span></h2>
-      <p>Each one is either a compile error in Python or a form Gleam would emit. squeal doesn't
-        guess — it refuses, or it matches Gleam exactly.</p>
+      <h2>Built on Gleam,<br><span class="muted">squeal follows these principles.</span></h2>
+      <p>These are the directions the language is being built against. Some are already in the
+        compiler; the rest are on the roadmap — the status section below says which is which.</p>
     </div>
 
     <div class="squares">
       <article class="square">
         <span class="idx">01</span>
-        <h3>Immutability</h3>
-        <p class="sub">replaces mutation</p>
-        <p class="desc">No <code>for</code>, no <code>while</code>, no <code>+=</code>, no assignment to
-          an index. Rebinding is allowed — the compiler names the new value <code>X@1</code>.</p>
-        <pre class="chip">x = x + <span class="n">1</span>   <span class="c"># X@1 = X + 1</span></pre>
+        <h3>IDE support</h3>
+        <p class="sub">static analysis, first-class</p>
+        <p class="desc">A great static-analysis experience in the IDE is one of the goals — and the
+          main target is PyCharm.</p>
+        <pre class="chip">target · PyCharm</pre>
       </article>
 
       <article class="square">
         <span class="idx">02</span>
-        <h3>Expressions</h3>
-        <p class="sub">replaces early returns</p>
-        <p class="desc"><code>if</code> and <code>match</code> end by assigning one variable. That
-          assignment is the value of the branch.</p>
-        <pre class="chip"><span class="k">match</span> n:
-    <span class="k">case</span> <span class="n">0</span>:
-        r = <span class="n">0</span></pre>
+        <h3>Great stdlib</h3>
+        <p class="sub">batteries, with methods</p>
+        <p class="desc">A stdlib that is pleasant to use, with OOP-style methods on the core data
+          structures.</p>
+        <pre class="chip">config.get(key)
+name.startswith(prefix)</pre>
       </article>
 
       <article class="square">
         <span class="idx">03</span>
-        <h3>Let it crash</h3>
-        <p class="sub">replaces error codes</p>
-        <p class="desc">A <code>match</code> that matches nothing raises <code>{case_clause, V}</code>
-          in the process. Exhaustiveness is a suggestion, not a requirement.</p>
-        <pre class="chip"><span class="prompt">1&gt;</span> shapes:shift(nope, <span class="n">3</span>).
-<span class="err">** exception error: no case clause</span></pre>
+        <h3>Optional static typing</h3>
+        <p class="sub">never mandatory</p>
+        <p class="desc">Static typing is fully optional. When you reach for it, it is there to make
+          the code clearer and more expressive.</p>
+        <pre class="chip">x: int   <span class="c"># optional</span></pre>
       </article>
 
       <article class="square">
         <span class="idx">04</span>
-        <h3>Patterns</h3>
-        <p class="sub">replaces isinstance chains</p>
-        <p class="desc">Destructuring, constructor patterns, guards and or-patterns compile to the very
-          patterns Gleam emits.</p>
-        <pre class="chip">head, *rest = xs
-<span class="k">case</span> Point(x, y) <span class="k">if</span> x &gt; <span class="n">0</span>:</pre>
+        <h3>All data types equally</h3>
+        <p class="sub">no second-class data</p>
+        <p class="desc">Maps, records, native records and the rest get the same level of support —
+          and optional types make all of them convenient.</p>
+        <pre class="chip">map · record · native record</pre>
       </article>
 
       <article class="square">
         <span class="idx">05</span>
-        <h3>Comprehensions</h3>
-        <p class="sub">replaces loops</p>
-        <p class="desc">List and dict comprehensions become Erlang comprehensions — generators, filters
-          and nesting in the same order.</p>
-        <pre class="chip">[x * <span class="n">2</span> <span class="k">for</span> x <span class="k">in</span> xs]
-<span class="c"># [X * 2 || X &lt;- squeal_iter(Xs)]</span></pre>
+        <h3>OTP first-class</h3>
+        <p class="sub">not an afterthought</p>
+        <p class="desc">Working with OTP matters as much as a good standard library.</p>
+        <pre class="chip">OTP · first-class</pre>
       </article>
 
       <article class="square">
         <span class="idx">06</span>
-        <h3>Modules</h3>
-        <p class="sub">replaces import trees</p>
-        <p class="desc">The module is the path: <code>src/a/b/c.ee</code> becomes <code>a@b@c</code>.
-          Imports are Python imports; the BEAM does the rest.</p>
-        <pre class="chip"><span class="k">from</span> my.app.math <span class="k">import</span> add
-<span class="c"># → my@app@math:add(…)</span></pre>
+        <h3>Python ecosystem friendly</h3>
+        <p class="sub">BEAM ↔ CPython</p>
+        <p class="desc">One of the tasks is to bring the BEAM and CPython ecosystems closer, and to
+          popularise projects like Hornbeam.</p>
+        <pre class="chip">hornbeam</pre>
       </article>
     </div>
   </section>
