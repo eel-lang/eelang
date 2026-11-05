@@ -181,6 +181,22 @@ h2 .muted{color:var(--faint)}
 
 
 
+
+/* ---------- early alpha: trade-offs ---------- */
+.tradeoffs{display:grid;grid-template-columns:minmax(0,.85fr) minmax(0,2fr);border-top:1px solid var(--line)}
+.tradeoff{padding:22px 32px 28px}
+.tradeoff.plus{border-right:1px solid var(--line)}
+.tradeoff-label{margin:0 0 12px;font-family:var(--mono);font-stretch:88%;font-size:.55rem;
+  letter-spacing:.14em;text-transform:uppercase;color:var(--faint);font-weight:500}
+.tradeoff ul{list-style:none;margin:0;padding:0;display:grid;gap:12px}
+.tradeoff li{display:flex;gap:11px;align-items:flex-start}
+.tradeoff .mark{flex:none;width:18px;height:18px;border-radius:50%;display:grid;place-items:center;
+  font-family:var(--mono);font-size:.62rem;line-height:1;margin-top:2px}
+.tradeoff.plus .mark{background:var(--pink-soft);color:var(--pink-strong);border:1px solid rgba(214,0,102,.28)}
+.tradeoff.minus .mark{background:var(--paper);color:var(--faint);border:1px solid var(--line)}
+.tradeoff strong{display:block;font-size:.9rem;font-weight:600;letter-spacing:-.01em}
+.tradeoff small{display:block;margin-top:2px;color:var(--muted);font-size:.8rem;line-height:1.5}
+
 /* ---------- standard library teaser ---------- */
 .stdlib{padding:0 0 4px}
 .std-head{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap;
@@ -333,11 +349,12 @@ footer nav a:hover{color:var(--pink-strong)}
   .square:nth-last-child(-n+3){border-bottom:1px solid var(--line)}
   .square:nth-last-child(-n+2){border-bottom:0}
   .std-head{padding:30px 24px 16px}
-  .std-grid{grid-template-columns:1fr 1fr}
-  .std-block:nth-child(3n){border-right:1px solid var(--line)}
-  .std-block:nth-child(2n){border-right:0}
-  .std-block:nth-last-child(-n+3){border-bottom:1px solid var(--line)}
-  .std-block:nth-last-child(-n+2){border-bottom:0}
+  .std-grid{grid-template-columns:1fr}
+  .std-block{border-right:0}
+  .std-block:last-child{border-bottom:0}
+  .tradeoffs{grid-template-columns:1fr}
+  .tradeoff.plus{border-right:0;border-bottom:1px solid var(--line)}
+  .tradeoff{padding-inline:24px}
   .syntax{grid-template-columns:1fr;padding:4px 24px 32px;gap:14px}
   .api-tabs{flex-direction:row;overflow-x:auto;gap:6px;padding-bottom:4px;scrollbar-width:thin}
   .api-tab{width:auto;white-space:nowrap}

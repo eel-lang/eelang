@@ -282,7 +282,7 @@ name.startswith(prefix)</pre>
   <!-- THE REST OF THE STANDARD LIBRARY -->
   <section class="stdlib" id="stdlib">
     <div class="std-head">
-      <h2>…and the rest of the standard library</h2>
+      <h2>OOP-styled standard library</h2>
       <span class="std-note">planned surface · not in the compiler yet</span>
     </div>
 
@@ -320,35 +320,63 @@ name.startswith(prefix)</pre>
         </ul>
       </div>
 
-      <div class="std-block">
-        <h3 class="std-label">Records &amp; classes</h3>
+    </div>
+  </section>
+
+  <!-- EARLY ALPHA -->
+  <section id="alpha">
+    <div class="big-head">
+      <h2>This is an early alpha.<br><span class="muted">The code is 100% vibe-coded.</span></h2>
+      <p>It compiles real modules today, and it is not something you put in production yet. The
+        honest list of what that buys you and what it costs:</p>
+    </div>
+
+    <div class="tradeoffs">
+      <div class="tradeoff plus">
+        <h3 class="tradeoff-label">plus</h3>
         <ul>
-          <li><code>p.x</code><span>field access on a tagged tuple</span></li>
-          <li><code>p.with(x = 0)</code><span>a copy with one field replaced</span></li>
-          <li><code>p.tag()</code><span>the atom a class was tagged with</span></li>
-          <li><code>p == q</code><span>structural equality, as in Erlang</span></li>
+          <li>
+            <span class="mark" aria-hidden="true">+</span>
+            <span><strong>A small codebase you can fork</strong>
+              <small>The compiler is a handful of Python modules — read it in an afternoon, fork it,
+                and bend it to your own project.</small></span>
+          </li>
         </ul>
       </div>
 
-      <div class="std-block">
-        <h3 class="std-label">Numbers</h3>
+      <div class="tradeoff minus">
+        <h3 class="tradeoff-label">minus</h3>
         <ul>
-          <li><code>n.abs()</code><span>absolute value</span></li>
-          <li><code>n.clamp(lo, hi)</code><span>fit into a range</span></li>
-          <li><code>n.round()</code><span>to the nearest integer</span></li>
-          <li><code>n.to_string()</code><span>decimal, no surprises</span></li>
-          <li><code>n ** k</code><span>integers stay integers</span></li>
-        </ul>
-      </div>
-
-      <div class="std-block">
-        <h3 class="std-label">OTP &amp; processes</h3>
-        <ul>
-          <li><code>spawn(f)</code><span>a process for one function</span></li>
-          <li><code>send(pid, msg)</code><span>fire and forget</span></li>
-          <li><code>call(pid, msg)</code><span>synchronous call with a timeout</span></li>
-          <li><code>supervise(children)</code><span>restart on failure</span></li>
-          <li><code>file.read(path)</code><span>contents as a binary</span></li>
+          <li>
+            <span class="mark" aria-hidden="true">−</span>
+            <span><strong>No type checker</strong>
+              <small>Annotations are documentation. Eel does not check them — outside tools own
+                that, as in Python.</small></span>
+          </li>
+          <li>
+            <span class="mark" aria-hidden="true">−</span>
+            <span><strong>No static analysis yet</strong>
+              <small>The IDE experience is a goal, not a feature: the analyzer is planned, and PyCharm
+                support does not exist today.</small></span>
+          </li>
+          <li>
+            <span class="mark" aria-hidden="true">−</span>
+            <span><strong>The standard library is a sketch</strong>
+              <small>OOP-style methods on the core types are designed, not implemented — today you work
+                with bare Erlang forms.</small></span>
+          </li>
+          <li>
+            <span class="mark" aria-hidden="true">−</span>
+            <span><strong>Pre-release, nothing to install</strong>
+              <small>Runs from a checkout on Python 3.15 and OTP 29: no package, no versioned releases,
+                no stability promise.</small></span>
+          </li>
+          <li>
+            <span class="mark" aria-hidden="true">−</span>
+            <span><strong>Written with AI, end to end</strong>
+              <small>Expect uneven code, thin tests in places and APIs that move. The parity suite with
+                Gleam is the part that keeps it honest.</small></span>
+          </li>
         </ul>
       </div>
     </div>
