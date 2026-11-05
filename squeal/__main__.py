@@ -29,6 +29,11 @@ def main(argv: list[str] | None = None) -> int:
         action="store_true",
         help="compile in-process instead of using the background daemon",
     )
+    b.add_argument(
+        "--force",
+        action="store_true",
+        help="rebuild every module, ignoring the incremental manifest",
+    )
     d = sub.add_parser("daemon", help="background compiler daemon")
     d.add_argument("action", choices=["start", "stop", "status"])
     args = parser.parse_args(argv)
@@ -40,6 +45,7 @@ def main(argv: list[str] | None = None) -> int:
                 erl=args.erl,
                 dump_forms=args.dump_forms,
                 daemon=not args.no_daemon,
+                force=args.force,
             )
             return 0
         except SquealError as e:

@@ -5,6 +5,7 @@ from __future__ import annotations
 import atexit
 import base64
 import hashlib
+import json
 import os
 import pathlib
 import socket
@@ -19,6 +20,23 @@ ESCRIPT = pathlib.Path(__file__).parent / "squeal_compile.escript"
 
 #: Версия протокола «клиент ↔ escript»; при расхождении демон перезапускается.
 PROTOCOL = 2
+
+#: Версия формата артефактов сборки: меняем — прежний манифест считается недействительным.
+BUILD_FORMAT = 1
+
+#: Исходники, влияющие на результат сборки: их хэш инвалидирует манифест.
+_BUILDER_SOURCES = (
+    "compiler.py",
+    "frontend.py",
+    "backend.py",
+    "checks.py",
+    "ir.py",
+    "etf.py",
+    "term.py",
+    "squeal_compile.escript",
+)
+
+_FINGERPRINT: str | None = None
 
 _CACHE = pathlib.Path(
     os.environ.get("XDG_CACHE_HOME") or pathlib.Path.home() / ".cache"
@@ -41,6 +59,34 @@ def compile_source(source: str, path: str, name: str) -> list:
 def module_name(relative_path: pathlib.PurePath) -> str:
     """``src/a/b/c.ee`` → ``a@b@c``; ``src/hello.ee`` → ``hello``."""
     return "@".join(relative_path.with_suffix("").parts)
+
+
+def builder_fingerprint() -> str:
+    """Хэш исходников компилятора: изменили кодогенерацию — пересобираем всё."""
+    global _FINGERPRINT
+    if _FINGERPRINT is None:
+        digest = hashlib.sha256()
+        package = pathlib.Path(__file__).parent
+        for name in _BUILDER_SOURCES:
+            digest.update((package / name).read_bytes())
+        _FINGERPRINT = digest.hexdigest()
+    return _FINGERPRINT
+
+
+def _load_manifest(path: pathlib.Path, builder: str) -> dict:
+    try:
+        data = json.loads(path.read_text())
+    except (OSError, ValueError):
+        return {}
+    if data.get("format") != BUILD_FORMAT or data.get("builder") != builder:
+        return {}
+    modules = data.get("modules")
+    return modules if isinstance(modules, dict) else {}
+
+
+def _save_manifest(path: pathlib.Path, builder: str, modules: dict) -> None:
+    payload = {"format": BUILD_FORMAT, "builder": builder, "modules": dict(sorted(modules.items()))}
+    path.write_text(json.dumps(payload, indent=1) + "\n")
 
 
 def _install_key() -> str:
@@ -250,17 +296,32 @@ COMPILER = CompilerProcess()
 atexit.register(COMPILER.close)
 
 
+def _needs_rebuild(entry, digest, ebin, artefacts, name, erl, dump_forms) -> bool:
+    """Пересобирать ли модуль: нет записи, другой хэш, пропали нужные артефакты."""
+    if entry != digest:
+        return True
+    if not (ebin / f"{name}.beam").exists():
+        return True
+    if erl and not (ebin / f"{name}.erl").exists():
+        return True
+    if dump_forms and not (artefacts / f"{name}.abstr").exists():
+        return True
+    return False
+
+
 def build(
     root: str | pathlib.Path,
     *,
     erl: bool = False,
     dump_forms: bool = False,
     daemon: bool = True,
+    force: bool = False,
 ) -> pathlib.Path:
     """Компилирует ``src/*.ee`` в ``build/dev/erlang/<app>/ebin``.
 
     ``erl`` — дополнительно писать ``.erl`` рядом с ``.beam``; ``dump_forms`` — писать читаемые
-    ``.abstr``; ``daemon`` — использовать фоновый демон (иначе escript внутри процесса).
+    ``.abstr``; ``daemon`` — использовать фоновый демон (иначе escript внутри процесса);
+    ``force`` — пересобрать всё, игнорируя манифест (иначе только изменившиеся модули).
     """
     root = pathlib.Path(root).resolve()
     src = root / "src"
@@ -272,18 +333,34 @@ def build(
     ebin.mkdir(parents=True, exist_ok=True)
 
     modules = []
+    builder = builder_fingerprint()
+    manifest_path = artefacts / "build.json"
+    previous = _load_manifest(manifest_path, builder)
+
+    current = {}
     jobs = []
     for path in sorted(src.glob("**/*.ee")):
         rel = path.relative_to(src)
         name = module_name(rel)
         modules.append(name)
         source_path = path.relative_to(root)
-        forms = compile_source(path.read_text(), str(source_path), name)
+        source = path.read_text()
+        digest = hashlib.sha256(source.encode("utf-8")).hexdigest()
+        current[name] = digest
+        if not force and not _needs_rebuild(
+            previous.get(name), digest, ebin, artefacts, name, erl, dump_forms
+        ):
+            continue
+        forms = compile_source(source, str(source_path), name)
         jobs.append((name, forms, str(source_path)))
         if dump_forms:
             (artefacts / f"{name}.abstr").write_text(
                 "".join(term_to_erlang(form) + ".\n" for form in forms)
             )
+
+    for gone in sorted(set(previous) - set(current)):   # модуль удалён или переименован
+        for stale in (ebin / f"{gone}.beam", ebin / f"{gone}.erl", artefacts / f"{gone}.abstr"):
+            stale.unlink(missing_ok=True)
 
     if jobs:
         forms_path = artefacts / "forms.etf"
@@ -297,6 +374,8 @@ def build(
                 COMPILER.compile(forms_path, erl)  # не смогли поднять демон — не падаем
         else:
             COMPILER.compile(forms_path, erl)
+
+    _save_manifest(manifest_path, builder, current)
 
     app_spec = (
         Atom("application"),

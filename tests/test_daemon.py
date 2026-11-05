@@ -47,6 +47,8 @@ def test_build_starts_daemon_and_reuses_it(clean_daemon, tmp_path):
     info = DAEMON.ping()
     assert info["version"] == str(PROTOCOL)
 
+    # правим исходник, чтобы вторая сборка действительно компилировала
+    (proj / "src" / "hello.ee").write_text('def hello():\n    "hi again"\n')
     build(proj)
     assert _pid() == pid                       # тот же процесс Erlang
     assert int(DAEMON.ping()["compiled"]) == 2
@@ -63,6 +65,7 @@ def test_daemon_survives_the_client_process(clean_daemon, tmp_path):
 
     run_cli()
     pid = _pid()
+    (proj / "src" / "hello.ee").write_text('def hello():\n    "hi again"\n')
     run_cli()                                  # другая команда, другой процесс
     assert _pid() == pid
     assert int(DAEMON.ping()["compiled"]) == 2
@@ -77,7 +80,7 @@ def test_daemon_stop_and_restart(clean_daemon, tmp_path):
     assert not daemon_socket().exists()
     assert DAEMON.ping() is None
 
-    build(proj)                                # новый демон поднимается сам
+    build(proj, force=True)                    # новый демон поднимается сам
     assert DAEMON.ping() is not None
 
 
