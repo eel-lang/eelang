@@ -5,6 +5,7 @@ brand: Eel
 status: Status: Alpha
 github: https://github.com/pwtail/squeal
 install: python3.15 -m squeal build my_app
+footer: Eel · Python syntax, Erlang semantics.
 ---
 
 <!--
@@ -16,7 +17,7 @@ install: python3.15 -m squeal build my_app
   - `###` — блок внутри секции: квадрат из шести принципов, таб в обзоре синтаксиса,
     плитка в stdlib-сетке, пункт плюсов/минусов.
   - Блок кода с первой строкой-подписью (`### Values · values.ee`) — панель кода с именем файла.
-  - `#якорь` в ссылке — id секции.
+  - `#якорь` в ссылке — id секции; ссылки в футере строятся из H2-секций, текст — из `footer:`.
 -->
 
 # A _Python-shaped_ language for the _BEAM_.
