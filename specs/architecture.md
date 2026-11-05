@@ -154,14 +154,21 @@ src/a/b.ee ──ast.parse──▶ Python AST ──▶ IR ──▶ прове
 - **Сообщения об ошибках — английские** (`squeal: путь:строка: text`, нижний регистр, без точки);
   так же и ошибки `compile:forms` после разбора в escript.
 - **Проверки** — разделены: фронтенд отклоняет запрещённый синтаксис (`for`/`while`/`del`/мутация, whitelist узлов), бэкенд проверяет «ветка заканчивается присваиванием той же переменной», `checks.py` — дубли определений.
-- **Бэкенд** — как `erlang-generation` у Gleam 1.19: builder поверх Erlang Abstract Format, каждая форма несёт аннотацию строки `.ee`, поэтому stack traces указывают в исходник squeal. Формы печатаются как Erlang-термы в файл `.abstr`. Атрибут `compile` повторяет Gleam (`no_auto_import, nowarn_ignored, nowarn_unused_vars, nowarn_unused_function, nowarn_nomatch, inline`).
-- **Сборка** — escript читает `.abstr` (ASCII; строки экранируются `\x{HEX}`) и зовёт `compile:forms` с `[return, report_errors, report_warnings, debug_info, {source, Path}]`; `.beam` кладётся в ebin, рядом генерируется `<app>.app`, `.erl` для отладки — `erl_pp` тех же форм.
+- **Бэкенд** — как `erlang-generation` у Gleam 1.19: builder поверх Erlang Abstract Format, каждая форма несёт аннотацию строки `.ee`, поэтому stack traces указывают в исходник squeal. Формы передаются в Erlang **ETF-блобом** (`squeal/etf.py`), а не текстом: `binary_to_term/1` не парсит грамматику, поэтому декодирование на порядок дешевле `file:consult` (замер: 40 модулей — 79 мс против 5 мс). Читаемый текст `.abstr` пишется только по флагу `--dump-forms`. Атрибут `compile` повторяет Gleam (`no_auto_import, nowarn_ignored, nowarn_unused_vars, nowarn_unused_function, nowarn_nomatch, inline`).
+- **Сборка** — `squeal_compile.escript` работает **сервером**: читает из stdin запросы
+  `{EtfPath, ErlFlag}.` и отвечает `OK` / `ERR <base64 текста>`. Формы — один ETF-блоб
+  `[{Base, Forms, SourcePath}, …]` (`_squeal_artefacts/forms.etf`), зовётся `compile:forms`
+  с `[return, debug_info, {source, Path}]` (без `report_*`: stdout — канал протокола).
+  `.beam` кладётся в ebin, рядом генерируется `<app>.app`; `.erl` — только по флагу `--erl`
+  (`erl_pp` тех же форм). `CompilerProcess` в Python держит один escript на процесс и переиспользует
+  его между сборками: повторная сборка не поднимает Erlang-VM (замер: 1.1 с → 0.45 с).
+  Одноразовый CLI от переиспользования не выигрывает — там один старт VM на вызов.
 
 Соответствие с Gleam обязательно только на нижнем слое — abstract format: builder повторяет `erlang-generation`, для одинаковых синтаксических узлов squeal строит те же формы, что Gleam; выше (Python AST, IR) — свои слои.
 
 ## Командная строка
 
-`python -m squeal build [DIR]` — подкоманды как у Gleam; первая сборка знает только `build`. Компилирует дерево `src/` в `build/dev/erlang/<app>/ebin`, `<app>` — имя каталога проекта; артефакты `.abstr` — в `build/dev/erlang/<app>/_squeal_artefacts`.
+`python -m squeal build [DIR]` — подкоманды как у Gleam; первая сборка знает только `build`. Компилирует дерево `src/` в `build/dev/erlang/<app>/ebin`, `<app>` — имя каталога проекта; артефакты (ETF-блоб и, по флагам, `.abstr`/`.erl`) — в `build/dev/erlang/<app>/_squeal_artefacts`.
 
 ## Jupyter
 

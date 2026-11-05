@@ -15,8 +15,9 @@ parent: squeal-architecture
 ## Ответственность
 
 - `python -m squeal build DIR` компилирует дерево `src/*.ee` в
-  `build/dev/erlang/<app>/ebin` (`<app>` — имя каталога проекта); артефакты `.abstr` — в
-  `build/dev/erlang/<app>/_squeal_artefacts`.
+  `build/dev/erlang/<app>/ebin` (`<app>` — имя каталога проекта); формы — ETF-блобом в
+  `build/dev/erlang/<app>/_squeal_artefacts/forms.etf` (`.abstr`/`.erl` — по флагам
+  `--dump-forms`/`--erl`).
 - Ошибки компиляции — `squeal: <путь>:<строка>: <текст>` в stderr, exit 1 (без traceback).
   Текст сообщений — по-английски (нижний регистр, без точки в конце); комментарии и
   докстринги кода остаются русскими.
@@ -71,9 +72,14 @@ parent: squeal-architecture
   `term.py` печатает Erlang-float (`1e-5` → `1.0e-5`) и строки (`\x{HEX}` для не-ASCII/управляющих).
   импорт → `{call, {remote, a@b@c, f}}` (имя из scope имеет приоритет над импортом).
 - `term.py` — `Atom` и печать термов в текст для `file:consult`.
-- `squeal_compile.escript` — читает `.abstr`, зовёт `compile:forms` (+ `return`), печатает `.erl`
-  через `erl_pp`; ошибки линта форматирует в `путь:строка: текст` (дамп терма наружу не выходит).
-- `compiler.py` — конвейер (`compile_source`, `build`); `__main__.py` — командная строка.
+- `squeal_compile.escript` — сервер: запросы `{EtfPath, ErlFlag}.` из stdin, ответы `OK` /
+  `ERR <base64>`; декодирует ETF, зовёт `compile:forms` (+ `return`), пишет `.beam` (и `.erl`
+  по флагу через `erl_pp`); ошибки линта форматирует в `путь:строка: текст` (дамп наружу не выходит).
+- `etf.py` — энкодер External Term Format: формы → блоб без зависимостей. `str` кодируется как
+  **charlist** (в формах `{string, L, "chars"}`), int — включая произвольную точность, float, tuple,
+  list; сжатие zlib при выигрыше.
+- `compiler.py` — конвейер (`compile_source`, `build`, `CompilerProcess` — переиспользуемый escript);
+  `__main__.py` — командная строка (`build [DIR] [--erl] [--dump-forms]`).
 - `session.py` — shell-режим: клетка → формы; session хранит маппинг имён/классы/импорты.
 - `repl.py` + `repl.escript` — persistent Erlang-REPL (`erl_eval:exprs`, bindings живут;
   `'$pp'` — `erl_pp` формы для печати эквивалента; вывод `print` копится в process dictionary и

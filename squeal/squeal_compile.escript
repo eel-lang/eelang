@@ -1,51 +1,96 @@
 #!/usr/bin/env escript
 %%! -noshell
-%% Компиляция Erlang abstract forms squeal (см. architecture.md).
+%% Компиляция Erlang abstract forms squeal (см. specs/architecture.md).
 %%
-%% usage: squeal_compile.escript JOBS
-%%   JOBS — файл с одним Erlang-термом: [{FormsPath, BasePath, Source}, ...]
-%%   FormsPath — файл термов (ASCII): одна форма на строку, каждая с точкой
-%%   BasePath  — без расширения: MODULE.beam и MODULE.erl лягут рядом
-%%   Source    — путь исходника .ee для атрибута -file и debug_info
+%% Сервер: читает из stdin по одному запросу-терму `{EtfPath, ErlFlag}.` и отвечает строкой
+%%   OK                     — всё скомпилировано
+%%   ERR <base64 текста>    — ошибка (формат `путь:строка: текст`, без дампа)
+%% Формы приходят ETF-блобом: `[{Base, Forms, SourcePath}, ...]` (см. squeal/etf.py).
+%% Процесс живёт до EOF — повторные сборки не поднимают VM заново.
 
-main([Jobs]) ->
-    case file:consult(Jobs) of
-        {ok, Jobs_} ->
-            compile_jobs(Jobs_);
-        {error, Reason} ->
-            io:format(standard_error, "read jobs failed: ~p~n", [Reason]),
-            halt(1)
+main(_) ->
+    loop().
+
+loop() ->
+    case io:get_line("") of
+        eof ->
+            halt(0);
+        Line ->
+            case parse_request(Line) of
+                {ok, EtfPath, ErlFlag} ->
+                    reply(compile_jobs(EtfPath, ErlFlag)),
+                    loop();
+                error ->
+                    reply({error, "bad request"}),
+                    loop()
+            end
     end.
 
-compile_jobs([]) ->
-    halt(0);
-compile_jobs([{FormsPath, Base, Source} | Rest]) ->
-    case file:consult(FormsPath) of
-        {ok, Forms} ->
-            case compile_one(Forms, Base, Source) of
-                ok -> compile_jobs(Rest);
-                error -> halt(1)
+reply(ok) ->
+    io:put_chars("OK\n");
+reply({error, Text}) ->
+    Encoded = base64:encode_to_string(unicode:characters_to_binary(Text)),
+    io:put_chars("ERR " ++ Encoded ++ "\n").
+
+parse_request(Line) ->
+    case erl_scan:string(Line) of
+        {ok, Tokens, _} ->
+            case erl_parse:parse_term(Tokens) of
+                {ok, {Path, ErlFlag}} when is_list(Path) -> {ok, Path, ErlFlag};
+                _ -> error
+            end;
+        {error, _, _} ->
+            error
+    end.
+
+compile_jobs(EtfPath, ErlFlag) ->
+    case file:read_file(EtfPath) of
+        {ok, Blob} ->
+            try binary_to_term(Blob) of
+                Jobs when is_list(Jobs) -> compile_all(Jobs, ErlFlag)
+            catch
+                _:_ -> {error, "cannot decode forms"}
             end;
         {error, Reason} ->
-            io:format(standard_error, "read ~s failed: ~p~n", [FormsPath, Reason]),
-            halt(1)
+            {error, io_lib:format("cannot read forms: ~p", [Reason])}
     end.
 
-compile_one(Forms, Base, Source) ->
-    Options = [return, report_errors, report_warnings, debug_info, {source, Source}],
+compile_all(Jobs, ErlFlag) ->
+    compile_each(Jobs, ErlFlag).
+
+compile_each([], _ErlFlag) ->
+    ok;
+compile_each([{Base, Forms, Source} | Rest], ErlFlag) ->
+    %% без report_*: компилятор не должен печатать в stdout — это канал протокола
+    Options = [return, debug_info, {source, Source}],
     case compile:forms(Forms, Options) of
         {ok, _Mod, Binary} ->
-            write(Base, Binary, Forms);
+            continue(Rest, ErlFlag, write(Base, Binary, Forms, ErlFlag));
         {ok, _Mod, Binary, _Warnings} ->
-            write(Base, Binary, Forms);
+            continue(Rest, ErlFlag, write(Base, Binary, Forms, ErlFlag));
         {error, Errors, _Warnings} ->
-            %% контракт ошибок (architecture.md): `путь:строка: текст`, без дампа
-            io:format(standard_error, "~ts", [format_errors(Source, Errors)]),
-            error;
-        Other ->
-            io:format(standard_error, "~ts: compilation failed~n", [Source]),
-            io:format(standard_error, "~P~n", [Other, 8]),
-            error
+            %% контракт ошибок: `путь:строка: текст`, без дампа терма
+            {error, format_errors(Source, Errors)};
+        _Other ->
+            {error, io_lib:format("~ts: compilation failed", [Source])}
+    end.
+
+continue(Rest, ErlFlag, ok) ->
+    compile_each(Rest, ErlFlag);
+continue(_Rest, _ErlFlag, {error, Text}) ->
+    {error, Text}.
+
+write(Base, Binary, Forms, ErlFlag) ->
+    case file:write_file(Base ++ ".beam", Binary) of
+        ok when ErlFlag ->
+            case file:write_file(Base ++ ".erl", [erl_pp:form(Form) || Form <- Forms]) of
+                ok -> ok;
+                {error, Reason} -> {error, io_lib:format("cannot write ~ts.erl: ~p", [Base, Reason])}
+            end;
+        ok ->
+            ok;
+        {error, Reason} ->
+            {error, io_lib:format("cannot write ~ts.beam: ~p", [Base, Reason])}
     end.
 
 format_errors(Source, [{_File, Problems} | _]) ->
@@ -72,9 +117,3 @@ describe(compile, {crash, Module, Kind, _Stack}) ->
     io_lib:format("internal Erlang compiler error (~p:~p) — check the generated forms", [Module, Kind]);
 describe(Module, Description) ->
     io_lib:format("~p: ~p", [Module, Description]).
-
-write(Base, Binary, Forms) ->
-    ok = file:write_file(Base ++ ".beam", Binary),
-    Erl = [erl_pp:form(Form) || Form <- Forms],
-    ok = file:write_file(Base ++ ".erl", Erl),
-    ok.

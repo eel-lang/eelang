@@ -33,7 +33,8 @@ def hello():
 Сборка:
 
 ```
-python -m squeal build my_app
+python -m squeal build my_app            # .beam в build/dev/erlang/my_app/ebin
+python -m squeal build my_app --erl      # ещё и .erl рядом с каждым .beam
 ```
 
 Запуск:
