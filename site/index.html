@@ -5,9 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light">
 <meta name="theme-color" content="#ffffff">
-<title>squeal — Python's syntax, Erlang's semantics</title>
-<meta name="description" content="squeal compiles .ee files straight to the BEAM: Python's syntax with Gleam's model — immutable by default, no loops, let it crash.">
-<link rel="icon" href="assets/puhlya.png" type="image/png">
+<title>Eel — Python's syntax, Erlang's semantics</title>
+<meta name="description" content="Eel compiles .ee files straight to the BEAM: Python's syntax with Gleam's model — immutable by default, no loops, let it crash.">
+<link rel="icon" href="assets/eel.png" type="image/png">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -15,14 +15,14 @@
 <header class="head">
   <div class="inner">
     <a class="logo" href="#top">
-      <img class="mark" src="assets/puhlya.png" alt="" width="32" height="32">
+      <img class="mark" src="assets/eel.png" alt="" width="98" height="44">
       <span class="brand-text">
-        <span class="wordmark">Squeal</span>
+        <span class="wordmark">Eel</span>
         <span class="status">Status: Alpha</span>
       </span>
     </a>
     <div class="head-end">
-      <a class="gh" href="https://github.com/pwtail/squeal" aria-label="Squeal on GitHub" title="GitHub">
+      <a class="gh" href="https://github.com/pwtail/squeal" aria-label="Eel on GitHub" title="GitHub">
         <svg class="octocat" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>
       </a>
     </div>
@@ -67,7 +67,7 @@
 <span class="ln" aria-hidden="true">10</span><span class="k">def</span> <span class="fn">fib</span>(n):
 <span class="ln" aria-hidden="true">11</span>    fib(n, <span class="n">0</span>, <span class="n">1</span>)</pre>
         </div>
-        <p class="viewer-caption">example · squeal syntax, not in the compiler yet</p>
+        <p class="viewer-caption">example · Eel syntax, not in the compiler yet</p>
       </div>
     </div>
   </section>
@@ -86,7 +86,7 @@
   <!-- SIX PRINCIPLES -->
   <section id="language">
     <div class="big-head">
-      <h2>Built on Gleam,<br><span class="muted">squeal follows these principles.</span></h2>
+      <h2>Built on Gleam,<br><span class="muted">Eel follows these principles.</span></h2>
       <p>These are the directions the language is being built against. Some are already in the
         compiler; the rest are on the roadmap — the status section below says which is which.</p>
     </div>
@@ -151,7 +151,7 @@ name.startswith(prefix)</pre>
   <!-- A MINUTE -->
   <section class="minute" id="quickstart">
     <div class="minute-left">
-      <p class="kicker">a minute with squeal</p>
+      <p class="kicker">a minute with Eel</p>
       <h2>One compiler,<br><span class="muted">three commands.</span></h2>
       <p class="lede">Write <code>.ee</code>, build it, run it in Erlang. Every step below is a real
         command with real output — click one, or just watch.</p>
@@ -184,13 +184,13 @@ name.startswith(prefix)</pre>
       <div class="terminal">
         <div class="term-bar">
           <span class="dot"></span><span class="dot"></span><span class="dot"></span>
-          <span class="term-title">~/my_app — squeal</span>
+          <span class="term-title">~/my_app — eel</span>
           <span class="term-ctl">01 / 05</span>
         </div>
         <div class="term-body">
 <span class="ln" aria-hidden="true">1</span><span class="prompt">$</span> python3.15 -m squeal build my_app
 <span class="ln" aria-hidden="true">2</span>
-<span class="ln" aria-hidden="true">3</span><span class="c"># squeal my_app → erlang</span>
+<span class="ln" aria-hidden="true">3</span><span class="c"># eel my_app → erlang</span>
 <span class="ln" aria-hidden="true">4</span>  src/hello.ee   →  hello.beam
 <span class="ln" aria-hidden="true">5</span>  src/fib.ee     →  fib.beam
 <span class="ln" aria-hidden="true">6</span>
@@ -200,7 +200,7 @@ name.startswith(prefix)</pre>
 <span class="ln" aria-hidden="true">10</span><span class="prompt">2&gt;</span> fib:fib(10).
 <span class="ln" aria-hidden="true">11</span><span class="n">55</span>
         </div>
-        <div class="term-foot"><span>real output · squeal</span><span>replay ↻</span></div>
+        <div class="term-foot"><span>real output · eel</span><span>replay ↻</span></div>
       </div>
     </div>
   </section>
@@ -208,14 +208,14 @@ name.startswith(prefix)</pre>
   <!-- MATRIX -->
   <section class="matrix" id="parity">
     <div class="big-head">
-      <h2>squeal is a small language.<br><span class="muted">And it says no a lot.</span></h2>
+      <h2>Eel is a small language.<br><span class="muted">And it says no a lot.</span></h2>
       <p>Gleam is the reference for the semantics, Python for the syntax. Where the two disagree,
-        squeal follows Gleam — and proves it with tests.</p>
+        Eel follows Gleam — and proves it with tests.</p>
     </div>
     <div class="table-wrap">
       <table>
         <thead>
-          <tr><th>Property</th><th class="us">squeal</th><th>Gleam</th><th>Python</th></tr>
+          <tr><th>Property</th><th class="us">eel</th><th>Gleam</th><th>Python</th></tr>
         </thead>
         <tbody>
           <tr><th>Syntax</th><td class="us">Python 3.15</td><td>ML-like</td><td>Python</td></tr>
@@ -256,7 +256,7 @@ name.startswith(prefix)</pre>
         <h3>Next</h3>
         <ul>
           <li><span class="tag">now</span><span>Annotations as documentation
-            <small>Type annotations are not checked by squeal — outside tools own that, as in Python.</small></span></li>
+            <small>Type annotations are not checked by Eel — outside tools own that, as in Python.</small></span></li>
           <li><span class="tag">next</span><span>Static analysis
             <small>A forked Python analyzer, later.</small></span></li>
           <li><span class="tag">later</span><span>Syntax beyond Python
@@ -270,7 +270,7 @@ name.startswith(prefix)</pre>
   <section class="cta">
     <div>
       <h2>Try it on the module you have open right now.</h2>
-      <p>Point squeal at a directory, read the Erlang it prints. Your editor keeps working — the source
+      <p>Point Eel at a directory, read the Erlang it prints. Your editor keeps working — the source
         is ordinary Python.</p>
     </div>
     <div class="cta-right">
@@ -285,7 +285,7 @@ name.startswith(prefix)</pre>
 
 <footer>
   <div class="inner">
-    <p><strong>Squeal</strong> · Python syntax, Erlang semantics.</p>
+    <p><strong>Eel</strong> · Python syntax, Erlang semantics.</p>
     <nav aria-label="Footer">
       <a href="#language">Language</a>
       <a href="#parity">Parity</a>

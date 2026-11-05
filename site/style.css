@@ -63,24 +63,23 @@ code,pre{font-family:var(--mono);font-stretch:88%;font-variant-ligatures:none}
 .head{position:sticky;top:0;z-index:30;background:rgba(255,255,255,.94);backdrop-filter:blur(12px);
   border-bottom:1px solid var(--line)}
 .head .inner{max-width:var(--container);margin-inline:auto;display:flex;align-items:center;gap:30px;
-  height:92px;padding:0 24px}
-.logo{display:flex;align-items:center;gap:12px}
-.brand-text{display:flex;align-items:baseline;gap:15px}
-.status{font-family:'Fira Sans',var(--sans);font-weight:300;font-size:.63rem;letter-spacing:.2em;
+  height:74px;padding:0 24px}
+.logo{display:flex;align-items:center;gap:10px}
+.brand-text{display:flex;align-items:baseline;gap:13px}
+.status{font-family:'Fira Sans',var(--sans);font-weight:300;font-size:.63rem;letter-spacing:.18em;
   text-transform:uppercase;color:var(--muted);white-space:nowrap}
-.logo .mark{width:70px;height:70px;border-radius:50%;object-fit:cover;display:block;
-  border:1px solid var(--line-warm);background:#fff}
+.logo .mark{width:auto;height:37px;display:block;object-fit:contain}
 .logo .wordmark{font-family:'Fira Sans',var(--sans);font-weight:700;font-size:2.175rem;letter-spacing:-.02em;
   line-height:1}
 .head-end{margin-left:auto;display:flex;align-items:center;gap:12px}
-.gh{display:grid;place-items:center;width:44px;height:44px;color:#0a0a0a;border-radius:3px;
+.gh{display:grid;place-items:center;width:34px;height:34px;color:#0a0a0a;border-radius:3px;
   transition:color .16s,background .16s}
-.gh .octocat{width:32px;height:32px;display:block}
+.gh .octocat{width:25px;height:25px;display:block}
 .gh:hover{color:var(--pink-strong);background:var(--paper)}
 
 /* ---------- frame ---------- */
 .frame{max-width:var(--container);margin-inline:auto;border-inline:1px solid var(--line)}
-.frame section{border-bottom:1px solid var(--line);scroll-margin-top:104px}
+.frame section{border-bottom:1px solid var(--line);scroll-margin-top:88px}
 
 /* ---------- hero ---------- */
 .hero{display:grid;grid-template-columns:1.04fr .96fr}
