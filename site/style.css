@@ -119,8 +119,11 @@ h1 .muted{color:var(--faint)}
 .vtab:hover{color:var(--ink)}
 .vtab[aria-selected="true"],.vtab[aria-current="true"]{color:var(--ink);background:#fff;
   border-color:var(--line-warm);border-bottom-color:#fff}
-.viewer-body{min-height:170px;background:#fff}
-.viewer-caption{margin:0;padding:9px 14px;border-top:1px solid var(--line-warm);background:var(--subtle);
+.viewer-body{min-height:300px;background:#fff;display:flex;flex-direction:column}
+.viewer-panel{display:flex;flex-direction:column;flex:1}
+.viewer-panel[hidden]{display:none}
+.viewer-panel pre{flex:1}
+.viewer-caption{margin:auto 0 0;padding:9px 14px;border-top:1px solid var(--line-warm);background:var(--subtle);
   font-family:var(--mono);font-stretch:88%;font-size:.52rem;letter-spacing:.09em;text-transform:uppercase;
   color:var(--faint)}
 pre{margin:0;padding:18px 18px;font-size:.7rem;line-height:1.95;overflow-x:auto;color:#26242c;

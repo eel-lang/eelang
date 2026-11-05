@@ -52,10 +52,15 @@
     </div>
 
     <div class="hero-right">
-      <div class="viewer">
-        <div class="viewer-tabs"><span class="vtab" aria-current="true">fib.ee</span></div>
+      <div class="viewer" data-tabs>
+        <div class="viewer-tabs" role="tablist" aria-label="Eel examples">
+          <button class="vtab" id="tab-fib" role="tab" aria-selected="true" aria-controls="panel-fib" type="button">fib.ee</button>
+          <button class="vtab" id="tab-hello" role="tab" aria-selected="false" aria-controls="panel-hello" tabindex="-1" type="button">hello.ee</button>
+          <button class="vtab" id="tab-classes" role="tab" aria-selected="false" aria-controls="panel-classes" tabindex="-1" type="button">classes.ee</button>
+        </div>
         <div class="viewer-body">
-          <pre id="panel-ee"><span class="ln" aria-hidden="true">1</span><span class="k">def</span> <span class="fn">fib</span>(n, current, next):
+          <div class="viewer-panel" id="panel-fib" role="tabpanel" aria-labelledby="tab-fib">
+<pre><span class="ln" aria-hidden="true">1</span><span class="k">def</span> <span class="fn">fib</span>(n, current, next):
 <span class="ln" aria-hidden="true">2</span>    <span class="k">match</span> n:
 <span class="ln" aria-hidden="true">3</span>        <span class="k">case</span> <span class="n">0</span>:
 <span class="ln" aria-hidden="true">4</span>            current
@@ -66,8 +71,29 @@
 <span class="ln" aria-hidden="true">9</span>
 <span class="ln" aria-hidden="true">10</span><span class="k">def</span> <span class="fn">fib</span>(n):
 <span class="ln" aria-hidden="true">11</span>    fib(n, <span class="n">0</span>, <span class="n">1</span>)</pre>
+            <p class="viewer-caption">proposed · not in the compiler yet</p>
+          </div>
+
+          <div class="viewer-panel" id="panel-hello" role="tabpanel" aria-labelledby="tab-hello" hidden>
+<pre><span class="ln" aria-hidden="true">1</span><span class="k">def</span> <span class="fn">hello</span>():
+<span class="ln" aria-hidden="true">2</span>    <span class="s">"hi"</span></pre>
+            <p class="viewer-caption">compiled · erl -eval 'hello:hello()' → &lt;&lt;"hi"&gt;&gt;</p>
+          </div>
+
+          <div class="viewer-panel" id="panel-classes" role="tabpanel" aria-labelledby="tab-classes" hidden>
+<pre><span class="ln" aria-hidden="true">1</span><span class="k">class</span> <span class="fn">Point</span>(StartingWithAtom):
+<span class="ln" aria-hidden="true">2</span>    x: <span class="fn">int</span>
+<span class="ln" aria-hidden="true">3</span>    y: <span class="fn">int</span>
+<span class="ln" aria-hidden="true">4</span>
+<span class="ln" aria-hidden="true">5</span>
+<span class="ln" aria-hidden="true">6</span><span class="k">def</span> <span class="fn">shift</span>(p, dx):
+<span class="ln" aria-hidden="true">7</span>    <span class="k">match</span> p:
+<span class="ln" aria-hidden="true">8</span>        <span class="k">case</span> Point(x, y):
+<span class="ln" aria-hidden="true">9</span>            q = Point(x + dx, y)
+<span class="ln" aria-hidden="true">10</span>    q</pre>
+            <p class="viewer-caption">compiled · Point(1, 2) becomes {point, 1, 2}</p>
+          </div>
         </div>
-        <p class="viewer-caption">example · Eel syntax, not in the compiler yet</p>
       </div>
     </div>
   </section>

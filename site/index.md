@@ -36,7 +36,7 @@ CLI · Jupyter
 [Then read the syntax overview →](#syntax)
 
 ### fib.ee
-_Example · Eel syntax, not in the compiler yet_
+_proposed · not in the compiler yet_
 
 ```python
 def fib(n, current, next):
@@ -50,6 +50,30 @@ def fib(n, current, next):
 
 def fib(n):
     fib(n, 0, 1)
+```
+
+### hello.ee
+_compiled · erl -eval 'hello:hello()' → <<"hi">>_
+
+```python
+def hello():
+    "hi"
+```
+
+### classes.ee
+_compiled · Point(1, 2) becomes {point, 1, 2}_
+
+```python
+class Point(StartingWithAtom):
+    x: int
+    y: int
+
+
+def shift(p, dx):
+    match p:
+        case Point(x, y):
+            q = Point(x + dx, y)
+    q
 ```
 
 ## Built on
