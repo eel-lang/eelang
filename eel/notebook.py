@@ -1,9 +1,9 @@
-"""Jupyter-интеграция squeal без кастомного kernel.
+"""Jupyter-интеграция eel без кастомного kernel.
 
 Подключается как IPython-расширение (``c.InteractiveShellApp.extensions =
-['squeal.notebook']`` в ``ipython_config.py``). Ячейка остаётся Python-текстом —
+['eel.notebook']`` в ``ipython_config.py``). Ячейка остаётся Python-текстом —
 автокомплит/линт даёт Python-LSP; выполнение перехватывается: Python выполняет
-``pass``, а исходник компилируется squeal'ом и исполняется в persistent Erlang-REPL.
+``pass``, а исходник компилируется eel'ом и исполняется в persistent Erlang-REPL.
 """
 
 from __future__ import annotations
@@ -38,10 +38,10 @@ def compact(source: str) -> str:
 
 
 def load_ipython_extension(ipython) -> None:
-    if getattr(ipython, "_squeal_notebook", None) is not None:
+    if getattr(ipython, "_eel_notebook", None) is not None:
         return  # уже загружено
     from . import frontend
-    from .errors import SquealError
+    from .errors import EelError
     from .repl import ErlangRepl
     from .session import Session
 
@@ -83,18 +83,18 @@ def load_ipython_extension(ipython) -> None:
                 if not suppress and value != "nil":
                     print(value)
             else:
-                sys.stderr.write(f"squeal runtime error: {value}\n")
+                sys.stderr.write(f"eel runtime error: {value}\n")
         except SyntaxError:
             pass  # клетка — не валидный Python-синтаксис, это уже видно в выводе
-        except SquealError as exc:
-            sys.stderr.write(f"squeal: {exc}\n")
+        except EelError as exc:
+            sys.stderr.write(f"eel: {exc}\n")
 
     transformer = _NoopTransformer()
     ipython.events.register("pre_run_cell", pre_run_cell)
     ipython.events.register("post_run_cell", post_run_cell)
     ipython.ast_transformers.append(transformer)
     ipython.input_transformers_cleanup.append(let_cleanup)
-    ipython._squeal_notebook = {
+    ipython._eel_notebook = {
         "state": state,
         "pre": pre_run_cell,
         "post": post_run_cell,
@@ -104,7 +104,7 @@ def load_ipython_extension(ipython) -> None:
 
 
 def unload_ipython_extension(ipython) -> None:
-    loaded = getattr(ipython, "_squeal_notebook", None)
+    loaded = getattr(ipython, "_eel_notebook", None)
     if loaded is None:
         return
     for name, callback in (("pre_run_cell", loaded["pre"]), ("post_run_cell", loaded["post"])):
@@ -123,4 +123,4 @@ def unload_ipython_extension(ipython) -> None:
     repl = loaded["state"].get("repl")
     if repl is not None:
         repl.close()
-    ipython._squeal_notebook = None
+    ipython._eel_notebook = None

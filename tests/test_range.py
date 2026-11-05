@@ -10,9 +10,9 @@ import tempfile
 
 import pytest
 
-from squeal.compiler import compile_source
-from squeal.errors import SquealError
-from squeal.term import Atom
+from eel.compiler import compile_source
+from eel.errors import EelError
+from eel.term import Atom
 
 ERL = shutil.which("erl")
 ROOT = pathlib.Path(__file__).resolve().parent.parent
@@ -22,7 +22,7 @@ ONE = (Atom("integer"), 2, 1)
 
 
 def _forms(source: str, name: str = "m") -> list:
-    return compile_source(source, "src/m.ee", name)
+    return compile_source(source, "src/m.eel", name)
 
 
 def _body(source: str, name: str = "m"):
@@ -37,7 +37,7 @@ def _function_names(source: str, name: str = "m") -> list:
 
 def test_range_arities_become_start_stop_step():
     body = _body("def m():\n    range(5)\n")
-    assert body[2] == (Atom("atom"), 2, Atom("squeal_range"))
+    assert body[2] == (Atom("atom"), 2, Atom("eel_range"))
     assert body[3] == [ZERO, (Atom("integer"), 2, 5), ONE]
 
     body = _body("def m(a):\n    range(2, a)\n")
@@ -48,7 +48,7 @@ def test_range_arities_become_start_stop_step():
 
 
 def test_helper_emitted_on_demand():
-    assert _function_names("def m():\n    range(3)\n")[1:] == [Atom("squeal_range")]
+    assert _function_names("def m():\n    range(3)\n")[1:] == [Atom("eel_range")]
     assert _function_names("def m(x):\n    x\n") == [Atom("m")]
 
 
@@ -57,15 +57,15 @@ def test_arity_errors():
         "def m():\n    range()\n",
         "def m(a, b, c):\n    range(a, b, c, 1)\n",
     ]:
-        with pytest.raises(SquealError, match="range takes"):
-            compile_source(source, "src/m.ee", "m")
+        with pytest.raises(EelError, match="range takes"):
+            compile_source(source, "src/m.eel", "m")
 
 
 def test_semantics_in_erl():
     tmp = pathlib.Path(tempfile.mkdtemp())
     src = tmp / "src"
     src.mkdir()
-    (src / "r.ee").write_text(
+    (src / "r.eel").write_text(
         "def a():\n    range(5)\n"
         "def b():\n    range(2, 5)\n"
         "def c():\n    range(0, 10, 3)\n"
@@ -80,7 +80,7 @@ def test_semantics_in_erl():
         "def bad_float():\n    range(1.5)\n"
     )
     subprocess.run(
-        [sys.executable, "-m", "squeal", "build", str(tmp)],
+        [sys.executable, "-m", "eel", "build", str(tmp)],
         cwd=ROOT, check=True, capture_output=True,
     )
     ebin = tmp / "build" / "dev" / "erlang" / tmp.name / "ebin"
@@ -110,12 +110,12 @@ def test_semantics_in_erl():
 
 def test_range_can_be_shadowed():
     src = "def range(n):\n    n * 2\n\ndef m():\n    range(21)\n"
-    assert Atom("squeal_range") not in _function_names(src)
+    assert Atom("eel_range") not in _function_names(src)
     tmp = pathlib.Path(tempfile.mkdtemp())
     (tmp / "src").mkdir()
-    (tmp / "src" / "m.ee").write_text(src)
+    (tmp / "src" / "m.eel").write_text(src)
     subprocess.run(
-        [sys.executable, "-m", "squeal", "build", str(tmp)],
+        [sys.executable, "-m", "eel", "build", str(tmp)],
         cwd=ROOT, check=True, capture_output=True,
     )
     ebin = tmp / "build" / "dev" / "erlang" / tmp.name / "ebin"
@@ -128,8 +128,8 @@ def test_range_can_be_shadowed():
 
 
 def test_shell_mode():
-    from squeal.session import Session, compile_cell
-    from squeal.repl import ErlangRepl
+    from eel.session import Session, compile_cell
+    from eel.repl import ErlangRepl
 
     s = Session()
     repl = ErlangRepl()

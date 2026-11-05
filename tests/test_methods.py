@@ -10,9 +10,9 @@ import tempfile
 
 import pytest
 
-from squeal.compiler import compile_source
-from squeal.errors import SquealError
-from squeal.term import Atom
+from eel.compiler import compile_source
+from eel.errors import EelError
+from eel.term import Atom
 
 ERL = shutil.which("erl")
 ROOT = pathlib.Path(__file__).resolve().parent.parent
@@ -21,7 +21,7 @@ NOMATCH = (Atom("atom"), 2, Atom("nomatch"))
 
 
 def _body(source: str, name: str = "m"):
-    forms = compile_source(source, "src/m.ee", name)
+    forms = compile_source(source, "src/m.eel", name)
     fn = [f for f in forms if f[0] == Atom("function")][0]
     return fn[4][0][4][0]
 
@@ -65,7 +65,7 @@ def test_str_method_checks_binary_type():
     assert body[0] == Atom("case")
     assert body[2] == (Atom("var"), 2, Atom("S"))
     ok, fail = body[3]
-    assert ok[2] == [(Atom("var"), 2, Atom("_squeal@m1"))]
+    assert ok[2] == [(Atom("var"), 2, Atom("_eel@m1"))]
     guard = ok[3][0][0]
     assert _remote(guard)[3] == (Atom("atom"), 2, Atom("is_binary"))
     assert ok[4][0][2] == (
@@ -73,14 +73,14 @@ def test_str_method_checks_binary_type():
         (Atom("atom"), 2, Atom("string")), (Atom("atom"), 2, Atom("lowercase")),
     )
     # the non-matching branch raises {bad_receiver, method, value}
-    assert fail[2] == [(Atom("var"), 2, Atom("_squeal@r2"))]
+    assert fail[2] == [(Atom("var"), 2, Atom("_eel@r2"))]
     error = fail[4][0]
     assert error[2] == (Atom("remote"), 2,
                         (Atom("atom"), 2, Atom("erlang")), (Atom("atom"), 2, Atom("error")))
     assert error[3][0][2] == [
         (Atom("atom"), 2, Atom("bad_receiver")),
         (Atom("atom"), 2, Atom("lower")),
-        (Atom("var"), 2, Atom("_squeal@r2")),
+        (Atom("var"), 2, Atom("_eel@r2")),
     ]
 
 
@@ -99,19 +99,19 @@ def test_count_dispatches_on_list_and_tuple():
 
 
 def test_unknown_method_is_compile_error():
-    with pytest.raises(SquealError, match="method"):
-        compile_source("def m(s):\n    s.foo()\n", "src/m.ee", "m")
-    with pytest.raises(SquealError, match="method"):
-        compile_source("def m(s):\n    s.get()\n", "src/m.ee", "m")
-    with pytest.raises(SquealError, match="method"):
-        compile_source("def m(s):\n    s.lower(1)\n", "src/m.ee", "m")
+    with pytest.raises(EelError, match="method"):
+        compile_source("def m(s):\n    s.foo()\n", "src/m.eel", "m")
+    with pytest.raises(EelError, match="method"):
+        compile_source("def m(s):\n    s.get()\n", "src/m.eel", "m")
+    with pytest.raises(EelError, match="method"):
+        compile_source("def m(s):\n    s.lower(1)\n", "src/m.eel", "m")
 
 
 def test_methods_semantics_in_erl():
     tmp = pathlib.Path(tempfile.mkdtemp())
     src = tmp / "src"
     src.mkdir()
-    (src / "methods.ee").write_text(
+    (src / "methods.eel").write_text(
         "def keys(d):\n    d.keys()\n"
         "def values(d):\n    d.values()\n"
         "def items(d):\n    d.items()\n"
@@ -135,7 +135,7 @@ def test_methods_semantics_in_erl():
         "def wrong(s):\n    s.lower()\n"
     )
     subprocess.run(
-        [sys.executable, "-m", "squeal", "build", str(tmp)],
+        [sys.executable, "-m", "eel", "build", str(tmp)],
         cwd=ROOT, check=True, capture_output=True,
     )
     ebin = tmp / "build" / "dev" / "erlang" / tmp.name / "ebin"
@@ -199,13 +199,13 @@ def test_join_rejects_non_strings():
 def _build_join() -> pathlib.Path:
     tmp = pathlib.Path(tempfile.mkdtemp())
     (tmp / "src").mkdir()
-    (tmp / "src" / "j.ee").write_text(
+    (tmp / "src" / "j.eel").write_text(
         'def ok():\n    ",".join(["a", "b", "c"])\n'
         "def empty():\n    \",\".join([])\n"
         "def bad():\n    \",\".join([1, 2])\n"
     )
     subprocess.run(
-        [sys.executable, "-m", "squeal", "build", str(tmp)],
+        [sys.executable, "-m", "eel", "build", str(tmp)],
         cwd=ROOT, check=True, capture_output=True,
     )
     return tmp / "build" / "dev" / "erlang" / tmp.name / "ebin"

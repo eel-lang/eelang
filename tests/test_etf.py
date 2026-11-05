@@ -8,9 +8,9 @@ import subprocess
 
 import pytest
 
-from squeal import etf
-from squeal.compiler import compile_source
-from squeal.term import Atom, term_to_erlang
+from eel import etf
+from eel.compiler import compile_source
+from eel.term import Atom, term_to_erlang
 
 ERL = shutil.which("erl")
 
@@ -79,7 +79,7 @@ def test_forms_from_etf_equal_text_forms(tmp_path):
         "        r = []\n"
         '    (r, "привет", 2.5, 1000000000000000000000000000000, d, T(1, 2))\n'
     )
-    forms = compile_source(source, "src/m.ee", "m")
+    forms = compile_source(source, "src/m.eel", "m")
     text = tmp_path / "m.abstr"
     text.write_text("".join(term_to_erlang(form) + ".\n" for form in forms))
     blob = tmp_path / "m.etf"

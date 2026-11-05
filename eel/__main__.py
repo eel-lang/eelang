@@ -1,4 +1,4 @@
-"""CLI squeal (в духе gleam): подкоманды; в первой сборке — только build."""
+"""CLI eel (в духе gleam): подкоманды; в первой сборке — только build."""
 
 from __future__ import annotations
 
@@ -7,7 +7,7 @@ import sys
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(prog="python -m squeal")
+    parser = argparse.ArgumentParser(prog="python -m eel")
     sub = parser.add_subparsers(dest="command", required=True)
 
     b = sub.add_parser("build", help="compile the src/ tree into build/dev/erlang")
@@ -47,7 +47,7 @@ def main(argv: list[str] | None = None) -> int:
 def _build(args) -> int:
     """Сначала тонкий клиент сервера; сборка внутри процесса — запасной путь."""
     from . import client
-    from .errors import SquealError
+    from .errors import EelError
 
     if not args.no_daemon:
         try:
@@ -55,8 +55,8 @@ def _build(args) -> int:
                 args.dir, erl=args.erl, dump_forms=args.dump_forms, force=args.force
             ):
                 return 0
-        except SquealError as exc:
-            print(f"squeal: {exc}", file=sys.stderr)
+        except EelError as exc:
+            print(f"eel: {exc}", file=sys.stderr)
             return 1
 
     from .compiler import build
@@ -70,8 +70,8 @@ def _build(args) -> int:
             force=args.force,
         )
         return 0
-    except SquealError as exc:
-        print(f"squeal: {exc}", file=sys.stderr)
+    except EelError as exc:
+        print(f"eel: {exc}", file=sys.stderr)
         return 1
 
 

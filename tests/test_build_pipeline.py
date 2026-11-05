@@ -6,7 +6,7 @@ import pathlib
 import shutil
 import subprocess
 
-from squeal.compiler import COMPILER, build
+from eel.compiler import COMPILER, build
 
 ERL = shutil.which("erl")
 
@@ -16,14 +16,14 @@ SRC = 'def hello():\n    "hi"\n\ndef twice(xs):\n    [x * 2 for x in xs]\n'
 def _project(tmp_path: pathlib.Path) -> pathlib.Path:
     proj = tmp_path / "app"
     (proj / "src").mkdir(parents=True)
-    (proj / "src" / "hello.ee").write_text(SRC)
+    (proj / "src" / "hello.eel").write_text(SRC)
     return proj
 
 
 def test_default_build_writes_beam_and_etf_only(tmp_path):
     proj = _project(tmp_path)
     out = build(proj)
-    ebin, artefacts = out / "ebin", out / "_squeal_artefacts"
+    ebin, artefacts = out / "ebin", out / "_eel_artefacts"
 
     assert (ebin / "hello.beam").exists()
     assert (ebin / "app.app").exists()
@@ -37,7 +37,7 @@ def test_erl_and_dump_forms_flags(tmp_path):
     proj = _project(tmp_path)
     build(proj)
     out = build(proj, erl=True, dump_forms=True)
-    ebin, artefacts = out / "ebin", out / "_squeal_artefacts"
+    ebin, artefacts = out / "ebin", out / "_eel_artefacts"
 
     assert (ebin / "hello.erl").exists()
     assert "hello" in (ebin / "hello.erl").read_text()

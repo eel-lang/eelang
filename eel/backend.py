@@ -2,23 +2,23 @@
 
 Формы повторяют Gleam 1.19 для совпадающих конструкций (см. specs/architecture.md);
 операторы Python-семантики (``// % **``) и деструктуризация — собственные формы.
-Аннотация каждой формы — строка исходника ``.ee``.
+Аннотация каждой формы — строка исходника ``.eel``.
 """
 
 from __future__ import annotations
 
 from . import ir
-from .errors import SquealError
+from .errors import EelError
 from .term import Atom
 
 # Встроенные функции: доступны, пока пользователь не определил имя сам.
 BUILTINS = frozenset({"print", "zip", "enumerate", "range", "send", "self", "spawn"})
 
 RESERVED_NAMES = frozenset({
-    "squeal_iter", "squeal_mod", "squeal_floordiv", "squeal_on_load",
-    "squeal_print", "squeal_str", "squeal_str_tuple", "squeal_str_map", "squeal_join",
-    "squeal_zip", "squeal_enumerate", "squeal_range",
-    "_squeal_pow", "_squeal_pow_loop",
+    "eel_iter", "eel_mod", "eel_floordiv", "eel_on_load",
+    "eel_print", "eel_str", "eel_str_tuple", "eel_str_map", "eel_join",
+    "eel_zip", "eel_enumerate", "eel_range",
+    "_eel_pow", "_eel_pow_loop",
 })
 
 COMPILE_OPTS = [
@@ -237,7 +237,7 @@ class _Gen:
     def _resolve(self, name: str, line: int) -> Atom:
         erlang = self._scope.get(name)
         if erlang is None:
-            raise SquealError(f"{line}: name {name!r} is not defined")
+            raise EelError(f"{line}: name {name!r} is not defined")
         return erlang
 
     # --- модуль и функции ---
@@ -253,7 +253,7 @@ class _Gen:
         forms = [(Atom("attribute"), 0, Atom("module"), Atom(module.name))]
         if self._decorated:
             forms.append(
-                (Atom("attribute"), 0, Atom("on_load"), (Atom("squeal_on_load"), 0))
+                (Atom("attribute"), 0, Atom("on_load"), (Atom("eel_on_load"), 0))
             )
         forms.extend([
             (Atom("attribute"), 0, Atom("compile"), list(COMPILE_OPTS)),
@@ -351,7 +351,7 @@ class _Gen:
         )
 
     def on_load_form(self) -> tuple:
-        """`squeal_on_load/0`: применяет декораторы один раз при загрузке модуля."""
+        """`eel_on_load/0`: применяет декораторы один раз при загрузке модуля."""
         line = 0
         puts = []
         for function, impl in self._decorated:
@@ -371,7 +371,7 @@ class _Gen:
         return (
             Atom("function"),
             line,
-            Atom("squeal_on_load"),
+            Atom("eel_on_load"),
             0,
             [(Atom("clause"), line, [], [], body)],
         )
@@ -391,11 +391,11 @@ class _Gen:
                 return (Atom("fun"), line, (Atom("function"), Atom(dec.name), 1))
             other = [a for (n, a) in sorted(self._module_defs) if n == dec.name]
             if other:
-                raise SquealError(
+                raise EelError(
                     f"{line}: decorator {dec.name} must take 1 argument "
                     f"(defined as {dec.name}/{other[0]})"
                 )
-            raise SquealError(f"{line}: decorator {dec.name}/1 is not defined")
+            raise EelError(f"{line}: decorator {dec.name}/1 is not defined")
         if isinstance(dec, ir.RemoteFunRef):
             return self._remote_fun(line, dec.module, dec.name)
         if isinstance(dec, ir.Call):
@@ -404,7 +404,7 @@ class _Gen:
             return _remote_call(
                 line, dec.module, dec.name, [self.expr_form(a) for a in dec.args]
             )
-        raise SquealError(f"{line}: unsupported decorator: {dec!r}")
+        raise EelError(f"{line}: unsupported decorator: {dec!r}")
 
     @staticmethod
     def _remote_fun(line: int, module: str, name: str) -> tuple:
@@ -425,7 +425,7 @@ class _Gen:
         line = stmt.line
         arity = len(stmt.params)
         name = self._bind_def(stmt.name, arity)
-        key = self._key_form(line, "squeal", stmt.name, arity)
+        key = self._key_form(line, "eel", stmt.name, arity)
         get_call = _remote_call(line, "erlang", "get", [key])
         params = [_var(line, f"P{i}") for i in range(arity)]
         placeholder_body = (Atom("call"), line, get_call, list(params))
@@ -510,7 +510,7 @@ class _Gen:
 
     def _branch_tail_body(self, stmts, line):
         if not stmts:
-            raise SquealError(f"{line}: branch has no value (empty block)")
+            raise EelError(f"{line}: branch has no value (empty block)")
         body = [self.stmt_form(s) for s in stmts[:-1]]
         last = stmts[-1]
         if isinstance(last, (ir.If, ir.Match)):
@@ -520,7 +520,7 @@ class _Gen:
         elif isinstance(last, ir.Expr):
             body.append(self.expr_form(last.value))
         else:
-            raise SquealError(f"{last.line}: branch tail must be an expression")
+            raise EelError(f"{last.line}: branch tail must be an expression")
         return body
 
     def _case_value_only(self, node) -> tuple:
@@ -569,7 +569,7 @@ class _Gen:
         if isinstance(stmt, (ir.If, ir.Match)):
             target, case = self._case_value(stmt)
             return (Atom("match"), stmt.line, _var(stmt.line, self._bind(target)), case)
-        raise SquealError(f"cannot generate a statement for: {stmt!r}")
+        raise EelError(f"cannot generate a statement for: {stmt!r}")
 
     def def_form(self, stmt: ir.Def, name: Atom) -> tuple:
         """`F = fun F(X) -> … end` — именованный fun, чтобы работала рекурсия."""
@@ -596,7 +596,7 @@ class _Gen:
         """Вложенный `def` — привязка имени к named_fun (рекурсия) + декораторы сразу."""
         line = stmt.line
         if stmt.name in RESERVED_NAMES:
-            raise SquealError(f"{line}: name {stmt.name!r} is reserved by the compiler")
+            raise EelError(f"{line}: name {stmt.name!r} is reserved by the compiler")
         self._drop_defs(stmt.name)  # имя модульной функции/клетки перекрыто переменной
         name = self._bind(stmt.name)
         saved_scope = dict(self._scope)
@@ -642,7 +642,7 @@ class _Gen:
 
         if node.after_timeout is None:
             if not clauses:
-                raise SquealError(f"{node.line}: receive without case clauses")
+                raise EelError(f"{node.line}: receive without case clauses")
             return (Atom("receive"), node.line, clauses), targets
 
         timeout = self.expr_form(node.after_timeout)
@@ -706,7 +706,7 @@ class _Gen:
         if isinstance(stmt, (ir.If, ir.Match)):
             target, case = self._case_value(stmt)
             return (Atom("match"), stmt.line, _var(stmt.line, self._bind(target)), case)
-        raise SquealError(f"cannot generate a statement for: {stmt!r}")
+        raise EelError(f"cannot generate a statement for: {stmt!r}")
 
     def def_form(self, stmt: ir.Def, name: Atom) -> tuple:
         """`F = fun F(X) -> … end` — именованный fun, чтобы работала рекурсия."""
@@ -733,7 +733,7 @@ class _Gen:
         """Вложенный `def` — привязка имени к named_fun (рекурсия) + декораторы сразу."""
         line = stmt.line
         if stmt.name in RESERVED_NAMES:
-            raise SquealError(f"{line}: name {stmt.name!r} is reserved by the compiler")
+            raise EelError(f"{line}: name {stmt.name!r} is reserved by the compiler")
         self._drop_defs(stmt.name)  # имя модульной функции/клетки перекрыто переменной
         name = self._bind(stmt.name)
         saved_scope = dict(self._scope)
@@ -826,7 +826,7 @@ class _Gen:
                     clauses.append((Atom("clause"), c.line, [p], guard, c_body + [c_result]))
             self._check_target(node.line, targets)
             return targets[0], (Atom("case"), node.line, subject, clauses)
-        raise SquealError(f"not a branch: {node!r}")
+        raise EelError(f"not a branch: {node!r}")
 
     def _branch(self, stmts, line):
         saved_scope = dict(self._scope)
@@ -840,7 +840,7 @@ class _Gen:
 
     def _branch_body(self, stmts, line):
         if not stmts:
-            raise SquealError(f"{line}: branch has no value (empty block)")
+            raise EelError(f"{line}: branch has no value (empty block)")
         body = []
         for stmt in stmts[:-1]:
             body.append(self.stmt_form(stmt))
@@ -853,14 +853,14 @@ class _Gen:
         elif isinstance(last, ir.NestedDef):
             target, result = last.name, self.stmt_form(last)
         else:
-            raise SquealError(
+            raise EelError(
                 f"{last.line}: branch must end with an assignment to the same variable"
             )
         return target, body, result
 
     def _check_target(self, line, targets):
         if len(set(targets)) != 1:
-            raise SquealError(f"{line}: branches assign different variables: {targets}")
+            raise EelError(f"{line}: branches assign different variables: {targets}")
 
     def _has_bindings(self, pat):
         if isinstance(pat, (ir.PName, ir.PStar)):
@@ -876,7 +876,7 @@ class _Gen:
     def _case_patterns(self, pattern):
         if isinstance(pattern, ir.OrPattern):
             if any(self._has_bindings(p) for p in pattern.patterns):
-                raise SquealError(
+                raise EelError(
                     f"{pattern.line}: or-pattern cannot bind variables"
                 )
             out = []
@@ -902,7 +902,7 @@ class _Gen:
             return (Atom("map"), pat.line, fields)
         if isinstance(pat, (ir.Int, ir.Float, ir.String, ir.AtomLit, ir.Bool, ir.Nil)):
             return self.expr_form(pat)
-        raise SquealError(f"cannot generate a pattern for: {pat!r}")
+        raise EelError(f"cannot generate a pattern for: {pat!r}")
 
     def _list_pattern(self, pat: ir.PList) -> tuple:
         line = pat.line
@@ -969,7 +969,7 @@ class _Gen:
                 have = ", ".join(
                     f"{expr.name}/{a}" for (nm, a) in sorted(self._defs) if nm == expr.name
                 )
-                raise SquealError(
+                raise EelError(
                     f"{expr.line}: function {expr.name}/{len(expr.args)} is not defined (have: {have})"
                 )
             elif expr.name in self._scope:
@@ -988,7 +988,7 @@ class _Gen:
                 hint = ""
                 if key in self._later_defs:
                     hint = " (defined below in this cell — move it up)"
-                raise SquealError(
+                raise EelError(
                     f"{expr.line}: function {expr.name}/{len(expr.args)} is not defined{hint}"
                 )
             elif key not in self._module_defs:
@@ -997,7 +997,7 @@ class _Gen:
                     " (have: " + ", ".join(f"{expr.name}/{a}" for a in have) + ")"
                     if have else ""
                 )
-                raise SquealError(
+                raise EelError(
                     f"{expr.line}: function {expr.name}/{len(expr.args)} is not defined{hint}"
                 )
             else:
@@ -1009,7 +1009,7 @@ class _Gen:
             return self.method_form(expr)
 
         if isinstance(expr, ir.Receive):
-            binder = self._fresh(expr.line, "_squeal@r")
+            binder = self._fresh(expr.line, "_eel@r")
             return (Atom("receive"), expr.line, [
                 (Atom("clause"), expr.line, [binder], [], [binder]),
             ])
@@ -1023,7 +1023,7 @@ class _Gen:
                 expr.line, "maps", "merge",
                 [self.expr_form(expr.left), self.expr_form(expr.right)],
             )
-        raise SquealError(f"cannot generate an expression for: {expr!r}")
+        raise EelError(f"cannot generate an expression for: {expr!r}")
 
     # --- встроенные функции (переопределяемые по имени) ---
 
@@ -1038,47 +1038,47 @@ class _Gen:
         line, name, arity = expr.line, expr.name, len(args)
         if name == "print":
             if arity != 1:
-                raise SquealError(
+                raise EelError(
                     f"{line}: print takes exactly one argument, got {arity}"
                 )
             self._used_print = True
-            return self._helper_call(line, "squeal_print", args)
+            return self._helper_call(line, "eel_print", args)
         if name == "zip":
             if arity != 2:
-                raise SquealError(f"{line}: zip takes exactly two lists, got {arity}")
+                raise EelError(f"{line}: zip takes exactly two lists, got {arity}")
             self._used_zip = True
-            return self._helper_call(line, "squeal_zip", args)
+            return self._helper_call(line, "eel_zip", args)
         if name == "enumerate":
             if arity not in (1, 2):
-                raise SquealError(
+                raise EelError(
                     f"{line}: enumerate takes one or two arguments, got {arity}"
                 )
             self._used_enumerate = True
             start = args[1] if arity == 2 else _int(line, 0)
-            return self._helper_call(line, "squeal_enumerate", [start, args[0]])
+            return self._helper_call(line, "eel_enumerate", [start, args[0]])
         if name == "send":
             if arity != 2:
-                raise SquealError(f"{line}: send takes a pid and a message, got {arity} arguments")
+                raise EelError(f"{line}: send takes a pid and a message, got {arity} arguments")
             return _remote_call(line, "erlang", "!", args)
         if name == "self":
             if arity != 0:
-                raise SquealError(f"{line}: self takes no arguments, got {arity}")
+                raise EelError(f"{line}: self takes no arguments, got {arity}")
             return _remote_call(line, "erlang", "self", [])
         if name == "spawn":
             if arity != 1:
-                raise SquealError(f"{line}: spawn takes one function, got {arity} arguments")
+                raise EelError(f"{line}: spawn takes one function, got {arity} arguments")
             return _remote_call(line, "erlang", "spawn", args)
         if name == "range":
             if not 1 <= arity <= 3:
-                raise SquealError(
+                raise EelError(
                     f"{line}: range takes one to three arguments, got {arity}"
                 )
             self._used_range = True
             start = args[0] if arity >= 2 else _int(line, 0)
             stop = args[1] if arity >= 2 else args[0]
             step = args[2] if arity == 3 else _int(line, 1)
-            return self._helper_call(line, "squeal_range", [start, stop, step])
-        raise SquealError(f"{line}: unknown builtin {name}")
+            return self._helper_call(line, "eel_range", [start, stop, step])
+        raise EelError(f"{line}: unknown builtin {name}")
 
     def method_form(self, expr: ir.Method) -> tuple:
         """Метод stdlib: диспетчеризация по имени и типу получателя в рантайме."""
@@ -1111,7 +1111,7 @@ class _Gen:
                 line, recv, name,
                 lambda v: _remote_call(
                     line, "erlang", "iolist_to_binary",
-                    [self._helper_call(line, "squeal_join", [v, args[0]])],
+                    [self._helper_call(line, "eel_join", [v, args[0]])],
                 ),
             )
         if name == "splitlines" and arity == 0:
@@ -1122,7 +1122,7 @@ class _Gen:
         if build is not None:
             return self._as_binary(line, recv, name, lambda v: build(line, v, args))
 
-        raise SquealError(
+        raise EelError(
             f"{line}: method {name}/{arity} is not supported (standard library only)"
         )
 
@@ -1132,8 +1132,8 @@ class _Gen:
         return (Atom("var"), line, Atom(f"{base}{self._temp}"))
 
     def _as_binary(self, line, recv, name, build) -> tuple:
-        binder = self._fresh(line, "_squeal@m")
-        other = self._fresh(line, "_squeal@r")
+        binder = self._fresh(line, "_eel@m")
+        other = self._fresh(line, "_eel@r")
         check = [[_remote_call(line, "erlang", "is_binary", [binder])]]
         fail = self._bad_receiver(line, name, other)
         return (Atom("case"), line, recv, [
@@ -1165,8 +1165,8 @@ class _Gen:
             line, [_bin_literal(line, "\r\n"), _bin_literal(line, "\n"), _bin_literal(line, "\r")]
         )
         split = _remote_call(line, "binary", "split", [v, separators, global_opt])
-        parts = self._fresh(line, "_squeal@p")
-        tail = self._fresh(line, "_squeal@l")
+        parts = self._fresh(line, "_eel@p")
+        tail = self._fresh(line, "_eel@l")
         drop_last = (Atom("case"), line, _remote_call(line, "lists", "last", [parts]), [
             (Atom("clause"), line, [empty_bin], [],
              [_remote_call(line, "lists", "droplast", [parts])]),
@@ -1181,10 +1181,10 @@ class _Gen:
         ])
 
     def _count_form(self, line, recv, arg) -> tuple:
-        e = self._fresh(line, "_squeal@e")
-        l = self._fresh(line, "_squeal@l")
-        t = self._fresh(line, "_squeal@t")
-        other = self._fresh(line, "_squeal@r")
+        e = self._fresh(line, "_eel@e")
+        l = self._fresh(line, "_eel@l")
+        t = self._fresh(line, "_eel@t")
+        other = self._fresh(line, "_eel@r")
 
         def count_of(source):
             comp = (
@@ -1222,7 +1222,7 @@ class _Gen:
             return (Atom("op"), expr.line, Atom("not"), operand)
         if expr.op == "UAdd":
             return operand
-        raise SquealError(f"unary operator {expr.op} is not supported")
+        raise EelError(f"unary operator {expr.op} is not supported")
 
     def _binop(self, expr: ir.BinOp) -> tuple:
         line = expr.line
@@ -1236,19 +1236,19 @@ class _Gen:
         if expr.op == "FloorDiv":
             self._used_floordiv = True
             return self._helper_call(
-                line, "squeal_floordiv", [self.expr_form(expr.left), self.expr_form(expr.right)]
+                line, "eel_floordiv", [self.expr_form(expr.left), self.expr_form(expr.right)]
             )
         if expr.op == "Mod":
             self._used_mod = True
             return self._helper_call(
-                line, "squeal_mod", [self.expr_form(expr.left), self.expr_form(expr.right)]
+                line, "eel_mod", [self.expr_form(expr.left), self.expr_form(expr.right)]
             )
         if expr.op == "Pow":
             self._used_pow = True
             return self._helper_call(
-                line, "_squeal_pow", [self.expr_form(expr.left), self.expr_form(expr.right)]
+                line, "_eel_pow", [self.expr_form(expr.left), self.expr_form(expr.right)]
             )
-        raise SquealError(f"binary operator {expr.op} is not supported")
+        raise EelError(f"binary operator {expr.op} is not supported")
 
     def _boolop(self, expr: ir.BoolOp) -> tuple:
         op = "andalso" if expr.op == "And" else "orelse"
@@ -1302,7 +1302,7 @@ class _Gen:
             if isinstance(q, ir.Gen):
                 self._used_iter = True
                 iter_form = self._helper_call(
-                    q.line, "squeal_iter", [self.expr_form(q.iter)]
+                    q.line, "eel_iter", [self.expr_form(q.iter)]
                 )
                 pattern = self._pattern(q.target)
                 out.append((Atom("generate"), q.line, pattern, iter_form))
@@ -1321,18 +1321,18 @@ class _Gen:
             elif isinstance(q, ir.Filter):
                 out.append(self.expr_form(q.expr))
             else:
-                raise SquealError(f"cannot generate a qualifier for: {q!r}")
+                raise EelError(f"cannot generate a qualifier for: {q!r}")
         return out
 
     def iter_helper(self) -> tuple:
-        """squeal_iter/1: map → ключи, список → как есть (иначе bad_generator)."""
+        """eel_iter/1: map → ключи, список → как есть (иначе bad_generator)."""
         line = 0
         m = _var(line, "M")
         l = _var(line, "L")
         return (
             Atom("function"),
             line,
-            Atom("squeal_iter"),
+            Atom("eel_iter"),
             1,
             [
                 (Atom("clause"), line, [m], [[_remote_call(line, "erlang", "is_map", [m])]],
@@ -1342,14 +1342,14 @@ class _Gen:
         )
 
     def print_helpers(self) -> list:
-        """squeal_print/1 + squeal_str/1 (+ tuple/map): питоновское представление для print."""
+        """eel_print/1 + eel_str/1 (+ tuple/map): питоновское представление для print."""
         line = 0
 
         def call(name, args):
             return _local_call(line, name, args)
 
         def str_(form):
-            return call("squeal_str", [form])
+            return call("eel_str", [form])
 
         def is_(kind, var):
             return [[_remote_call(line, "erlang", kind, [var])]]
@@ -1372,7 +1372,7 @@ class _Gen:
         )
         e = _var(line, "E")
 
-        str_fn = (Atom("function"), line, Atom("squeal_str"), 1, [
+        str_fn = (Atom("function"), line, Atom("eel_str"), 1, [
             clause(b, is_("is_binary", b), [b]),
             clause(a, is_("is_atom", a),
                    [_remote_call(line, "erlang", "atom_to_binary", [a, _atom(line, "utf8")])]),
@@ -1384,10 +1384,10 @@ class _Gen:
             clause(l, is_("is_list", l),
                    [_list_expr(line, [char(ord("[")), joined(each(e, l)), char(ord("]"))])]),
             clause(t, is_("is_tuple", t),
-                   [call("squeal_str_tuple",
+                   [call("eel_str_tuple",
                          [_remote_call(line, "erlang", "tuple_to_list", [t])])]),
             clause(m, is_("is_map", m),
-                   [call("squeal_str_map",
+                   [call("eel_str_map",
                          [_remote_call(line, "lists", "keysort",
                                        [_int(line, 1),
                                         _remote_call(line, "maps", "to_list", [m])])])]),
@@ -1397,7 +1397,7 @@ class _Gen:
         ])
 
         one, items = _var(line, "One"), _var(line, "Items")
-        tuple_fn = (Atom("function"), line, Atom("squeal_str_tuple"), 1, [
+        tuple_fn = (Atom("function"), line, Atom("eel_str_tuple"), 1, [
             clause((Atom("nil"), line), [], [_bin_literal(line, "()")]),
             clause((Atom("cons"), line, one, (Atom("nil"), line)), [],
                    [_list_expr(line, [char(ord("(")), str_(one), _bin_literal(line, ",)")])]),
@@ -1408,7 +1408,7 @@ class _Gen:
         pairs, k, v = _var(line, "Pairs"), _var(line, "K"), _var(line, "V")
         pair = _list_expr(line, [str_(k), _bin_literal(line, ": "), str_(v)])
         pair_gen = (Atom("generate"), line, (Atom("tuple"), line, [k, v]), pairs)
-        map_fn = (Atom("function"), line, Atom("squeal_str_map"), 1, [
+        map_fn = (Atom("function"), line, Atom("eel_str_map"), 1, [
             clause((Atom("nil"), line), [], [_bin_literal(line, "{}")]),
             clause(pairs, [], [
                 _list_expr(line, [char(ord("{")),
@@ -1418,7 +1418,7 @@ class _Gen:
         ])
 
         shown = _var(line, "X")
-        print_fn = (Atom("function"), line, Atom("squeal_print"), 1, [
+        print_fn = (Atom("function"), line, Atom("eel_print"), 1, [
             clause(shown, [], [
                 _remote_call(line, "io", "format",
                              [(Atom("string"), line, "~ts~n"),
@@ -1429,7 +1429,7 @@ class _Gen:
         return [print_fn, str_fn, tuple_fn, map_fn]
 
     def join_helper(self) -> tuple:
-        """squeal_join/2: iolist из частей; не-строка — {bad_argument, join, Часть}."""
+        """eel_join/2: iolist из частей; не-строка — {bad_argument, join, Часть}."""
         line = 0
         sep = _var(line, "Sep")
         head = _var(line, "H")
@@ -1437,24 +1437,24 @@ class _Gen:
         one = (Atom("cons"), line, head, (Atom("nil"), line))
         many = (Atom("cons"), line, head, tail)
         is_bin = [[_remote_call(line, "erlang", "is_binary", [head])]]
-        return (Atom("function"), line, Atom("squeal_join"), 2, [
+        return (Atom("function"), line, Atom("eel_join"), 2, [
             (Atom("clause"), line, [_var(line, "_"), (Atom("nil"), line)], [],
              [(Atom("nil"), line)]),
             (Atom("clause"), line, [sep, one], is_bin, [head]),
             (Atom("clause"), line, [sep, many], is_bin,
-             [_list_expr(line, [head, sep, _local_call(line, "squeal_join", [sep, tail])])]),
+             [_list_expr(line, [head, sep, _local_call(line, "eel_join", [sep, tail])])]),
             (Atom("clause"), line, [_var(line, "_"), many], [],
              [self._bad_argument(line, "join", head)]),
         ])
 
     def zip_helper(self) -> tuple:
-        """squeal_zip/2: списки только, обрезка по короткому (Python), иначе bad_argument."""
+        """eel_zip/2: списки только, обрезка по короткому (Python), иначе bad_argument."""
         line = 0
         a, b = _var(line, "A"), _var(line, "B")
         is_list = lambda v: _remote_call(line, "erlang", "is_list", [v])  # noqa: E731
         not_list = lambda v: (Atom("op"), line, Atom("not"), is_list(v))  # noqa: E731
         trim = (Atom("atom"), line, Atom("trim"))
-        return (Atom("function"), line, Atom("squeal_zip"), 2, [
+        return (Atom("function"), line, Atom("eel_zip"), 2, [
             (Atom("clause"), line, [a, b], [[is_list(a), is_list(b)]],
              [_remote_call(line, "lists", "zip", [a, b, trim])]),
             (Atom("clause"), line, [a, b], [[not_list(a)]],
@@ -1463,12 +1463,12 @@ class _Gen:
         ])
 
     def enumerate_helper(self) -> tuple:
-        """squeal_enumerate/2: (Start, List) → [{N, X}]; только список."""
+        """eel_enumerate/2: (Start, List) → [{N, X}]; только список."""
         line = 0
         start, items = _var(line, "Start"), _var(line, "List")
         is_int = lambda v: _remote_call(line, "erlang", "is_integer", [v])  # noqa: E731
         is_list = lambda v: _remote_call(line, "erlang", "is_list", [v])  # noqa: E731
-        return (Atom("function"), line, Atom("squeal_enumerate"), 2, [
+        return (Atom("function"), line, Atom("eel_enumerate"), 2, [
             (Atom("clause"), line, [start, items], [[is_int(start), is_list(items)]],
              [_remote_call(line, "lists", "enumerate", [start, items])]),
             (Atom("clause"), line, [start, items], [[(Atom("op"), line, Atom("not"), is_int(start))]],
@@ -1478,7 +1478,7 @@ class _Gen:
         ])
 
     def range_helper(self) -> tuple:
-        """squeal_range/3: питоновский range (стоп не включается, шаг любой, пустые — [])."""
+        """eel_range/3: питоновский range (стоп не включается, шаг любой, пустые — [])."""
         line = 0
         start, stop, step = (
             _var(line, "Start"), _var(line, "Stop"), _var(line, "Step")
@@ -1491,10 +1491,10 @@ class _Gen:
         less = lambda x, y: _op(line, "<", x, y)  # noqa: E731
         zero = _int(line, 0)
         recurse = _local_call(
-            line, "squeal_range",
+            line, "eel_range",
             [_op(line, "+", start, step), stop, step],
         )
-        return (Atom("function"), line, Atom("squeal_range"), 3, [
+        return (Atom("function"), line, Atom("eel_range"), 3, [
             (Atom("clause"), line, [start, stop, step], [[not_int(start)]],
              [self._bad_argument(line, "range", start)]),
             (Atom("clause"), line, [start, stop, step], [[not_int(stop)]],
@@ -1530,7 +1530,7 @@ class _Gen:
         mod_float = _remote_call(line, "math", "fmod", [
             _op(line, "+", _remote_call(line, "math", "fmod", [a, b]), b), b,
         ])
-        return self._num_helper("squeal_mod", line, mod_int, mod_float)
+        return self._num_helper("eel_mod", line, mod_int, mod_float)
 
     def floordiv_helper(self) -> tuple:
         line = 0
@@ -1540,10 +1540,10 @@ class _Gen:
         div_int = _op(line, "div", _op(line, "-", a, mod_int), b)
         div_float = _remote_call(line, "erlang", "float",
             [_remote_call(line, "math", "floor", [_op(line, "/", a, b)])])
-        return self._num_helper("squeal_floordiv", line, div_int, div_float)
+        return self._num_helper("eel_floordiv", line, div_int, div_float)
 
     def pow_helpers(self) -> list:
-        """Приватные _squeal_pow/2 и _squeal_pow_loop/3: int**int (≥0) — целочисленно,
+        """Приватные _eel_pow/2 и _eel_pow_loop/3: int**int (≥0) — целочисленно,
         иначе math:pow."""
         line = 0
         a = _var(line, "A")
@@ -1553,9 +1553,9 @@ class _Gen:
             is_integer(a), is_integer(b),
             (Atom("op"), line, Atom(">="), b, _int(line, 0)),
         ]]
-        pow_fn = (Atom("function"), line, Atom("_squeal_pow"), 2, [
+        pow_fn = (Atom("function"), line, Atom("_eel_pow"), 2, [
             (Atom("clause"), line, [a, b], guard,
-             [_local_call(line, "_squeal_pow_loop", [a, b, _int(line, 1)])]),
+             [_local_call(line, "_eel_pow_loop", [a, b, _int(line, 1)])]),
             (Atom("clause"), line, [a, b], [],
              [_remote_call(line, "math", "pow", [a, b])]),
         ])
@@ -1565,14 +1565,14 @@ class _Gen:
         acc = _var(line, "Acc")
         even_guard = [[(Atom("op"), line, Atom("=:="),
                         (Atom("op"), line, Atom("rem"), n, _int(line, 2)), _int(line, 0))]]
-        loop_fn = (Atom("function"), line, Atom("_squeal_pow_loop"), 3, [
+        loop_fn = (Atom("function"), line, Atom("_eel_pow_loop"), 3, [
             (Atom("clause"), line, [_var(line, "_"), _int(line, 0), acc], [], [acc]),
             (Atom("clause"), line, [a2, n, acc], even_guard,
-             [_local_call(line, "_squeal_pow_loop",
+             [_local_call(line, "_eel_pow_loop",
                           [(Atom("op"), line, Atom("*"), a2, a2),
                            (Atom("op"), line, Atom("div"), n, _int(line, 2)), acc])]),
             (Atom("clause"), line, [a2, n, acc], [],
-             [_local_call(line, "_squeal_pow_loop",
+             [_local_call(line, "_eel_pow_loop",
                           [a2, (Atom("op"), line, Atom("-"), n, _int(line, 1)),
                            (Atom("op"), line, Atom("*"), acc, a2)])]),
         ])

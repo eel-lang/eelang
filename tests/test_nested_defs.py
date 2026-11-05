@@ -10,16 +10,16 @@ import tempfile
 
 import pytest
 
-from squeal.compiler import compile_source
-from squeal.errors import SquealError
-from squeal.term import Atom
+from eel.compiler import compile_source
+from eel.errors import EelError
+from eel.term import Atom
 
 ERL = shutil.which("erl")
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 
 
 def _function(source: str, name: str = "m"):
-    forms = compile_source(source, "src/m.ee", "m")
+    forms = compile_source(source, "src/m.eel", "m")
     return next(f for f in forms if f[0] == Atom("function") and f[2] == Atom(name))
 
 
@@ -40,9 +40,9 @@ def _find(form, pred, out=None) -> list:
 def _build(source: str, module: str = "n") -> pathlib.Path:
     tmp = pathlib.Path(tempfile.mkdtemp())
     (tmp / "src").mkdir()
-    (tmp / "src" / f"{module}.ee").write_text(source)
+    (tmp / "src" / f"{module}.eel").write_text(source)
     subprocess.run(
-        [sys.executable, "-m", "squeal", "build", str(tmp)],
+        [sys.executable, "-m", "eel", "build", str(tmp)],
         cwd=ROOT, check=True, capture_output=True,
     )
     return tmp / "build" / "dev" / "erlang" / tmp.name / "ebin"
@@ -74,14 +74,14 @@ def test_nested_def_errors():
         "def m():\n    def f(x=1):\n        x\n",
         "def m():\n    def f(*args):\n        args\n",
     ]:
-        with pytest.raises(SquealError):
-            compile_source(source, "src/m.ee", "m")
+        with pytest.raises(EelError):
+            compile_source(source, "src/m.eel", "m")
 
 
 def test_nested_def_shadows_builtin():
     src = "def m(v):\n    def print(x):\n        x + 1\n    print(v)\n"
-    names = [f[2] for f in compile_source(src, "src/m.ee", "m") if f[0] == Atom("function")]
-    assert Atom("squeal_print") not in names
+    names = [f[2] for f in compile_source(src, "src/m.eel", "m") if f[0] == Atom("function")]
+    assert Atom("eel_print") not in names
     ebin = _build(src)
     assert _run(ebin, 'io:format("~p", [n:m(1)])') == "2"
 
@@ -156,8 +156,8 @@ def test_nested_decorator_inside_function():
 
 
 def test_shell_mode_nested_def():
-    from squeal.session import Session, compile_cell
-    from squeal.repl import ErlangRepl
+    from eel.session import Session, compile_cell
+    from eel.repl import ErlangRepl
 
     s = Session()
     repl = ErlangRepl()

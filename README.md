@@ -1,17 +1,17 @@
-# Squeal
+# Eel
 
 Gleam-подобный язык для BEAM (виртуальной машины Erlang) с синтаксисом Python.
-Исходники — файлы `.ee`; компилятор генерирует Erlang Abstract Format и `.beam` так же,
+Исходники — файлы `.eel`; компилятор генерирует Erlang Abstract Format и `.beam` так же,
 как Gleam 1.19.
 
 ## Установка
 
 ```
-pip install squealang      # на PyPI имя свободного «squeal» занято другим пакетом
+pip install eelang      # язык называется eel, но на PyPI имя «eel» занято другой библиотекой
 ```
 
 Пакет требует Python 3.15 и Erlang/OTP с `escript` в `PATH`. После установки доступны
-`squeal build DIR` и `python -m squeal build DIR`.
+`eel build DIR` и `python -m eel build DIR`.
 
 ## Быстрый старт
 
@@ -20,10 +20,10 @@ pip install squealang      # на PyPI имя свободного «squeal» з
 ```
 my_app/
 └── src/
-    └── hello.ee
+    └── hello.eel
 ```
 
-`hello.ee`:
+`hello.eel`:
 
 ```python
 def hello():
@@ -33,26 +33,26 @@ def hello():
 Сборка:
 
 ```
-python -m squeal build my_app            # .beam в build/dev/erlang/my_app/ebin
-python -m squeal build my_app --erl      # ещё и .erl рядом с каждым .beam
-squeal daemon stop                       # остановить фоновый компилятор
+python -m eel build my_app            # .beam в build/dev/erlang/my_app/ebin
+python -m eel build my_app --erl      # ещё и .erl рядом с каждым .beam
+eel daemon stop                       # остановить фоновый компилятор
 ```
 
 Сборка инкрементальная: пересобираются только изменившиеся модули (хэш содержимого, а не mtime),
-удалённые `.ee` убирают свои `.beam`; `--force` пересобирает всё.
+удалённые `.eel` убирают свои `.beam`; `--force` пересобирает всё.
 
 Фоновая часть двухслойная: **сервер сборки** (живой Python-процесс, принимает сборки по unix-сокету)
 держит внутри **демон компилятора** (Erlang-VM). Слежения за файлами нет — сборка идёт только по
 запросу, но без старта интерпретатора и VM: правка одного модуля в проекте из 40 — 4–6 мс по сокету,
-70–85 мс обычным `squeal build` (остальное — старт CPython). Своя интеграция (редактор, LSP, хук)
-может говорить с сокетом напрямую: `from squeal import client; client.build_remote(path)`.
-Оба процесса живут вместе: `squeal daemon start` поднимает сервер и демон компилятора,
-`squeal daemon stop` гасит оба, а если сервер убить (даже `kill -9`), демон компилятора уходит сам —
+70–85 мс обычным `eel build` (остальное — старт CPython). Своя интеграция (редактор, LSP, хук)
+может говорить с сокетом напрямую: `from eel import client; client.build_remote(path)`.
+Оба процесса живут вместе: `eel daemon start` поднимает сервер и демон компилятора,
+`eel daemon stop` гасит оба, а если сервер убить (даже `kill -9`), демон компилятора уходит сам —
 он стережёт родителя по закрытию stdin. `--no-daemon` собирает в процессе без фоновых процессов.
 
 Первая сборка поднимает фоновый демон компилятора (Erlang-VM), и он живёт, пока не выполнят
-`squeal daemon stop` — следующие сборки не тратят ~0.5 с на старт VM. `--no-daemon` собирает
-внутри процесса, `squeal daemon status` показывает pid, версию протокола и число сборок.
+`eel daemon stop` — следующие сборки не тратят ~0.5 с на старт VM. `--no-daemon` собирает
+внутри процесса, `eel daemon status` показывает pid, версию протокола и число сборок.
 
 Запуск:
 
@@ -62,7 +62,7 @@ erl -pa my_app/build/dev/erlang/my_app/ebin -noshell \
 # => <<"hi">>
 ```
 
-Модуль — это путь файла под `src/`: `src/a/b/c.ee` → модуль `a@b@c`; импорт
+Модуль — это путь файла под `src/`: `src/a/b/c.eel` → модуль `a@b@c`; импорт
 `from a.b.c import f` → вызов `a@b@c:f(...)`.
 
 ## Язык
@@ -96,6 +96,6 @@ python -m venv .venv
 .venv/bin/python -m pytest
 ```
 
-Тесты включают 18 паритет-пар с Gleam: на эквивалентном коде squeal и Gleam 1.19.2 генерируют
+Тесты включают 18 паритет-пар с Gleam: на эквивалентном коде eel и Gleam 1.19.2 генерируют
 одинаковые Erlang-формы. Для них нужен установленный `gleam` в `PATH` (сам компилятор Gleam в
 репозиторий не входит — для справки держите локальный клон `gleam/`, он в `.gitignore`).

@@ -3,8 +3,8 @@ requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "squealang"
-version = "0.1.0"
+name = "eelang"
+version = "0.3.0"
 description = "Gleam-like language for the BEAM with Python syntax"
 readme = "README.md"
 requires-python = ">=3.15"
@@ -20,20 +20,20 @@ classifiers = [
 ]
 
 [project.urls]
-Repository = "https://github.com/squea-lang/squeal"
+Repository = "https://github.com/squea-lang/eel"
 
 [project.scripts]
-squeal = "squeal.__main__:main"
+eel = "eel.__main__:main"
 
 [project.optional-dependencies]
 dev = ["pytest"]
 notebook = ["ipykernel"]
 
 [tool.setuptools]
-packages = ["squeal"]
+packages = ["eel"]
 
 [tool.setuptools.package-data]
-squeal = ["*.escript"]
+eel = ["*.escript"]
 
 [tool.pytest.ini_options]
 pythonpath = ["."]

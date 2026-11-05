@@ -10,37 +10,37 @@ import tempfile
 
 import pytest
 
-from squeal.compiler import compile_source
-from squeal.errors import SquealError
-from squeal.term import Atom
+from eel.compiler import compile_source
+from eel.errors import EelError
+from eel.term import Atom
 
 ERL = shutil.which("erl")
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 
 
 def _body(source: str, name: str = "m"):
-    forms = compile_source(source, "src/m.ee", name)
+    forms = compile_source(source, "src/m.eel", name)
     fn = [f for f in forms if f[0] == Atom("function")][0]
     return fn[4][0][4][0]
 
 
 def _function_names(source: str, name: str = "m") -> list:
-    forms = compile_source(source, "src/m.ee", name)
+    forms = compile_source(source, "src/m.eel", name)
     return [f[2] for f in forms if f[0] == Atom("function")]
 
 
 def test_print_is_helper_call():
     body = _body('def m(x):\n    print(x)\n')
     assert body[0] == Atom("call")
-    assert body[2] == (Atom("atom"), 2, Atom("squeal_print"))
+    assert body[2] == (Atom("atom"), 2, Atom("eel_print"))
     assert body[3] == [(Atom("var"), 2, Atom("X"))]
 
 
 def test_print_emits_helpers_only_when_used():
     names = _function_names('def m(x):\n    print(x)\n')
     assert names[1:] == [
-        Atom("squeal_print"), Atom("squeal_str"),
-        Atom("squeal_str_tuple"), Atom("squeal_str_map"),
+        Atom("eel_print"), Atom("eel_str"),
+        Atom("eel_str_tuple"), Atom("eel_str_map"),
     ]
     names = _function_names("def m(x):\n    x\n")
     assert names == [Atom("m")]
@@ -52,15 +52,15 @@ def test_print_errors():
         "def m(a, b):\n    print(a, b)\n",
         "def m(a):\n    print(a, sep=',')\n",
     ]:
-        with pytest.raises(SquealError):
-            compile_source(source, "src/m.ee", "m")
+        with pytest.raises(EelError):
+            compile_source(source, "src/m.eel", "m")
 
 
 def test_print_representation_in_erl():
     tmp = pathlib.Path(tempfile.mkdtemp())
     src = tmp / "src"
     src.mkdir()
-    (src / "p.ee").write_text(
+    (src / "p.eel").write_text(
         'def txt():\n    print("hi")\n    "|"\n'
         "def num():\n    print(42)\n    \"|\"\n"
         "def flt():\n    print(1.5)\n    \"|\"\n"
@@ -76,7 +76,7 @@ def test_print_representation_in_erl():
         "def value():\n    print(\"hi\")\n    7\n"
     )
     subprocess.run(
-        [sys.executable, "-m", "squeal", "build", str(tmp)],
+        [sys.executable, "-m", "eel", "build", str(tmp)],
         cwd=ROOT, check=True, capture_output=True,
     )
     ebin = tmp / "build" / "dev" / "erlang" / tmp.name / "ebin"
@@ -102,12 +102,12 @@ def test_print_representation_in_erl():
 def test_print_can_be_shadowed():
     src = "def print(x):\n    x * 2\n\ndef m(v):\n    print(v)\n"
     names = _function_names(src)
-    assert Atom("squeal_print") not in names  # встроенная не подключается
+    assert Atom("eel_print") not in names  # встроенная не подключается
     tmp = pathlib.Path(tempfile.mkdtemp())
     (tmp / "src").mkdir()
-    (tmp / "src" / "m.ee").write_text(src)
+    (tmp / "src" / "m.eel").write_text(src)
     subprocess.run(
-        [sys.executable, "-m", "squeal", "build", str(tmp)],
+        [sys.executable, "-m", "eel", "build", str(tmp)],
         cwd=ROOT, check=True, capture_output=True,
     )
     ebin = tmp / "build" / "dev" / "erlang" / tmp.name / "ebin"
@@ -122,7 +122,7 @@ def test_print_can_be_shadowed():
 def test_print_in_notebook():
     from IPython.core.interactiveshell import InteractiveShell
     from IPython.utils.capture import capture_output
-    import squeal.notebook as nb
+    import eel.notebook as nb
 
     shell = InteractiveShell.instance()
     nb.load_ipython_extension(shell)
@@ -145,8 +145,8 @@ def test_print_in_notebook():
 
 
 def test_print_order_in_repl(capsys):
-    from squeal.session import Session, compile_cell
-    from squeal.repl import ErlangRepl
+    from eel.session import Session, compile_cell
+    from eel.repl import ErlangRepl
 
     s = Session()
     repl = ErlangRepl()

@@ -8,10 +8,10 @@ import sys
 
 import pytest
 
-from squeal import client, etf
-from squeal.compiler import DAEMON, PROTOCOL, build, daemon_pid_file, daemon_socket
-from squeal.errors import SquealError
-from squeal.term import Atom
+from eel import client, etf
+from eel.compiler import DAEMON, PROTOCOL, build, daemon_pid_file, daemon_socket
+from eel.errors import EelError
+from eel.term import Atom
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 
@@ -28,7 +28,7 @@ def clean_processes():
 def _project(tmp_path: pathlib.Path) -> pathlib.Path:
     proj = tmp_path / "app"
     (proj / "src").mkdir(parents=True)
-    (proj / "src" / "hello.ee").write_text('def hello():\n    "hi"\n')
+    (proj / "src" / "hello.eel").write_text('def hello():\n    "hi"\n')
     return proj
 
 
@@ -45,7 +45,7 @@ def test_build_uses_the_running_daemon(clean_processes, tmp_path):
     assert info["version"] == str(PROTOCOL)
 
     # правим исходник, чтобы вторая сборка действительно компилировала
-    (proj / "src" / "hello.ee").write_text('def hello():\n    "hi again"\n')
+    (proj / "src" / "hello.eel").write_text('def hello():\n    "hi again"\n')
     build(proj)
     assert _pid() == pid                       # тот же процесс Erlang
     assert int(DAEMON.ping()["compiled"]) == 2
@@ -68,7 +68,7 @@ def test_daemon_stop_and_restart(clean_processes, tmp_path):
 def test_no_daemon_flag_keeps_everything_off(clean_processes, tmp_path):
     proj = _project(tmp_path)
     subprocess.run(
-        [sys.executable, "-m", "squeal", "build", str(proj), "--no-daemon"],
+        [sys.executable, "-m", "eel", "build", str(proj), "--no-daemon"],
         cwd=ROOT, check=True, capture_output=True,
     )
     assert not daemon_socket().exists()
@@ -81,16 +81,16 @@ def test_compile_error_through_daemon(clean_processes, tmp_path):
     forms = [
         (Atom("attribute"), 0, Atom("module"), Atom("t")),
         (Atom("attribute"), 0, Atom("export"), [(Atom("m"), 0)]),
-        (Atom("attribute"), 0, Atom("file"), ("src/t.ee", 0)),
+        (Atom("attribute"), 0, Atom("file"), ("src/t.eel", 0)),
         (Atom("function"), 2, Atom("m"), 0, [
             (Atom("clause"), 2, [], [],
              [(Atom("call"), 3, (Atom("atom"), 3, Atom("nope")), [])]),
         ]),
     ]
     blob = tmp_path / "t.etf"
-    blob.write_bytes(etf.encode([(str(tmp_path / "t"), forms, "src/t.ee")]))
+    blob.write_bytes(etf.encode([(str(tmp_path / "t"), forms, "src/t.eel")]))
 
-    with pytest.raises(SquealError) as exc:
+    with pytest.raises(EelError) as exc:
         DAEMON.compile(blob, False)
-    assert str(exc.value) == "src/t.ee:3: function nope/0 is not defined"
+    assert str(exc.value) == "src/t.eel:3: function nope/0 is not defined"
     assert DAEMON.ping() is not None           # демон жив после ошибки

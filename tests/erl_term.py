@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import re
 
-from squeal.term import Atom
+from eel.term import Atom
 
 _ATOM = re.compile(r"[a-z][a-zA-Z0-9_@]*")
 _NUMBER = re.compile(r"-?[0-9]+(\.[0-9]+)?([eE][+-]?[0-9]+)?")

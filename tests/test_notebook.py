@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from squeal.session import Session, compile_cell
-from squeal.repl import ErlangRepl
+from eel.session import Session, compile_cell
+from eel.repl import ErlangRepl
 
 
 def test_compile_cell_assignment():
@@ -89,7 +89,7 @@ def test_repl_runtime_error():
 def test_ipykernel_hook():
     from IPython.core.interactiveshell import InteractiveShell
     from IPython.utils.capture import capture_output
-    import squeal.notebook as nb
+    import eel.notebook as nb
 
     shell = InteractiveShell.instance()
     nb.load_ipython_extension(shell)
@@ -110,7 +110,7 @@ def test_shell_mode_helper_is_variable_call():
     s = Session()
     forms, _ = compile_cell("2 ** 3\n", s)
     call = forms[0]
-    assert call[0] == "call" and call[2][0] == "var"  # {call, {var, '_squeal_pow'}, ...}
+    assert call[0] == "call" and call[2][0] == "var"  # {call, {var, '_eel_pow'}, ...}
 
 
 def test_shell_mode_pow_and_comprehension():
@@ -136,8 +136,8 @@ def test_class_redefinition_across_cells_is_allowed():
 
 def test_class_duplicate_within_cell_errors():
     import pytest
-    from squeal.errors import SquealError
-    with pytest.raises(SquealError):
+    from eel.errors import EelError
+    with pytest.raises(EelError):
         compile_cell(
             "class T(StartingWithAtom):\n    x: int\nclass T(StartingWithAtom):\n    y: int\n",
             Session(),
@@ -155,7 +155,7 @@ def test_session_builtin_ok_error():
 def test_hook_survives_python_syntax_error():
     from IPython.core.interactiveshell import InteractiveShell
     from IPython.utils.capture import capture_output
-    import squeal.notebook as nb
+    import eel.notebook as nb
 
     shell = InteractiveShell.instance()
     nb.load_ipython_extension(shell)
@@ -185,7 +185,7 @@ def test_repl_pattern_assign():
 def test_hook_accepts_pattern_assign():
     from IPython.core.interactiveshell import InteractiveShell
     from IPython.utils.capture import capture_output
-    import squeal.notebook as nb
+    import eel.notebook as nb
 
     shell = InteractiveShell.instance()
     nb.load_ipython_extension(shell)
@@ -202,14 +202,14 @@ def test_hook_accepts_pattern_assign():
 
 
 def test_repl_pp_comprehension():
-    from squeal.notebook import compact
+    from eel.notebook import compact
     s = Session()
     repl = ErlangRepl()
     try:
         forms, _ = compile_cell("[x * 2 for x in [1, 2, 3]]\n", s)
-        assert compact(repl.pp(forms[0])) == "[X * 2 || X <- squeal_iter([1, 2, 3])]"
+        assert compact(repl.pp(forms[0])) == "[X * 2 || X <- eel_iter([1, 2, 3])]"
         forms, _ = compile_cell("{k: 1 for k in {'a': 9}}\n", s)
-        assert compact(repl.pp(forms[0])) == "#{K => 1 || K <- squeal_iter(#{a => 9})}"
+        assert compact(repl.pp(forms[0])) == "#{K => 1 || K <- eel_iter(#{a => 9})}"
     finally:
         repl.close()
 
@@ -217,14 +217,14 @@ def test_repl_pp_comprehension():
 def test_hook_prints_erl_comprehension():
     from IPython.core.interactiveshell import InteractiveShell
     from IPython.utils.capture import capture_output
-    import squeal.notebook as nb
+    import eel.notebook as nb
 
     shell = InteractiveShell.instance()
     nb.load_ipython_extension(shell)
     try:
         with capture_output() as out:
             shell.run_cell("[x * 2 for x in [1, 2, 3]]")
-        assert "erl: [X * 2 || X <- squeal_iter([1, 2, 3])]" in out.stdout
+        assert "erl: [X * 2 || X <- eel_iter([1, 2, 3])]" in out.stdout
         assert "[2,4,6]" in out.stdout
     finally:
         nb.unload_ipython_extension(shell)
@@ -232,13 +232,13 @@ def test_hook_prints_erl_comprehension():
 
 
 def test_comprehension_targets_use_local_names():
-    from squeal.notebook import compact
+    from eel.notebook import compact
     s = Session()
     repl = ErlangRepl()
     try:
         compile_cell("x = 1\nx = x + 1\n", s)           # x -> X, X@1 in the session
         forms, _ = compile_cell("[x * 2 for x in [1, 2, 3]]\n", s)
-        assert compact(repl.pp(forms[0])) == "[X * 2 || X <- squeal_iter([1, 2, 3])]"
+        assert compact(repl.pp(forms[0])) == "[X * 2 || X <- eel_iter([1, 2, 3])]"
     finally:
         repl.close()
 
@@ -260,8 +260,8 @@ def test_repl_arity_overloading():
 
 def test_repl_forward_definition_errors():
     import pytest
-    from squeal.errors import SquealError
-    with pytest.raises(SquealError) as e:
+    from eel.errors import EelError
+    with pytest.raises(EelError) as e:
         compile_cell("def f(x):\n    g(x)\n\ndef g(y):\n    y\n", Session())
     assert "is not defined" in str(e.value)
 
@@ -296,13 +296,13 @@ def test_functions_are_values_in_shell():
 
 def test_shell_arity_mismatch_is_clear():
     import pytest
-    from squeal.errors import SquealError
+    from eel.errors import EelError
     s = Session()
     repl = ErlangRepl()
     try:
         forms, _ = compile_cell("def f(x):\n    x\n", s)
         repl.eval_forms(forms)
-        with pytest.raises(SquealError) as e:
+        with pytest.raises(EelError) as e:
             compile_cell("f(1, 2)\n", s)
         assert "is not defined" in str(e.value)
     finally:
@@ -311,7 +311,7 @@ def test_shell_arity_mismatch_is_clear():
 
 def test_extension_load_is_idempotent_and_unloads():
     from IPython.core.interactiveshell import InteractiveShell
-    import squeal.notebook as nb
+    import eel.notebook as nb
 
     shell = InteractiveShell.instance()
     try:

@@ -8,9 +8,9 @@ import sys
 
 import pytest
 
-from squeal import client
-from squeal.compiler import DAEMON
-from squeal.errors import SquealError
+from eel import client
+from eel.compiler import DAEMON
+from eel.errors import EelError
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 
@@ -29,13 +29,13 @@ def clean_servers():
 def _project(tmp_path: pathlib.Path, source: str = OK_SRC) -> pathlib.Path:
     proj = tmp_path / "app"
     (proj / "src").mkdir(parents=True)
-    (proj / "src" / "hello.ee").write_text(source)
+    (proj / "src" / "hello.eel").write_text(source)
     return proj
 
 
 def _cli(*args):
     return subprocess.run(
-        [sys.executable, "-m", "squeal", *args], cwd=ROOT, capture_output=True, text=True
+        [sys.executable, "-m", "eel", *args], cwd=ROOT, capture_output=True, text=True
     )
 
 
@@ -48,7 +48,7 @@ def test_first_build_starts_server_and_next_reuses_it(clean_servers, tmp_path):
     assert _cli("build", str(proj)).returncode == 0
     pid = client.server_pid_file().read_text().strip()
 
-    (proj / "src" / "hello.ee").write_text('def hello():\n    "hi again"\n')
+    (proj / "src" / "hello.eel").write_text('def hello():\n    "hi again"\n')
     assert _cli("build", str(proj)).returncode == 0
     assert client.server_pid_file().read_text().strip() == pid   # сервер тот же
     assert client.ping()["builds"] == 2
@@ -64,21 +64,21 @@ def test_build_remote_is_served_by_the_live_process(clean_servers, tmp_path):
     assert client.build_remote(proj) is True          # ничего не менялось
     assert _beams(out) == before                      # и ничего не пересобрано
 
-    (proj / "src" / "hello.ee").write_text('def hello():\n    "ho"\n')
+    (proj / "src" / "hello.eel").write_text('def hello():\n    "ho"\n')
     assert client.build_remote(proj) is True
     assert _beams(out)["hello.beam"] != before["hello.beam"]
 
 
 def test_compile_error_is_reported_and_server_survives(clean_servers, tmp_path):
     proj = _project(tmp_path, 'def hello():\n    for x in [1]:\n        x\n')
-    with pytest.raises(SquealError, match="loop For is forbidden"):
+    with pytest.raises(EelError, match="loop For is forbidden"):
         client.build_remote(proj)
 
     info = client.ping()
     assert info is not None
     assert info["errors"] >= 1
 
-    (proj / "src" / "hello.ee").write_text(OK_SRC)     # сервер продолжает работать
+    (proj / "src" / "hello.eel").write_text(OK_SRC)     # сервер продолжает работать
     assert client.build_remote(proj) is True
     assert (proj / "build" / "dev" / "erlang" / proj.name / "ebin" / "hello.beam").exists()
 
@@ -87,7 +87,7 @@ def test_cli_reports_compile_errors(clean_servers, tmp_path):
     proj = _project(tmp_path, 'def hello():\n    for x in [1]:\n        x\n')
     result = _cli("build", str(proj))
     assert result.returncode == 1
-    assert "squeal: " in result.stderr and "loop For is forbidden" in result.stderr
+    assert "eel: " in result.stderr and "loop For is forbidden" in result.stderr
 
 
 def test_daemon_status_shows_both_processes(clean_servers, tmp_path):
@@ -154,7 +154,7 @@ def test_compiler_daemon_dies_when_the_server_is_killed(clean_servers, tmp_path)
 
 
 def test_library_build_does_not_start_the_daemon(clean_servers, tmp_path):
-    from squeal.compiler import build
+    from eel.compiler import build
 
     proj = _project(tmp_path)
     build(proj)                                # API без сервера: escript внутри процесса

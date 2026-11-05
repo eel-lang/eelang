@@ -1,4 +1,4 @@
-"""End-to-end skeleton: the build CLI compiles .ee into .beam, hello:hello() → <<"hi">>."""
+"""End-to-end skeleton: the build CLI compiles .eel into .beam, hello:hello() → <<"hi">>."""
 
 from __future__ import annotations
 
@@ -16,10 +16,10 @@ def test_build_and_run():
     tmp = pathlib.Path(tempfile.mkdtemp())
     src = tmp / "src"
     src.mkdir()
-    (src / "hello.ee").write_text('def hello():\n    "hi"\n')
+    (src / "hello.eel").write_text('def hello():\n    "hi"\n')
 
     subprocess.run(
-        [sys.executable, "-m", "squeal", "build", str(tmp)],
+        [sys.executable, "-m", "eel", "build", str(tmp)],
         cwd=ROOT,
         check=True,
         capture_output=True,
@@ -29,7 +29,7 @@ def test_build_and_run():
     assert (ebin / "hello.beam").exists()
     # .erl — только по флагу --erl (по умолчанию формы идут ETF-блобом)
     assert not (ebin / "hello.erl").exists()
-    artefacts = tmp / "build" / "dev" / "erlang" / tmp.name / "_squeal_artefacts"
+    artefacts = tmp / "build" / "dev" / "erlang" / tmp.name / "_eel_artefacts"
     assert (artefacts / "forms.etf").exists()
 
     out = subprocess.run(
@@ -43,7 +43,7 @@ def test_build_and_run():
 
     # --erl дописывает исходник рядом с .beam
     subprocess.run(
-        [sys.executable, "-m", "squeal", "build", str(tmp), "--erl"],
+        [sys.executable, "-m", "eel", "build", str(tmp), "--erl"],
         cwd=ROOT, check=True, capture_output=True,
     )
     assert (ebin / "hello.erl").exists()

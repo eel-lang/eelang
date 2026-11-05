@@ -9,8 +9,8 @@ import subprocess
 import sys
 import tempfile
 
-from squeal.compiler import compile_source
-from squeal.term import Atom
+from eel.compiler import compile_source
+from eel.term import Atom
 
 ERL = shutil.which("erl")
 ROOT = pathlib.Path(__file__).resolve().parent.parent
@@ -18,7 +18,7 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 
 def _body(source: str, name: str = "m"):
     """The module's only function and its body (the last expression of the clause)."""
-    forms = compile_source(source, "src/m.ee", name)
+    forms = compile_source(source, "src/m.eel", name)
     fn = [f for f in forms if f[0] == Atom("function")][0]
     return fn[4][0][4][0]
 
@@ -26,19 +26,19 @@ def _body(source: str, name: str = "m"):
 def test_mod_uses_helper():
     body = _body("def m(a, b):\n    a % b\n")
     assert body[0] == Atom("call")
-    assert body[2] == (Atom("atom"), 2, Atom("squeal_mod"))
+    assert body[2] == (Atom("atom"), 2, Atom("eel_mod"))
 
 
 def test_floordiv_uses_helper():
     body = _body("def m(a, b):\n    a // b\n")
     assert body[0] == Atom("call")
-    assert body[2] == (Atom("atom"), 2, Atom("squeal_floordiv"))
+    assert body[2] == (Atom("atom"), 2, Atom("eel_floordiv"))
 
 
 def test_pow_emits_helper():
-    forms = compile_source("def m(a, b):\n    a ** b\n", "src/m.ee", "m")
+    forms = compile_source("def m(a, b):\n    a ** b\n", "src/m.eel", "m")
     names = [f[2] for f in forms if f[0] == Atom("function")]
-    assert names == [Atom("m"), Atom("_squeal_pow"), Atom("_squeal_pow_loop")]
+    assert names == [Atom("m"), Atom("_eel_pow"), Atom("_eel_pow_loop")]
 
 
 def test_dict_atom_and_string_keys():
@@ -59,7 +59,7 @@ def test_semantics_in_erl():
     tmp = pathlib.Path(tempfile.mkdtemp())
     src = tmp / "src"
     src.mkdir()
-    (src / "vals.ee").write_text(
+    (src / "vals.eel").write_text(
         "def mod(a, b):\n    a % b\n"
         "def floordiv(a, b):\n    a // b\n"
         "def power(a, b):\n    a ** b\n"
@@ -70,7 +70,7 @@ def test_semantics_in_erl():
         "def atom():\n    'ok'\n"
     )
     subprocess.run(
-        [sys.executable, "-m", "squeal", "build", str(tmp)],
+        [sys.executable, "-m", "eel", "build", str(tmp)],
         cwd=ROOT, check=True, capture_output=True,
     )
     ebin = tmp / "build" / "dev" / "erlang" / tmp.name / "ebin"
@@ -96,7 +96,7 @@ def test_semantics_in_erl():
 
 
 def _clause_body(source: str, name: str = "m"):
-    forms = compile_source(source, "src/m.ee", name)
+    forms = compile_source(source, "src/m.eel", name)
     fn = [f for f in forms if f[0] == Atom("function")][0]
     return fn[4][0][4]
 
@@ -122,7 +122,7 @@ def test_merge_form():
 
 def test_forbidden_constructs():
     import pytest
-    from squeal.errors import SquealError
+    from eel.errors import EelError
     for source in [
         "def f():\n    for x in [1]:\n        x\n",
         "def f():\n    while True:\n        pass\n",
@@ -130,22 +130,22 @@ def test_forbidden_constructs():
         "def f(x):\n    x += 1\n",
         "def f(x):\n    x[0] = 1\n",
     ]:
-        with pytest.raises(SquealError):
-            compile_source(source, "src/m.ee", "m")
+        with pytest.raises(EelError):
+            compile_source(source, "src/m.eel", "m")
 
 
 def test_assignment_semantics_in_erl():
     tmp = pathlib.Path(tempfile.mkdtemp())
     src = tmp / "src"
     src.mkdir()
-    (src / "v.ee").write_text(
+    (src / "v.eel").write_text(
         "def reassign():\n    x = 1\n    x = x + 1\n    x\n"
         "def destructure(l):\n    head, *rest = l\n    head\n"
         "def tupd(t):\n    a, b = t\n    a + b\n"
         "def merge(m):\n    m |= {'k': 1}\n    m\n"
     )
     subprocess.run(
-        [sys.executable, "-m", "squeal", "build", str(tmp)],
+        [sys.executable, "-m", "eel", "build", str(tmp)],
         cwd=ROOT, check=True, capture_output=True,
     )
     ebin = tmp / "build" / "dev" / "erlang" / tmp.name / "ebin"
@@ -193,22 +193,22 @@ def test_capture_pattern():
 
 def test_branch_errors():
     import pytest
-    from squeal.errors import SquealError
+    from eel.errors import EelError
     for source in [
         # different targets only in a NON-tail position (tails may now differ)
         "def f(c):\n    if c:\n        a = 1\n    else:\n        b = 2\n    a\n",
         "def f(v):\n    match v:\n        case 1:\n            a = 1\n        case 2:\n            b = 2\n    a\n",
         "def f(c):\n    if c:\n        v = 1\n",   # if without else
     ]:
-        with pytest.raises(SquealError):
-            compile_source(source, "src/m.ee", "m")
+        with pytest.raises(EelError):
+            compile_source(source, "src/m.eel", "m")
 
 
 def test_branching_semantics_and_crash():
     tmp = pathlib.Path(tempfile.mkdtemp())
     src = tmp / "src"
     src.mkdir()
-    (src / "branch.ee").write_text(
+    (src / "branch.eel").write_text(
         "def iflike(c, a, b):\n    if c:\n        value = a\n    else:\n        value = b\n    value\n"
         "def mc(v, x, y):\n    match v:\n        case 1:\n            value = x\n        case 2:\n            value = x\n        case _:\n            value = y\n    value\n"
         "def guarded(v):\n    match v:\n        case n if n > 0:\n            value = n\n        case _:\n            value = 0\n    value\n"
@@ -217,7 +217,7 @@ def test_branching_semantics_and_crash():
         "def crashy(v):\n    match v:\n        case 1:\n            value = 'ok'\n    value\n"
     )
     subprocess.run(
-        [sys.executable, "-m", "squeal", "build", str(tmp)],
+        [sys.executable, "-m", "eel", "build", str(tmp)],
         cwd=ROOT, check=True, capture_output=True,
     )
     ebin = tmp / "build" / "dev" / "erlang" / tmp.name / "ebin"
@@ -242,26 +242,26 @@ def test_branching_semantics_and_crash():
 
 
 def test_error_message_has_file_and_line():
-    from squeal.errors import SquealError
+    from eel.errors import EelError
     try:
-        compile_source("def f():\n    for x in [1]:\n        x\n", "src/m.ee", "m")
-    except SquealError as e:
-        assert str(e).startswith("src/m.ee:2:")
+        compile_source("def f():\n    for x in [1]:\n        x\n", "src/m.eel", "m")
+    except EelError as e:
+        assert str(e).startswith("src/m.eel:2:")
         return
-    assert False, "expected SquealError"
+    assert False, "expected EelError"
 
 
 def test_cli_error_exit_code():
     tmp = pathlib.Path(tempfile.mkdtemp())
     src = tmp / "src"
     src.mkdir()
-    (src / "bad.ee").write_text("def f():\n    for x in [1]:\n        x\n")
+    (src / "bad.eel").write_text("def f():\n    for x in [1]:\n        x\n")
     r = subprocess.run(
-        [sys.executable, "-m", "squeal", "build", str(tmp)],
+        [sys.executable, "-m", "eel", "build", str(tmp)],
         cwd=ROOT, capture_output=True, text=True,
     )
     assert r.returncode == 1
-    assert r.stderr.startswith("squeal: src/bad.ee:2:")
+    assert r.stderr.startswith("eel: src/bad.eel:2:")
     assert "Traceback" not in r.stderr
 
 
@@ -290,19 +290,19 @@ def test_class_pattern_form():
 
 def test_class_base_errors():
     import pytest
-    from squeal.errors import SquealError
+    from eel.errors import EelError
     for source in [
         "class Foo(NativeRecord):\n    x: int\n",
         "class Foo:\n    x: int\n",
         "class Foo(StartingWithAtom):\n    x = 1\n",
     ]:
-        with pytest.raises(SquealError):
-            compile_source(source, "src/m.ee", "m")
+        with pytest.raises(EelError):
+            compile_source(source, "src/m.eel", "m")
 
 
 def test_builtin_result_classes_can_be_redefined():
     import pytest
-    from squeal.errors import SquealError
+    from eel.errors import EelError
 
     src = (
         "class Ok(StartingWithAtom):\n    value: int\n    code: int\n\n"
@@ -311,9 +311,9 @@ def test_builtin_result_classes_can_be_redefined():
     )
     tmp = pathlib.Path(tempfile.mkdtemp())
     (tmp / "src").mkdir()
-    (tmp / "src" / "m.ee").write_text(src)
+    (tmp / "src" / "m.eel").write_text(src)
     subprocess.run(
-        [sys.executable, "-m", "squeal", "build", str(tmp)],
+        [sys.executable, "-m", "eel", "build", str(tmp)],
         cwd=ROOT, check=True, capture_output=True,
     )
     ebin = tmp / "build" / "dev" / "erlang" / tmp.name / "ebin"
@@ -325,13 +325,13 @@ def test_builtin_result_classes_can_be_redefined():
     assert out.stdout.strip() == "{ok,1,7} 8"
 
     # без переопределения работает прелюдия
-    assert compile_source("def f():\n    Ok(1)\n", "src/m.ee", "m")
+    assert compile_source("def f():\n    Ok(1)\n", "src/m.eel", "m")
     # повторное определение пользовательского класса — по-прежнему ошибка
-    with pytest.raises(SquealError, match="duplicate definition of class Ok"):
+    with pytest.raises(EelError, match="duplicate definition of class Ok"):
         compile_source(
             "class Ok(StartingWithAtom):\n    a: int\n\n"
             "class Ok(StartingWithAtom):\n    a: int\n",
-            "src/m.ee", "m",
+            "src/m.eel", "m",
         )
 
 
@@ -339,13 +339,13 @@ def test_class_semantics_in_erl():
     tmp = pathlib.Path(tempfile.mkdtemp())
     src = tmp / "src"
     src.mkdir()
-    (src / "klass.ee").write_text(
+    (src / "klass.eel").write_text(
         _SRC_CLASS
         + "def make():\n    CustomType(1, 2)\n"
         + "def get(t):\n    match t:\n        case CustomType(x, _):\n            r = x\n    r\n"
     )
     subprocess.run(
-        [sys.executable, "-m", "squeal", "build", str(tmp)],
+        [sys.executable, "-m", "eel", "build", str(tmp)],
         cwd=ROOT, check=True, capture_output=True,
     )
     ebin = tmp / "build" / "dev" / "erlang" / tmp.name / "ebin"
@@ -390,7 +390,7 @@ def test_listcomp_basic():
     gen = body[3][0]
     assert gen[0] == Atom("generate")
     assert gen[2] == (Atom("var"), 2, Atom("X"))
-    assert gen[3][0] == Atom("call") and gen[3][2][2] == Atom("squeal_iter")
+    assert gen[3][0] == Atom("call") and gen[3][2][2] == Atom("eel_iter")
 
 
 def test_listcomp_expr():
@@ -420,13 +420,13 @@ def test_listcomp_pattern_target():
 
 
 def test_dictcomp_keys():
-    forms = compile_source("def f(m):\n    {k: 1 for k in m}\n", "src/m.ee", "m")
+    forms = compile_source("def f(m):\n    {k: 1 for k in m}\n", "src/m.eel", "m")
     fn = [f for f in forms if f[0] == Atom("function")][0]
     body = fn[4][0][4][0]
     assert body[0] == Atom("mc")
     gen = body[3][0]
-    assert gen[3][0] == Atom("call") and gen[3][2][2] == Atom("squeal_iter")
-    assert any(f[2] == Atom("squeal_iter") for f in forms if f[0] == Atom("function"))
+    assert gen[3][0] == Atom("call") and gen[3][2][2] == Atom("eel_iter")
+    assert any(f[2] == Atom("eel_iter") for f in forms if f[0] == Atom("function"))
 
 
 def test_dictcomp_items():
@@ -441,7 +441,7 @@ def test_dictcomp_pairs_list():
     body = _expr_form("def f(pairs):\n    {k: v for k, v in pairs}\n")
     gen = body[3][0]
     assert gen[0] == Atom("generate")
-    assert gen[2][0] == Atom("tuple")  # {K, V} <- squeal_iter(Pairs)
+    assert gen[2][0] == Atom("tuple")  # {K, V} <- eel_iter(Pairs)
 
 
 def test_items_expression():
@@ -452,20 +452,20 @@ def test_items_expression():
 
 def test_setcomp_and_genexpr_errors():
     import pytest
-    from squeal.errors import SquealError
+    from eel.errors import EelError
     for source in [
         "def f(l):\n    {x for x in l}\n",
         "def f(l):\n    (x for x in l)\n",
     ]:
-        with pytest.raises(SquealError):
-            compile_source(source, "src/m.ee", "m")
+        with pytest.raises(EelError):
+            compile_source(source, "src/m.eel", "m")
 
 
 def test_comprehension_semantics_in_erl():
     tmp = pathlib.Path(tempfile.mkdtemp())
     src = tmp / "src"
     src.mkdir()
-    (src / "comp.ee").write_text(
+    (src / "comp.eel").write_text(
         "def lc(l):\n    [x * 2 for x in l]\n"
         "def lcf(l):\n    [x for x in l if x > 1]\n"
         "def dc(m):\n    {k: 1 for k in m}\n"
@@ -475,7 +475,7 @@ def test_comprehension_semantics_in_erl():
         "def lam(y):\n    f = lambda x: x + y\n    f(1)\n"
     )
     subprocess.run(
-        [sys.executable, "-m", "squeal", "build", str(tmp)],
+        [sys.executable, "-m", "eel", "build", str(tmp)],
         cwd=ROOT, check=True, capture_output=True,
     )
     ebin = tmp / "build" / "dev" / "erlang" / tmp.name / "ebin"
@@ -496,9 +496,9 @@ def test_filter_non_bool_skips():
     tmp = pathlib.Path(tempfile.mkdtemp())
     src = tmp / "src"
     src.mkdir()
-    (src / "f.ee").write_text("def f(l):\n    [x for x in l if 1]\n")
+    (src / "f.eel").write_text("def f(l):\n    [x for x in l if 1]\n")
     subprocess.run(
-        [sys.executable, "-m", "squeal", "build", str(tmp)],
+        [sys.executable, "-m", "eel", "build", str(tmp)],
         cwd=ROOT, check=True, capture_output=True,
     )
     ebin = tmp / "build" / "dev" / "erlang" / tmp.name / "ebin"
@@ -518,7 +518,7 @@ def test_import_remote_form():
 
 def test_import_multiple_and_as():
     src = "from a.b import f, g as h\ndef x():\n    f()\ndef y():\n    h()\n"
-    forms = compile_source(src, "src/m.ee", "m")
+    forms = compile_source(src, "src/m.eel", "m")
     fns = {f[2]: f for f in forms if f[0] == Atom("function")}
     fx = fns[Atom("x")][4][0][4][0]
     hy = fns[Atom("y")][4][0][4][0]
@@ -528,23 +528,23 @@ def test_import_multiple_and_as():
 
 def test_import_errors():
     import pytest
-    from squeal.errors import SquealError
+    from eel.errors import EelError
     for source in [
         "from a.b import *\ndef f():\n    1\n",
         "import a.b\ndef f():\n    1\n",
     ]:
-        with pytest.raises(SquealError):
-            compile_source(source, "src/m.ee", "m")
+        with pytest.raises(EelError):
+            compile_source(source, "src/m.eel", "m")
 
 
 def test_nested_module_build():
     tmp = pathlib.Path(tempfile.mkdtemp())
     src = tmp / "src"
     (src / "a" / "b").mkdir(parents=True)
-    (src / "a" / "b" / "c.ee").write_text("def f():\n    42\n")
-    (src / "main.ee").write_text("from a.b.c import f\ndef g():\n    f()\n")
+    (src / "a" / "b" / "c.eel").write_text("def f():\n    42\n")
+    (src / "main.eel").write_text("from a.b.c import f\ndef g():\n    f()\n")
     subprocess.run(
-        [sys.executable, "-m", "squeal", "build", str(tmp)],
+        [sys.executable, "-m", "eel", "build", str(tmp)],
         cwd=ROOT, check=True, capture_output=True,
     )
     ebin = tmp / "build" / "dev" / "erlang" / tmp.name / "ebin"
@@ -560,7 +560,7 @@ def test_nested_module_build():
 
 
 def test_term_float_format():
-    from squeal.term import term_to_erlang
+    from eel.term import term_to_erlang
     assert term_to_erlang(1e-5) == "1.0e-5"
     assert term_to_erlang(1e20) == "1.0e20"
     assert term_to_erlang(1.5) == "1.5"
@@ -568,7 +568,7 @@ def test_term_float_format():
 
 
 def test_term_string_escaping():
-    from squeal.term import term_to_erlang
+    from eel.term import term_to_erlang
     assert term_to_erlang("a\rb") == '"a\\rb"'
     assert term_to_erlang("a\x00b") == '"a\\x{0}b"'
 
@@ -577,8 +577,8 @@ def test_float_scientific_in_erl():
     tmp = pathlib.Path(tempfile.mkdtemp())
     src = tmp / "src"
     src.mkdir()
-    (src / "f.ee").write_text("def f():\n    1e-5\ndef g():\n    1e10\n")
-    subprocess.run([sys.executable, "-m", "squeal", "build", str(tmp)],
+    (src / "f.eel").write_text("def f():\n    1e-5\ndef g():\n    1e10\n")
+    subprocess.run([sys.executable, "-m", "eel", "build", str(tmp)],
                    cwd=ROOT, check=True, capture_output=True)
     ebin = tmp / "build" / "dev" / "erlang" / tmp.name / "ebin"
     out = subprocess.run(
@@ -592,8 +592,8 @@ def test_nonascii_string_in_erl():
     tmp = pathlib.Path(tempfile.mkdtemp())
     src = tmp / "src"
     src.mkdir()
-    (src / "s.ee").write_text('def f():\n    "привет"\n')
-    subprocess.run([sys.executable, "-m", "squeal", "build", str(tmp)],
+    (src / "s.eel").write_text('def f():\n    "привет"\n')
+    subprocess.run([sys.executable, "-m", "eel", "build", str(tmp)],
                    cwd=ROOT, check=True, capture_output=True)
     ebin = tmp / "build" / "dev" / "erlang" / tmp.name / "ebin"
     out = subprocess.run(
@@ -608,7 +608,7 @@ def test_items_nonname_receiver():
     gen = body[3][0]
     assert gen[0] == Atom("generate")          # not m_generate
     assert gen[2][0] == Atom("tuple")          # {K, V}
-    assert gen[3][0] == Atom("call") and gen[3][2][2] == Atom("squeal_iter")
+    assert gen[3][0] == Atom("call") and gen[3][2][2] == Atom("eel_iter")
 
 
 def test_bare_tuple_pattern():
@@ -620,29 +620,29 @@ def test_bare_tuple_pattern():
 
 def test_constructor_arity():
     import pytest
-    from squeal.errors import SquealError
+    from eel.errors import EelError
     for src in [
         "class T(StartingWithAtom):\n    x: int\ndef f():\n    T(1, 2)\n",
         "class T(StartingWithAtom):\n    x: int\ndef f(v):\n    match v:\n        case T(x, y):\n            r = x\n        case _:\n            r = 0\n    r\n",
     ]:
-        with pytest.raises(SquealError):
-            compile_source(src, "src/m.ee", "m")
+        with pytest.raises(EelError):
+            compile_source(src, "src/m.eel", "m")
 
 
 def test_duplicate_class_error():
     import pytest
-    from squeal.errors import SquealError
-    with pytest.raises(SquealError):
+    from eel.errors import EelError
+    with pytest.raises(EelError):
         compile_source(
             "class T(StartingWithAtom):\n    x: int\nclass T(StartingWithAtom):\n    y: int\n",
-            "src/m.ee", "m")
+            "src/m.eel", "m")
 
 
 def test_no_temp_variables():
-    # % and // no longer build an inline begin…end with temporary `_squeal@N`
+    # % and // no longer build an inline begin…end with temporary `_eel@N`
     body = _expr_form("def m(_value, y):\n    _value % y\n")
     assert body[0] == Atom("call")
-    assert body[2] == (Atom("atom"), 2, Atom("squeal_mod"))
+    assert body[2] == (Atom("atom"), 2, Atom("eel_mod"))
     assert body[3][0] == (Atom("var"), 2, Atom("_value"))
 
 
@@ -651,9 +651,9 @@ def test_build_default_dir_and_app_file():
     tmp = pathlib.Path(tempfile.mkdtemp())
     src = tmp / "src"
     src.mkdir()
-    (src / "hello.ee").write_text('def hello():\n    "hi"\n')
+    (src / "hello.eel").write_text('def hello():\n    "hi"\n')
     env = {**os.environ, "PYTHONPATH": str(ROOT)}
-    subprocess.run([sys.executable, "-m", "squeal", "build"],
+    subprocess.run([sys.executable, "-m", "eel", "build"],
                    cwd=tmp, env=env, check=True, capture_output=True)
     ebin = tmp / "build" / "dev" / "erlang" / tmp.name / "ebin"
     assert (ebin / "hello.beam").exists()
@@ -664,8 +664,8 @@ def test_listcomp_over_dict_keys():
     tmp = pathlib.Path(tempfile.mkdtemp())
     src = tmp / "src"
     src.mkdir()
-    (src / "lc.ee").write_text("def f(m):\n    [k for k in m]\n")
-    subprocess.run([sys.executable, "-m", "squeal", "build", str(tmp)],
+    (src / "lc.eel").write_text("def f(m):\n    [k for k in m]\n")
+    subprocess.run([sys.executable, "-m", "eel", "build", str(tmp)],
                    cwd=ROOT, check=True, capture_output=True)
     ebin = tmp / "build" / "dev" / "erlang" / tmp.name / "ebin"
     out = subprocess.run(
@@ -693,13 +693,13 @@ def test_builtin_ok_error_pattern():
 
 def test_builtin_ok_arity_error():
     import pytest
-    from squeal.errors import SquealError
-    with pytest.raises(SquealError):
-        compile_source("def f():\n    Ok(1, 2)\n", "src/m.ee", "m")
+    from eel.errors import EelError
+    with pytest.raises(EelError):
+        compile_source("def f():\n    Ok(1, 2)\n", "src/m.eel", "m")
 
 
 def test_rewrite_pattern_assignments():
-    from squeal.frontend import rewrite_pattern_assignments
+    from eel.frontend import rewrite_pattern_assignments
     assert rewrite_pattern_assignments("Ok(v) = f(1)\n") == "__pattern_match__(Ok(v), f(1))\n"
     assert rewrite_pattern_assignments("x = 1\n") == "x = 1\n"
     assert rewrite_pattern_assignments("a, b = (1, 2)\n") == "a, b = (1, 2)\n"
@@ -718,30 +718,30 @@ def test_pattern_assign_constructor():
 
 def test_pattern_assign_errors():
     import pytest
-    from squeal.errors import SquealError
-    with pytest.raises(SquealError):
-        compile_source("def f(v):\n    f(x) = v\n", "src/m.ee", "m")      # not a class
-    with pytest.raises(SquealError):
-        compile_source("def f(v):\n    Ok(x, y) = v\n", "src/m.ee", "m")   # arity
+    from eel.errors import EelError
+    with pytest.raises(EelError):
+        compile_source("def f(v):\n    f(x) = v\n", "src/m.eel", "m")      # not a class
+    with pytest.raises(EelError):
+        compile_source("def f(v):\n    Ok(x, y) = v\n", "src/m.eel", "m")   # arity
 
 
 def test_pattern_assign_duplicate_name_errors():
     import pytest
-    from squeal.errors import SquealError
-    with pytest.raises(SquealError):
-        compile_source("def f(v):\n    Ok(x, x) = v\n", "src/m.ee", "m")
+    from eel.errors import EelError
+    with pytest.raises(EelError):
+        compile_source("def f(v):\n    Ok(x, x) = v\n", "src/m.eel", "m")
 
 
 def test_arity_overloading_in_module():
     tmp = pathlib.Path(tempfile.mkdtemp())
     src = tmp / "src"
     src.mkdir()
-    (src / "fib.ee").write_text(
+    (src / "fib.eel").write_text(
         "def fib(N):\n    fib(N, 0, 1)\n\n"
         "def fib(N, current, next):\n    match N:\n        case 0:\n            ret = current\n"
         "        case _ if N > 0:\n            ret = fib(N - 1, next, current + next)\n    ret\n"
     )
-    subprocess.run([sys.executable, "-m", "squeal", "build", str(tmp)],
+    subprocess.run([sys.executable, "-m", "eel", "build", str(tmp)],
                    cwd=ROOT, check=True, capture_output=True)
     ebin = tmp / "build" / "dev" / "erlang" / tmp.name / "ebin"
     out = subprocess.run(
@@ -753,9 +753,9 @@ def test_arity_overloading_in_module():
 
 def test_duplicate_same_arity_rejected():
     import pytest
-    from squeal.errors import SquealError
-    with pytest.raises(SquealError):
-        compile_source("def f(x):\n    x\ndef f(y):\n    y\n", "src/m.ee", "m")
+    from eel.errors import EelError
+    with pytest.raises(EelError):
+        compile_source("def f(x):\n    x\ndef f(y):\n    y\n", "src/m.eel", "m")
 
 
 def test_tail_if_returns_value():
@@ -782,11 +782,11 @@ def test_tail_case_semantics_in_erl():
     tmp = pathlib.Path(tempfile.mkdtemp())
     src = tmp / "src"
     src.mkdir()
-    (src / "t.ee").write_text(
+    (src / "t.eel").write_text(
         "def pick(c):\n    if c:\n        'yes'\n    else:\n        'no'\n"
         "def num(v):\n    match v:\n        case 1:\n            10\n        case _:\n            20\n"
     )
-    subprocess.run([sys.executable, "-m", "squeal", "build", str(tmp)],
+    subprocess.run([sys.executable, "-m", "eel", "build", str(tmp)],
                    cwd=ROOT, check=True, capture_output=True)
     ebin = tmp / "build" / "dev" / "erlang" / tmp.name / "ebin"
     out = subprocess.run(
@@ -800,9 +800,9 @@ def test_float_mod_and_floordiv():
     tmp = pathlib.Path(tempfile.mkdtemp())
     src = tmp / "src"
     src.mkdir()
-    (src / "f.ee").write_text(
+    (src / "f.eel").write_text(
         "def m(a, b):\n    a % b\ndef d(a, b):\n    a // b\n")
-    subprocess.run([sys.executable, "-m", "squeal", "build", str(tmp)],
+    subprocess.run([sys.executable, "-m", "eel", "build", str(tmp)],
                    cwd=ROOT, check=True, capture_output=True)
     ebin = tmp / "build" / "dev" / "erlang" / tmp.name / "ebin"
     out = subprocess.run(
@@ -814,7 +814,7 @@ def test_float_mod_and_floordiv():
 
 def test_source_chars_quotes_with_unicode():
     import ast
-    from squeal.frontend import _source_chars
+    from eel.frontend import _source_chars
 
     src = 'привет = "b"\nz = \'a\'\n'
     chars = _source_chars(src)
@@ -829,8 +829,8 @@ def test_params_differing_only_by_case():
     tmp = pathlib.Path(tempfile.mkdtemp())
     src = tmp / "src"
     src.mkdir()
-    (src / "nm.ee").write_text("def f(N, n):\n    (N, n)\n")
-    subprocess.run([sys.executable, "-m", "squeal", "build", str(tmp)],
+    (src / "nm.eel").write_text("def f(N, n):\n    (N, n)\n")
+    subprocess.run([sys.executable, "-m", "eel", "build", str(tmp)],
                    cwd=ROOT, check=True, capture_output=True)
     ebin = tmp / "build" / "dev" / "erlang" / tmp.name / "ebin"
     out = subprocess.run(
@@ -841,20 +841,20 @@ def test_params_differing_only_by_case():
 
 
 def test_decorators_in_module():
-    from squeal.term import term_to_erlang
+    from eel.term import term_to_erlang
     src = ("def twice(fn):\n    lambda x: fn(fn(x))\n\n"
            "@twice\ndef inc(x):\n    x + 1\n")
-    forms = compile_source(src, "src/m.ee", "m")
+    forms = compile_source(src, "src/m.eel", "m")
     names = [f[2] for f in forms if f[0] == "function"]
-    assert "inc@impl" in names and "inc" in names and "squeal_on_load" in names
+    assert "inc@impl" in names and "inc" in names and "eel_on_load" in names
     wrapper = next(f for f in forms if f[0] == "function" and f[2] == "inc")
     text = term_to_erlang(wrapper)
     assert "persistent_term" in text and "twice" not in text  # applied once, not at the call site
 
     tmp = pathlib.Path(tempfile.mkdtemp())
     (tmp / "src").mkdir()
-    (tmp / "src" / "m.ee").write_text(src)
-    subprocess.run([sys.executable, "-m", "squeal", "build", str(tmp)],
+    (tmp / "src" / "m.eel").write_text(src)
+    subprocess.run([sys.executable, "-m", "eel", "build", str(tmp)],
                    cwd=ROOT, check=True, capture_output=True)
     ebin = tmp / "build" / "dev" / "erlang" / tmp.name / "ebin"
     out = subprocess.run(
@@ -867,11 +867,11 @@ def test_decorators_in_module():
 def test_decorator_chain_and_recursion_in_module():
     tmp = pathlib.Path(tempfile.mkdtemp())
     (tmp / "src").mkdir()
-    (tmp / "src" / "r.ee").write_text(
+    (tmp / "src" / "r.eel").write_text(
         "def plus1(fn):\n    lambda x: fn(x) + 1\n\n"
         "@plus1\ndef r(n):\n    if n > 0:\n        r(n - 1)\n    else:\n        0\n\n"
         "@plus1\n@plus1\ndef z(x):\n    x\n")
-    subprocess.run([sys.executable, "-m", "squeal", "build", str(tmp)],
+    subprocess.run([sys.executable, "-m", "eel", "build", str(tmp)],
                    cwd=ROOT, check=True, capture_output=True)
     ebin = tmp / "build" / "dev" / "erlang" / tmp.name / "ebin"
     out = subprocess.run(
@@ -883,22 +883,22 @@ def test_decorator_chain_and_recursion_in_module():
 
 def test_decorator_errors():
     import pytest
-    from squeal.errors import SquealError
+    from eel.errors import EelError
     for src in [
         "@(lambda f: f)\ndef g():\n    1\n",              # not a name/module/call
         "@dec\nclass T(StartingWithAtom):\n    x: int\n",  # a class
     ]:
-        with pytest.raises(SquealError):
-            compile_source(src, "src/m.ee", "m")
+        with pytest.raises(EelError):
+            compile_source(src, "src/m.eel", "m")
 
 
 def test_decorator_from_another_module():
     tmp = pathlib.Path(tempfile.mkdtemp())
     src = tmp / "src"
     src.mkdir()
-    (src / "a.ee").write_text("def dec(f):\n    lambda x: f(x) + 1\n")
-    (src / "b.ee").write_text("from a import dec\n\n@dec\ndef g(x):\n    x * 2\n")
-    subprocess.run([sys.executable, "-m", "squeal", "build", str(tmp)],
+    (src / "a.eel").write_text("def dec(f):\n    lambda x: f(x) + 1\n")
+    (src / "b.eel").write_text("from a import dec\n\n@dec\ndef g(x):\n    x * 2\n")
+    subprocess.run([sys.executable, "-m", "eel", "build", str(tmp)],
                    cwd=ROOT, check=True, capture_output=True)
     ebin = tmp / "build" / "dev" / "erlang" / tmp.name / "ebin"
     out = subprocess.run(
@@ -911,9 +911,9 @@ def test_remote_decorator_without_import():
     tmp = pathlib.Path(tempfile.mkdtemp())
     src = tmp / "src"
     src.mkdir()
-    (src / "a.ee").write_text("def dec(f):\n    lambda x: f(x) + 1\n")
-    (src / "zz.ee").write_text("@a.dec\ndef h(x):\n    x * 3\n")
-    subprocess.run([sys.executable, "-m", "squeal", "build", str(tmp)],
+    (src / "a.eel").write_text("def dec(f):\n    lambda x: f(x) + 1\n")
+    (src / "zz.eel").write_text("@a.dec\ndef h(x):\n    x * 3\n")
+    subprocess.run([sys.executable, "-m", "eel", "build", str(tmp)],
                    cwd=ROOT, check=True, capture_output=True)
     ebin = tmp / "build" / "dev" / "erlang" / tmp.name / "ebin"
     out = subprocess.run(
@@ -924,10 +924,10 @@ def test_remote_decorator_without_import():
 
 def test_decorator_must_be_arity_one():
     import pytest
-    from squeal.errors import SquealError
+    from eel.errors import EelError
     for src in [
         "def add(a, b):\n    a + b\n\n@add\ndef g(x):\n    x\n",  # arity 2
         "@nope\ndef g(x):\n    x\n",                              # does not exist
     ]:
-        with pytest.raises(SquealError, match="decorator"):
-            compile_source(src, "src/m.ee", "m")
+        with pytest.raises(EelError, match="decorator"):
+            compile_source(src, "src/m.eel", "m")

@@ -1,4 +1,4 @@
-"""ETF (External Term Format): формы squeal → бинарник для Erlang.
+"""ETF (External Term Format): формы eel → бинарник для Erlang.
 
 Заменяет текстовый `.abstr` + `file:consult`: `binary_to_term/1` не парсит грамматику, а читает
 теги, поэтому декодирование на порядок дешевле (см. specs/architecture.md, «Компилятор»).

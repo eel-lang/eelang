@@ -13,10 +13,10 @@ import subprocess
 import time
 
 from . import backend, checks, etf, frontend
-from .errors import SquealError
+from .errors import EelError
 from .term import Atom, term_to_erlang
 
-ESCRIPT = pathlib.Path(__file__).parent / "squeal_compile.escript"
+ESCRIPT = pathlib.Path(__file__).parent / "eel_compile.escript"
 
 #: Версия протокола «клиент ↔ escript»; при расхождении демон перезапускается.
 PROTOCOL = 2
@@ -33,14 +33,14 @@ _BUILDER_SOURCES = (
     "ir.py",
     "etf.py",
     "term.py",
-    "squeal_compile.escript",
+    "eel_compile.escript",
 )
 
 _FINGERPRINT: str | None = None
 
 _CACHE = pathlib.Path(
     os.environ.get("XDG_CACHE_HOME") or pathlib.Path.home() / ".cache"
-) / "squeal"
+) / "eel"
 
 
 def compile_source(source: str, path: str, name: str) -> list:
@@ -49,15 +49,15 @@ def compile_source(source: str, path: str, name: str) -> list:
         module = frontend.parse_module(source, path, name)
         checks.check(module)
         return backend.module_forms(module)
-    except SquealError as e:
+    except EelError as e:
         msg = str(e)
         if not msg.startswith(f"{path}:"):
-            raise SquealError(f"{path}:{msg}") from e
+            raise EelError(f"{path}:{msg}") from e
         raise
 
 
 def module_name(relative_path: pathlib.PurePath) -> str:
-    """``src/a/b/c.ee`` → ``a@b@c``; ``src/hello.ee`` → ``hello``."""
+    """``src/a/b/c.eel`` → ``a@b@c``; ``src/hello.eel`` → ``hello``."""
     return "@".join(relative_path.with_suffix("").parts)
 
 
@@ -90,7 +90,7 @@ def _save_manifest(path: pathlib.Path, builder: str, modules: dict) -> None:
 
 
 def _install_key() -> str:
-    """Ключ по пути escript: у разных установок squeal — разные демоны."""
+    """Ключ по пути escript: у разных установок eel — разные демоны."""
     return hashlib.sha1(str(ESCRIPT.resolve()).encode("utf-8")).hexdigest()[:12]
 
 
@@ -251,7 +251,7 @@ class CompilerDaemon:
         if reply == "OK":
             return
         if reply.startswith("ERR "):
-            raise SquealError(self._payload(reply))
+            raise EelError(self._payload(reply))
         raise DaemonUnavailable(f"unexpected compiler reply: {reply!r}")
 
 
@@ -276,7 +276,7 @@ class CompilerProcess:
         return self._proc
 
     def compile(self, forms_path: pathlib.Path, erl: bool) -> None:
-        """Скомпилировать ETF-блоб с формами; ошибки — SquealError с текстом от escript."""
+        """Скомпилировать ETF-блоб с формами; ошибки — EelError с текстом от escript."""
         proc = self._ensure()
         request = term_to_erlang(
             (Atom("compile"), str(forms_path), Atom("true") if erl else Atom("false"))
@@ -286,16 +286,16 @@ class CompilerProcess:
             proc.stdin.flush()
             line = proc.stdout.readline()
         except (BrokenPipeError, OSError) as exc:
-            raise SquealError("compiler process died") from exc
+            raise EelError("compiler process died") from exc
         if not line:
             stderr = proc.stderr.read().strip() if proc.stderr else ""
-            raise SquealError(stderr or "compiler process exited")
+            raise EelError(stderr or "compiler process exited")
         reply = line.rstrip("\n")
         if reply == "OK":
             return
         if reply.startswith("ERR "):
-            raise SquealError(CompilerDaemon._payload(reply))
-        raise SquealError(f"unexpected compiler reply: {reply!r}")
+            raise EelError(CompilerDaemon._payload(reply))
+        raise EelError(f"unexpected compiler reply: {reply!r}")
 
     def close(self) -> None:
         if self._proc is None:
@@ -337,7 +337,7 @@ def build(
     daemon: bool = True,
     force: bool = False,
 ) -> pathlib.Path:
-    """Компилирует ``src/*.ee`` в ``build/dev/erlang/<app>/ebin``.
+    """Компилирует ``src/*.eel`` в ``build/dev/erlang/<app>/ebin``.
 
     ``erl`` — дополнительно писать ``.erl`` рядом с ``.beam``; ``dump_forms`` — писать читаемые
     ``.abstr``; ``daemon`` — использовать фоновый демон (иначе escript внутри процесса);
@@ -347,7 +347,7 @@ def build(
     src = root / "src"
     app = root.name
     out = root / "build" / "dev" / "erlang" / app
-    artefacts = out / "_squeal_artefacts"
+    artefacts = out / "_eel_artefacts"
     ebin = out / "ebin"
     artefacts.mkdir(parents=True, exist_ok=True)
     ebin.mkdir(parents=True, exist_ok=True)
@@ -359,7 +359,7 @@ def build(
 
     current = {}
     jobs = []
-    for path in sorted(src.glob("**/*.ee")):
+    for path in sorted(src.glob("**/*.eel")):
         rel = path.relative_to(src)
         name = module_name(rel)
         modules.append(name)

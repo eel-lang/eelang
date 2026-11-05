@@ -1,24 +1,24 @@
 ---
-id: squeal-compiler-package
+id: eel-compiler-package
 type: module-design
-title: Squeal — пакет компилятора
+title: Eel — пакет компилятора
 status: active
-parent: squeal-architecture
+parent: eel-architecture
 ---
 
-# Squeal — пакет компилятора
+# Eel — пакет компилятора
 
-Пакет `squeal/` превращает `.ee`-исходник в Erlang Abstract Format и `.beam`. Правила языка
-живут в architecture.md, правила образцов — в `squeal-patterns` (patterns.md); здесь —
+Пакет `eel/` превращает `.eel`-исходник в Erlang Abstract Format и `.beam`. Правила языка
+живут в architecture.md, правила образцов — в `eel-patterns` (patterns.md); здесь —
 ответственность пакета, его границы и стадии.
 
 ## Ответственность
 
-- `python -m squeal build DIR` компилирует дерево `src/*.ee` в
+- `python -m eel build DIR` компилирует дерево `src/*.eel` в
   `build/dev/erlang/<app>/ebin` (`<app>` — имя каталога проекта); формы — ETF-блобом в
-  `build/dev/erlang/<app>/_squeal_artefacts/forms.etf` (`.abstr`/`.erl` — по флагам
+  `build/dev/erlang/<app>/_eel_artefacts/forms.etf` (`.abstr`/`.erl` — по флагам
   `--dump-forms`/`--erl`).
-- Ошибки компиляции — `squeal: <путь>:<строка>: <текст>` в stderr, exit 1 (без traceback).
+- Ошибки компиляции — `eel: <путь>:<строка>: <текст>` в stderr, exit 1 (без traceback).
   Текст сообщений — по-английски (нижний регистр, без точки в конце); комментарии и
   докстринги кода остаются русскими.
 - Наружу пакет зовёт только `escript` (драйвер компиляции). Парсер — стоковый `ast.parse`
@@ -37,7 +37,7 @@ parent: squeal-architecture
   вызовы; арность 1 проверяется статически);
   встроенные `Ok`/`Error` (прелюдия) — `{ok, …}`/`{error, …}`; пользовательский `class Ok`/`class Error`
   переопределяет прелюдию (повторное пользовательское определение — ошибка).
-  `lambda` → IR; включения list/dict (все генераторы через `squeal_iter`, `for k, v in m.items()` → map-генератор,
+  `lambda` → IR; включения list/dict (все генераторы через `eel_iter`, `for k, v in m.items()` → map-генератор,
   получатель `.items()` может быть любым выражением); вызов метода → `ir.Method` (имя, арность, получатель);
   встроенные `print`/`zip`/`enumerate` — обычные `ir.Call` (разрешаются в бэкенде как запасной
   вариант, поэтому переопределяемы по имени); `def` в теле функции → `ir.NestedDef`;
@@ -45,9 +45,9 @@ parent: squeal-architecture
   (несколько имён, псевдоним `as`); `import *` и `import X` — ошибка.
 - `ir.py` — узлы IR; отделяет бэкенд от Python AST, чтобы фронтенд можно было заменить своим парсером.
 - `checks.py` — семантика, которой нет в синтаксисе (дубли по (имя, арность), резерв имён хелперов,
-  включая `squeal_on_load`).
-- `backend.py` — IR → Erlang Abstract Format; формы повторяют Gleam, аннотация — строка `.ee`;
-  операторы Python-семантики (`// % **`) — хелперы `squeal_floordiv`/`squeal_mod`/`_squeal_pow`
+  включая `eel_on_load`).
+- `backend.py` — IR → Erlang Abstract Format; формы повторяют Gleam, аннотация — строка `.eel`;
+  операторы Python-семантики (`// % **`) — хелперы `eel_floordiv`/`eel_mod`/`_eel_pow`
   (int и float), генерируются по требованию; имена хелперов зарезервированы; линейный scope на функцию
   маппит имена как Gleam (`x` → `X`, переприсваивание → `X@N`), деструктуризация — `match` с образцом;
   `if`/`match` → `case`-выражение с вынесенным присваиванием цели (проверка одинаковой цели у веток);
@@ -56,32 +56,32 @@ parent: squeal-architecture
   по (имя, арность); включения → `lc`/`mc`/`m_generate`;
   вложенный `def` → `named_fun` (рекурсия) с привязкой имени как обычной переменной, декораторы
   применяются сразу (`F = Dec(fun …)`), имя в `_scope` разрешается как переменная и в декораторах;
-  `squeal_iter/1` генерируется по требованию (map → ключи, список → как есть); декораторы —
-  `f@impl/N` + обёртка через `persistent_term` + `squeal_on_load/0` (`-on_load`);
+  `eel_iter/1` генерируется по требованию (map → ключи, список → как есть); декораторы —
+  `f@impl/N` + обёртка через `persistent_term` + `eel_on_load/0` (`-on_load`);
   методы stdlib — таблица в бэкенде: `str` → `string:*`/`binary:*` под проверкой `is_binary`,
   `dict` → `maps:*`, `list`/`tuple` → `count` через `case` по `is_list`/`is_tuple` (свежие имена
-  привязок `_squeal@…`), неверный получатель — `erlang:error({bad_receiver, Метод, Значение})`,
-  неизвестное имя/арность — `SquealError`;
+  привязок `_eel@…`), неверный получатель — `erlang:error({bad_receiver, Метод, Значение})`,
+  неизвестное имя/арность — `EelError`;
   вызов имени, не найденного нигде, но входящего в `BUILTINS` → встроенная форма
   (`print` — ровно 1 аргумент, `zip` — 2, `enumerate` — 1 или 2, `range` — 1–3, `send` — 2,
-  `self` — 0, `spawn` — 1, иначе `SquealError`);
-  `zip`/`enumerate` → хелперы `squeal_zip/2`, `squeal_enumerate/2` (списки только,
-  не-список — `{bad_argument, Имя, V}`), `range` → `squeal_range/3` (start, stop, step; целые,
+  `self` — 0, `spawn` — 1, иначе `EelError`);
+  `zip`/`enumerate` → хелперы `eel_zip/2`, `eel_enumerate/2` (списки только,
+  не-список — `{bad_argument, Имя, V}`), `range` → `eel_range/3` (start, stop, step; целые,
   питоновская семантика) — генерируются по требованию;
   `match receive():` (subject — `ir.Receive`) → `{'receive', Clauses[, Timeout, AfterBody]}`:
   селективный приём, клауза `case Timeout(ms):` становится `after`; `send`/`self`/`spawn` →
   `erlang:'!'/2`, `erlang:self/0`, `erlang:spawn/1`;
-  `print` → `squeal_print/1` (`io:format("~ts~n")`), хелперы `squeal_str/1`, `squeal_str_tuple/1`,
-  `squeal_str_map/1` — питоновское представление значения, генерируются по требованию;
+  `print` → `eel_print/1` (`io:format("~ts~n")`), хелперы `eel_str/1`, `eel_str_tuple/1`,
+  `eel_str_map/1` — питоновское представление значения, генерируются по требованию;
   `term.py` печатает Erlang-float (`1e-5` → `1.0e-5`) и строки (`\x{HEX}` для не-ASCII/управляющих).
   импорт → `{call, {remote, a@b@c, f}}` (имя из scope имеет приоритет над импортом).
 - `term.py` — `Atom` и печать термов в текст для `file:consult`.
-- `squeal_compile.escript` — сервер: запросы `{EtfPath, ErlFlag}.` из stdin, ответы `OK` /
+- `eel_compile.escript` — сервер: запросы `{EtfPath, ErlFlag}.` из stdin, ответы `OK` /
   `ERR <base64>`; декодирует ETF, зовёт `compile:forms` (+ `return`), пишет `.beam` (и `.erl`
   по флагу через `erl_pp`); ошибки линта форматирует в `путь:строка: текст` (дамп наружу не выходит).
 - `client.py` — тонкий клиент сервера сборки (socket/json/pathlib, без импорта компилятора):
   пути сокета/pid/лога, `ping`/`stop`/`build_remote`, автостарт сервера.
-- `server.py` — сервер сборки: `python -m squeal.server <sock> <pid>`, JSON-строки
+- `server.py` — сервер сборки: `python -m eel.server <sock> <pid>`, JSON-строки
   `{"op": build|ping|stop}`, последовательный accept, вызов `build()`; поднимает демон компилятора
   при старте и гасит в `finally` (включая `SIGTERM`/`SIGINT`), поэтому тот живёт ровно столько же,
   сколько сервер.

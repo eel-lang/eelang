@@ -10,16 +10,16 @@ import tempfile
 
 import pytest
 
-from squeal.compiler import compile_source
-from squeal.errors import SquealError
-from squeal.term import Atom
+from eel.compiler import compile_source
+from eel.errors import EelError
+from eel.term import Atom
 
 ERL = shutil.which("erl")
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 
 
 def _body(source: str, name: str = "m"):
-    forms = compile_source(source, "src/m.ee", "m")
+    forms = compile_source(source, "src/m.eel", "m")
     fn = next(f for f in forms if f[0] == Atom("function") and f[2] == Atom(name))
     return fn[4][0][4][0]
 
@@ -98,18 +98,18 @@ def test_errors():
         ),
         (
             "def m(x):\n    match x:\n        case Timeout(5):\n            0\n",
-            "class pattern is only allowed for squeal classes",
+            "class pattern is only allowed for eel classes",
         ),
     ]
     for source, message in cases:
-        with pytest.raises(SquealError, match=message):
-            compile_source(source, "src/m.ee", "m")
+        with pytest.raises(EelError, match=message):
+            compile_source(source, "src/m.eel", "m")
 
 
 def test_semantics_in_erl():
     tmp = pathlib.Path(tempfile.mkdtemp())
     (tmp / "src").mkdir()
-    (tmp / "src" / "msg.ee").write_text(
+    (tmp / "src" / "msg.eel").write_text(
         "def selective():\n"
         "    match receive():\n"
         "        case Ok(v):\n"
@@ -143,7 +143,7 @@ def test_semantics_in_erl():
         "    spawn(lambda: 1)\n"
     )
     subprocess.run(
-        [sys.executable, "-m", "squeal", "build", str(tmp), "--no-daemon"],
+        [sys.executable, "-m", "eel", "build", str(tmp), "--no-daemon"],
         cwd=ROOT, check=True, capture_output=True,
     )
     ebin = tmp / "build" / "dev" / "erlang" / tmp.name / "ebin"

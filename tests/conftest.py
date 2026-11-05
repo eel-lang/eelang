@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import pytest
 
-from squeal import client
-from squeal.compiler import DAEMON
+from eel import client
+from eel.compiler import DAEMON
 
 
 @pytest.fixture(scope="session", autouse=True)

@@ -10,16 +10,16 @@ import tempfile
 
 import pytest
 
-from squeal.compiler import compile_source
-from squeal.errors import SquealError
-from squeal.term import Atom
+from eel.compiler import compile_source
+from eel.errors import EelError
+from eel.term import Atom
 
 ERL = shutil.which("erl")
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 
 
 def _forms(source: str, name: str = "m") -> list:
-    return compile_source(source, "src/m.ee", name)
+    return compile_source(source, "src/m.eel", name)
 
 
 def _body(source: str, name: str = "m"):
@@ -35,13 +35,13 @@ def _function_names(source: str, name: str = "m") -> list:
 def test_zip_call_form():
     body = _body("def m(a, b):\n    zip(a, b)\n")
     assert body[0] == Atom("call")
-    assert body[2] == (Atom("atom"), 2, Atom("squeal_zip"))
+    assert body[2] == (Atom("atom"), 2, Atom("eel_zip"))
     assert body[3] == [(Atom("var"), 2, Atom("A")), (Atom("var"), 2, Atom("B"))]
 
 
 def test_enumerate_defaults_to_zero():
     body = _body("def m(xs):\n    enumerate(xs)\n")
-    assert body[2] == (Atom("atom"), 2, Atom("squeal_enumerate"))
+    assert body[2] == (Atom("atom"), 2, Atom("eel_enumerate"))
     assert body[3] == [(Atom("integer"), 2, 0), (Atom("var"), 2, Atom("Xs"))]
 
     body = _body("def m(xs):\n    enumerate(xs, 5)\n")
@@ -49,9 +49,9 @@ def test_enumerate_defaults_to_zero():
 
 
 def test_helpers_emitted_on_demand():
-    assert _function_names("def m(a, b):\n    zip(a, b)\n")[1:] == [Atom("squeal_zip")]
+    assert _function_names("def m(a, b):\n    zip(a, b)\n")[1:] == [Atom("eel_zip")]
     assert _function_names("def m(xs):\n    enumerate(xs)\n")[1:] == [
-        Atom("squeal_enumerate")
+        Atom("eel_enumerate")
     ]
     assert _function_names("def m(xs):\n    xs\n") == [Atom("m")]
 
@@ -64,19 +64,19 @@ def test_arity_errors():
         "def m(a, b, c):\n    enumerate(a, b, c)\n",
         "def m(a, b):\n    zip(a, b=b)\n",
     ]:
-        with pytest.raises(SquealError):
-            compile_source(source, "src/m.ee", "m")
+        with pytest.raises(EelError):
+            compile_source(source, "src/m.eel", "m")
 
 
 def test_zip_can_be_shadowed():
     src = "def zip(a, b):\n    a\n\ndef m(xs, ys):\n    zip(xs, ys)\n"
     names = _function_names(src)
-    assert Atom("squeal_zip") not in names  # встроенная не подключается
+    assert Atom("eel_zip") not in names  # встроенная не подключается
     tmp = pathlib.Path(tempfile.mkdtemp())
     (tmp / "src").mkdir()
-    (tmp / "src" / "m.ee").write_text(src)
+    (tmp / "src" / "m.eel").write_text(src)
     subprocess.run(
-        [sys.executable, "-m", "squeal", "build", str(tmp)],
+        [sys.executable, "-m", "eel", "build", str(tmp)],
         cwd=ROOT, check=True, capture_output=True,
     )
     ebin = tmp / "build" / "dev" / "erlang" / tmp.name / "ebin"
@@ -92,7 +92,7 @@ def test_semantics_in_erl():
     tmp = pathlib.Path(tempfile.mkdtemp())
     src = tmp / "src"
     src.mkdir()
-    (src / "z.ee").write_text(
+    (src / "z.eel").write_text(
         "def zip_short():\n    zip([1, 2, 3], [\"a\", \"b\"])\n"
         "def zip_empty():\n    zip([], [1])\n"
         "def enum():\n    enumerate([\"a\", \"b\"])\n"
@@ -102,7 +102,7 @@ def test_semantics_in_erl():
         "def bad_enum():\n    enumerate({\"a\": 2})\n"
     )
     subprocess.run(
-        [sys.executable, "-m", "squeal", "build", str(tmp)],
+        [sys.executable, "-m", "eel", "build", str(tmp)],
         cwd=ROOT, check=True, capture_output=True,
     )
     ebin = tmp / "build" / "dev" / "erlang" / tmp.name / "ebin"
@@ -124,8 +124,8 @@ def test_semantics_in_erl():
 
 
 def test_shell_mode():
-    from squeal.session import Session, compile_cell
-    from squeal.repl import ErlangRepl
+    from eel.session import Session, compile_cell
+    from eel.repl import ErlangRepl
 
     s = Session()
     repl = ErlangRepl()

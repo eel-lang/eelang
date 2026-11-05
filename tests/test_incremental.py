@@ -9,8 +9,8 @@ import sys
 
 import pytest
 
-from squeal import compiler
-from squeal.compiler import build
+from eel import compiler
+from eel.compiler import build
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 
@@ -19,7 +19,7 @@ def _project(tmp_path: pathlib.Path, modules: dict[str, str]) -> pathlib.Path:
     proj = tmp_path / "app"
     (proj / "src").mkdir(parents=True)
     for name, body in modules.items():
-        (proj / "src" / f"{name}.ee").write_text(f"def {name}():\n    {body}\n")
+        (proj / "src" / f"{name}.eel").write_text(f"def {name}():\n    {body}\n")
     return proj
 
 
@@ -41,7 +41,7 @@ def test_only_changed_module_recompiles(tmp_path):
     out = build(proj)
     before = _beams(out)
 
-    (proj / "src" / "a.ee").write_text("def a():\n    11\n")
+    (proj / "src" / "a.eel").write_text("def a():\n    11\n")
     build(proj)
     after = _beams(out)
     assert after["a.beam"] != before["a.beam"]
@@ -53,7 +53,7 @@ def test_deleted_module_is_pruned(tmp_path):
     out = build(proj)
     assert (out / "ebin" / "b.beam").exists()
 
-    (proj / "src" / "b.ee").unlink()
+    (proj / "src" / "b.eel").unlink()
     build(proj)
     assert not (out / "ebin" / "b.beam").exists()
     app_file = next((out / "ebin").glob("*.app")).read_text()
@@ -95,7 +95,7 @@ def test_broken_manifest_rebuilds(tmp_path):
     out = build(proj)
     before = _beams(out)
 
-    (out / "_squeal_artefacts" / "build.json").write_text("{ not json")
+    (out / "_eel_artefacts" / "build.json").write_text("{ not json")
     build(proj)
     assert _beams(out)["a.beam"] != before["a.beam"]
 
@@ -117,7 +117,7 @@ def test_cli_is_incremental_too(tmp_path):
 
     def cli(*extra):
         return subprocess.run(
-            [sys.executable, "-m", "squeal", "build", str(proj), *extra],
+            [sys.executable, "-m", "eel", "build", str(proj), *extra],
             cwd=ROOT, capture_output=True, text=True, check=True,
         )
 

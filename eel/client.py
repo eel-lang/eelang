@@ -1,7 +1,7 @@
 """Тонкий клиент сервера сборки: только сокет, JSON и пути.
 
 Держится намеренно лёгким — этот модуль импортирует CLI до того, как решит, нужен ли вообще
-тяжёлый компилятор: сборка в живом сервере стоит ~3 мс, а импорт `squeal.compiler` — десятки.
+тяжёлый компилятор: сборка в живом сервере стоит ~3 мс, а импорт `eel.compiler` — десятки.
 """
 
 from __future__ import annotations
@@ -14,18 +14,18 @@ import socket
 import sys
 import time
 
-from .errors import SquealError
+from .errors import EelError
 
 #: Версия протокола «клиент ↔ сервер сборки».
 SERVER_PROTOCOL = 1
 
 _CACHE = pathlib.Path(
     os.environ.get("XDG_CACHE_HOME") or pathlib.Path.home() / ".cache"
-) / "squeal"
+) / "eel"
 
 
 def install_key() -> str:
-    """Ключ по пути установки: у разных копий squeal — свои серверы."""
+    """Ключ по пути установки: у разных копий eel — свои серверы."""
     package = pathlib.Path(__file__).resolve().parent
     return hashlib.sha1(str(package).encode("utf-8")).hexdigest()[:12]
 
@@ -94,7 +94,7 @@ def start() -> dict:
     _clean_endpoint()
     with open(server_log(), "ab") as log:
         subprocess.Popen(
-            [sys.executable, "-m", "squeal.server", str(server_socket()), str(server_pid_file())],
+            [sys.executable, "-m", "eel.server", str(server_socket()), str(server_pid_file())],
             stdin=subprocess.DEVNULL,
             stdout=subprocess.DEVNULL,
             stderr=log,
@@ -140,7 +140,7 @@ def build_remote(
 ) -> bool:
     """Собрать через сервер. True — сделано; False — сервер недоступен (собирать внутри процесса).
 
-    Ошибки компиляции поднимаются как `SquealError` с текстом от сервера.
+    Ошибки компиляции поднимаются как `EelError` с текстом от сервера.
     """
     try:
         ensure()
@@ -157,4 +157,4 @@ def build_remote(
         return False
     if reply.get("ok"):
         return True
-    raise SquealError(str(reply.get("error", "build failed")))
+    raise EelError(str(reply.get("error", "build failed")))

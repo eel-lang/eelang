@@ -11,8 +11,8 @@ import shutil
 import subprocess
 import tempfile
 
-from squeal.compiler import compile_source
-from squeal.term import Atom
+from eel.compiler import compile_source
+from eel.term import Atom
 
 from erl_term import parse
 
@@ -97,8 +97,8 @@ def _zero_annos(term):
 
 
 def normalize(forms: list) -> list:
-    """Drop the file/spec/type/export_type attributes (squeal has no types) and
-    zero out line annotations (the .gleam and .ee line numbers differ)."""
+    """Drop the file/spec/type/export_type attributes (eel has no types) and
+    zero out line annotations (the .gleam and .eel line numbers differ)."""
     out = []
     for form in forms:
         if isinstance(form, tuple) and len(form) >= 3 and form[0] == Atom("attribute"):
@@ -110,10 +110,10 @@ def normalize(forms: list) -> list:
 
 def test_hello():
     gleam = 'pub fn hello() {\n  "hi"\n}\n'
-    squeal = 'def hello():\n    "hi"\n'
+    eel = 'def hello():\n    "hi"\n'
 
     expected = normalize(gleam_forms(gleam, "hello", "parity_hello"))
-    actual = normalize(compile_source(squeal, "src/hello.ee", "hello"))
+    actual = normalize(compile_source(eel, "src/hello.eel", "hello"))
 
     assert actual == expected
 
@@ -140,7 +140,7 @@ pub fn tr() { True }
 pub fn fl() { False }
 pub fn ident(my_list) { my_list }
 """
-    squeal = """\
+    eel = """\
 def add(a, b):
     a + b
 def sub(a, b):
@@ -181,7 +181,7 @@ def ident(my_list):
     my_list
 """
     expected = normalize(gleam_forms(gleam, "parity", "parity_values"))
-    actual = normalize(compile_source(squeal, "src/parity.ee", "parity"))
+    actual = normalize(compile_source(eel, "src/parity.eel", "parity"))
     assert actual == expected
 
 
@@ -197,7 +197,7 @@ pub fn tup(t: #(Int, Int)) -> Int {
   a
 }
 """
-    squeal = """\
+    eel = """\
 def reassign():
     x = 1
     x = x + 1
@@ -207,7 +207,7 @@ def tup(t):
     a
 """
     expected = normalize(gleam_forms(gleam, "assign", "parity_assign"))
-    actual = normalize(compile_source(squeal, "src/assign.ee", "assign"))
+    actual = normalize(compile_source(eel, "src/assign.eel", "assign"))
     assert actual == expected
 
 
@@ -244,7 +244,7 @@ pub fn orp(v: Int, x: Int) -> Int {
   value
 }
 """
-    squeal = """\
+    eel = """\
 def iflike(c, a, b):
     if c:
         value = a
@@ -276,7 +276,7 @@ def orp(v, x):
     value
 """
     expected = normalize(gleam_forms(gleam, "branch", "parity_branch"))
-    actual = normalize(compile_source(squeal, "src/branch.ee", "branch"))
+    actual = normalize(compile_source(eel, "src/branch.eel", "branch"))
     assert actual == expected
 
 
@@ -293,7 +293,7 @@ pub fn get(t: CustomType) -> Int {
   r
 }
 """
-    squeal = """\
+    eel = """\
 class CustomType(StartingWithAtom):
     x: int
     y: int
@@ -306,7 +306,7 @@ def get(t):
     r
 """
     expected = normalize(gleam_forms(gleam, "custom", "parity_custom"))
-    actual = normalize(compile_source(squeal, "src/custom.ee", "custom"))
+    actual = normalize(compile_source(eel, "src/custom.eel", "custom"))
     assert actual == expected
 
 
@@ -317,13 +317,13 @@ pub fn lf(y: Int) -> Int {
   f(1)
 }
 """
-    squeal = """\
+    eel = """\
 def lf(y):
     f = lambda x: x + y
     f(1)
 """
     expected = normalize(gleam_forms(gleam, "lf", "parity_lf"))
-    actual = normalize(compile_source(squeal, "src/lf.ee", "lf"))
+    actual = normalize(compile_source(eel, "src/lf.eel", "lf"))
     assert actual == expected
 
 
@@ -333,15 +333,15 @@ def test_parity_import():
         "src/main.gleam": "import a/b/c\npub fn g() -> Int { c.f() }\n",
     }
     expected = normalize(gleam_project_forms(sources, "main", "parity_imp"))
-    squeal = "from a.b.c import f\ndef g():\n    f()\n"
-    actual = normalize(compile_source(squeal, "src/main.ee", "main"))
+    eel = "from a.b.c import f\ndef g():\n    f()\n"
+    actual = normalize(compile_source(eel, "src/main.eel", "main"))
     assert actual == expected
 
 
-def assert_parity(gleam: str, squeal: str, module: str, app: str):
+def assert_parity(gleam: str, eel: str, module: str, app: str):
     expected = normalize(gleam_forms(gleam, module, app))
-    actual = normalize(compile_source(squeal, f"src/{module}.ee", module))
-    assert actual == expected, f"{module}: squeal forms differ from Gleam"
+    actual = normalize(compile_source(eel, f"src/{module}.eel", module))
+    assert actual == expected, f"{module}: eel forms differ from Gleam"
 
 
 def test_parity_unary_minus():

@@ -1,18 +1,18 @@
 #!/usr/bin/env escript
 %%! -noshell
-%% Компиляция Erlang abstract forms squeal (см. specs/architecture.md).
+%% Компиляция Erlang abstract forms eel (см. specs/architecture.md).
 %%
 %% Два режима:
-%%   escript squeal_compile.escript
+%%   escript eel_compile.escript
 %%       stdin-цикл: запрос на строку, ответ на строку (escript внутри Python-процесса)
-%%   escript squeal_compile.escript --daemon <SocketPath> <PidFile>
+%%   escript eel_compile.escript --daemon <SocketPath> <PidFile>
 %%       демон: слушает unix-сокет, работает, пока не придёт {stop}
 %%
 %% Запросы (Erlang-термы, по одному на строку):
 %%   {compile, EtfPath, ErlFlag}.  → OK | ERR <base64 текста>
 %%   {ping}.                       → OK <base64 "version=… compiled=…">
 %%   {stop}.                       → OK, снять сокет и выйти (только в режиме демона)
-%% Формы — ETF-блоб `[{Base, Forms, SourcePath}, …]` (см. squeal/etf.py).
+%% Формы — ETF-блоб `[{Base, Forms, SourcePath}, …]` (см. eel/etf.py).
 
 -define(PROTOCOL, "2").
 
@@ -21,7 +21,7 @@ main([]) ->
 main(["--daemon", SocketPath, PidFile]) ->
     daemon(SocketPath, PidFile);
 main(Args) ->
-    io:format(standard_error, "usage: squeal_compile.escript [--daemon SOCKET PIDFILE]~n", []),
+    io:format(standard_error, "usage: eel_compile.escript [--daemon SOCKET PIDFILE]~n", []),
     io:format(standard_error, "unexpected arguments: ~p~n", [Args]),
     halt(2).
 

@@ -1,6 +1,6 @@
 """Сервер сборки: живой Python-процесс, который собирает проект по запросу.
 
-Запускается в фоне (`python -m squeal.server <sock> <pid>`) и принимает по unix-сокету
+Запускается в фоне (`python -m eel.server <sock> <pid>`) и принимает по unix-сокету
 одну JSON-строку на запрос:
 
     {"op": "build", "root": "...", "erl": false, "dump_forms": false, "force": false}
@@ -9,7 +9,7 @@
 
 Ответ — тоже одна JSON-строка: ``{"ok": true, ...}`` или ``{"ok": false, "error": "..."}``.
 За файлами сервер не следит: сборка происходит только по запросу — зато не платит за старт
-интерпретатора и импорт компилятора (см. `squeal/client.py`).
+интерпретатора и импорт компилятора (см. `eel/client.py`).
 """
 
 from __future__ import annotations
@@ -23,7 +23,7 @@ import traceback
 
 from . import client
 from .compiler import DAEMON, build
-from .errors import SquealError
+from .errors import EelError
 
 STATE = {"builds": 0, "errors": 0}
 
@@ -51,7 +51,7 @@ def _handle(payload: dict) -> tuple[dict, bool]:
         if op == "stop":
             return {"ok": True}, False
         return {"ok": False, "error": f"bad request: {op!r}"}, True
-    except SquealError as exc:
+    except EelError as exc:
         STATE["errors"] += 1
         return {"ok": False, "error": str(exc)}, True
     except Exception:  # noqa: BLE001 — один плохой запрос не должен ронять сервер
@@ -92,7 +92,7 @@ def _shutdown(_signum, _frame):
 
 def main(argv: list[str]) -> int:
     if len(argv) != 2:
-        print("usage: python -m squeal.server SOCKET PIDFILE", file=sys.stderr)
+        print("usage: python -m eel.server SOCKET PIDFILE", file=sys.stderr)
         return 2
     sock_path, pid_path = argv
     try:
