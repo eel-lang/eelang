@@ -180,6 +180,26 @@ h2 .muted{color:var(--faint)}
   scrollbar-width:thin;scrollbar-color:#d9d1c7 transparent}
 
 
+
+/* ---------- standard library teaser ---------- */
+.stdlib{padding:0 0 4px}
+.std-head{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap;
+  padding:38px 32px 20px}
+.std-head h2{font-size:clamp(1.35rem,2.4vw,1.85rem);letter-spacing:-.02em}
+.std-note{font-family:var(--mono);font-stretch:88%;font-size:.55rem;letter-spacing:.09em;
+  text-transform:uppercase;color:var(--faint)}
+.std-grid{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid var(--line)}
+.std-block{padding:20px 24px 22px;border-right:1px solid var(--line);border-bottom:1px solid var(--line)}
+.std-block:nth-child(3n){border-right:0}
+.std-block:nth-last-child(-n+3){border-bottom:0}
+.std-label{margin:0 0 10px;font-family:var(--mono);font-stretch:88%;font-size:.55rem;letter-spacing:.13em;
+  text-transform:uppercase;color:var(--faint);font-weight:500}
+.std-block ul{list-style:none;margin:0;padding:0;display:grid;gap:1px}
+.std-block li{display:flex;flex-direction:column;gap:1px;padding:6px 7px;border-radius:5px}
+.std-block li:hover{background:var(--paper)}
+.std-block code{font-size:.66rem;color:var(--pink-strong)}
+.std-block span{font-size:.78rem;color:var(--muted);line-height:1.45}
+
 /* ---------- syntax overview ---------- */
 .syntax{display:grid;grid-template-columns:minmax(0,272px) minmax(0,1fr);gap:26px;
   padding:4px 32px 44px}
@@ -312,6 +332,12 @@ footer nav a:hover{color:var(--pink-strong)}
   .square:nth-child(2n){border-right:0}
   .square:nth-last-child(-n+3){border-bottom:1px solid var(--line)}
   .square:nth-last-child(-n+2){border-bottom:0}
+  .std-head{padding:30px 24px 16px}
+  .std-grid{grid-template-columns:1fr 1fr}
+  .std-block:nth-child(3n){border-right:1px solid var(--line)}
+  .std-block:nth-child(2n){border-right:0}
+  .std-block:nth-last-child(-n+3){border-bottom:1px solid var(--line)}
+  .std-block:nth-last-child(-n+2){border-bottom:0}
   .syntax{grid-template-columns:1fr;padding:4px 24px 32px;gap:14px}
   .api-tabs{flex-direction:row;overflow-x:auto;gap:6px;padding-bottom:4px;scrollbar-width:thin}
   .api-tab{width:auto;white-space:nowrap}
@@ -326,6 +352,11 @@ footer nav a:hover{color:var(--pink-strong)}
   thead th,tbody th,tbody td{padding-inline:16px}
 }
 @media (max-width:620px){
+  .std-grid{grid-template-columns:1fr}
+  .std-block{border-right:0}
+  .std-block:nth-child(3n){border-right:0}
+  .std-block:nth-last-child(-n+2){border-bottom:1px solid var(--line)}
+  .std-block:last-child{border-bottom:0}
   .status{display:none}
   .squares{grid-template-columns:1fr}
   .square{min-height:0;aspect-ratio:auto;border-right:0}

@@ -279,6 +279,81 @@ name.startswith(prefix)</pre>
     </div>
   </section>
 
+  <!-- THE REST OF THE STANDARD LIBRARY -->
+  <section class="stdlib" id="stdlib">
+    <div class="std-head">
+      <h2>…and the rest of the standard library</h2>
+      <span class="std-note">planned surface · not in the compiler yet</span>
+    </div>
+
+    <div class="std-grid">
+      <div class="std-block">
+        <h3 class="std-label">Strings</h3>
+        <ul>
+          <li><code>name.startswith(prefix)</code><span>prefix test, bytes included</span></li>
+          <li><code>name.strip()</code><span>trim whitespace on both ends</span></li>
+          <li><code>line.split(sep)</code><span>split into a list of strings</span></li>
+          <li><code>path.replace(from, to)</code><span>replace every occurrence</span></li>
+          <li><code>sep.join(items)</code><span>join a list back into one string</span></li>
+        </ul>
+      </div>
+
+      <div class="std-block">
+        <h3 class="std-label">Lists</h3>
+        <ul>
+          <li><code>xs.map(f)</code><span>apply a function to every element</span></li>
+          <li><code>xs.filter(pred)</code><span>keep the elements that match</span></li>
+          <li><code>xs.fold(acc, f)</code><span>reduce to a single value</span></li>
+          <li><code>xs.take(n)</code><span>the first n elements</span></li>
+          <li><code>xs.zip(ys)</code><span>pairs, like Python's zip</span></li>
+        </ul>
+      </div>
+
+      <div class="std-block">
+        <h3 class="std-label">Maps</h3>
+        <ul>
+          <li><code>config.get(key)</code><span>value or nil, never an exception</span></li>
+          <li><code>m.put(key, value)</code><span>a new map, the old one intact</span></li>
+          <li><code>m.merge(other)</code><span>what <code>|=</code> compiles to</span></li>
+          <li><code>m.keys()</code><span>keys, in no particular order</span></li>
+          <li><code>m.items()</code><span>pairs, for comprehensions</span></li>
+        </ul>
+      </div>
+
+      <div class="std-block">
+        <h3 class="std-label">Records &amp; classes</h3>
+        <ul>
+          <li><code>p.x</code><span>field access on a tagged tuple</span></li>
+          <li><code>p.with(x = 0)</code><span>a copy with one field replaced</span></li>
+          <li><code>p.tag()</code><span>the atom a class was tagged with</span></li>
+          <li><code>p == q</code><span>structural equality, as in Erlang</span></li>
+        </ul>
+      </div>
+
+      <div class="std-block">
+        <h3 class="std-label">Numbers</h3>
+        <ul>
+          <li><code>n.abs()</code><span>absolute value</span></li>
+          <li><code>n.clamp(lo, hi)</code><span>fit into a range</span></li>
+          <li><code>n.round()</code><span>to the nearest integer</span></li>
+          <li><code>n.to_string()</code><span>decimal, no surprises</span></li>
+          <li><code>n ** k</code><span>integers stay integers</span></li>
+        </ul>
+      </div>
+
+      <div class="std-block">
+        <h3 class="std-label">OTP &amp; processes</h3>
+        <ul>
+          <li><code>spawn(f)</code><span>a process for one function</span></li>
+          <li><code>send(pid, msg)</code><span>fire and forget</span></li>
+          <li><code>call(pid, msg)</code><span>synchronous call with a timeout</span></li>
+          <li><code>supervise(children)</code><span>restart on failure</span></li>
+          <li><code>file.read(path)</code><span>contents as a binary</span></li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
   <!-- A MINUTE -->
   <section class="minute" id="quickstart">
     <div class="minute-left">
