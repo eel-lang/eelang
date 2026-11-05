@@ -122,3 +122,41 @@ def test_ping_reports_protocol(clean_servers, tmp_path):
     client.build_remote(_project(tmp_path))
     info = client.ping()
     assert info["version"] == client.SERVER_PROTOCOL
+
+
+def test_compiler_daemon_is_born_with_the_server(clean_servers, tmp_path):
+    assert DAEMON.ping() is None
+    client.ensure()
+    assert DAEMON.ping() is not None           # без единой сборки
+
+
+def test_compiler_daemon_dies_with_the_server(clean_servers, tmp_path):
+    client.ensure()
+    assert DAEMON.ping() is not None
+    client.stop()
+    assert DAEMON.ping() is None
+
+
+def test_compiler_daemon_dies_when_the_server_is_killed(clean_servers, tmp_path):
+    import os
+    import signal
+    import time
+
+    client.ensure()
+    assert DAEMON.ping() is not None
+    pid = int(client.server_pid_file().read_text())
+    os.kill(pid, signal.SIGKILL)               # сервер умирает без шанса прибраться
+
+    deadline = time.monotonic() + 10
+    while time.monotonic() < deadline and DAEMON.ping() is not None:
+        time.sleep(0.05)
+    assert DAEMON.ping() is None               # escript ушёл по EOF на stdin
+
+
+def test_library_build_does_not_start_the_daemon(clean_servers, tmp_path):
+    from squeal.compiler import build
+
+    proj = _project(tmp_path)
+    build(proj)                                # API без сервера: escript внутри процесса
+    assert DAEMON.ping() is None               # демон рождается только вместе с сервером
+    assert (proj / "build" / "dev" / "erlang" / proj.name / "ebin" / "hello.beam").exists()

@@ -57,11 +57,20 @@ daemon(SocketPath, PidFile) ->
         {ok, Listen} ->
             filelib:ensure_dir(PidFile),
             ok = file:write_file(PidFile, os:getpid()),
+            %% родитель (сервер сборки) держит нашу stdin трубой: закрылась — родитель умер
+            _Watchdog = spawn(fun watch_parent/0),
             accept(Listen, SocketPath, PidFile, 0);
         {error, Reason} ->
             io:format(standard_error, "cannot listen on ~ts: ~p~n", [SocketPath, Reason]),
             file:delete(PidFile),
             halt(2)
+    end.
+
+%% демон живёт только вместе с родителем: EOF на stdin — родителя больше нет
+watch_parent() ->
+    case io:get_line("") of
+        eof -> halt(0);
+        _ -> watch_parent()
     end.
 
 accept(Listen, SocketPath, PidFile, Compiled) ->

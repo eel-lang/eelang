@@ -10,7 +10,7 @@ import sys
 import pytest
 
 from squeal import compiler
-from squeal.compiler import DAEMON, build
+from squeal.compiler import build
 
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 
@@ -27,32 +27,25 @@ def _beams(out: pathlib.Path) -> dict[str, int]:
     return {p.name: p.stat().st_mtime_ns for p in (out / "ebin").glob("*.beam")}
 
 
-def _compiled() -> int:
-    info = DAEMON.ping()
-    return int(info["compiled"]) if info else 0
-
-
 def test_second_build_recompiles_nothing(tmp_path):
     proj = _project(tmp_path, {"a": "1", "b": "2"})
     out = build(proj)
-    before, compiled = _beams(out), _compiled()
+    before = _beams(out)
 
     build(proj)
-    assert _beams(out) == before
-    assert _compiled() == compiled          # запрос компилятору не отправлялся
+    assert _beams(out) == before            # ничего не пересобрано и не перезаписано
 
 
 def test_only_changed_module_recompiles(tmp_path):
     proj = _project(tmp_path, {"a": "1", "b": "2"})
     out = build(proj)
-    before, compiled = _beams(out), _compiled()
+    before = _beams(out)
 
     (proj / "src" / "a.ee").write_text("def a():\n    11\n")
     build(proj)
     after = _beams(out)
     assert after["a.beam"] != before["a.beam"]
-    assert after["b.beam"] == before["b.beam"]
-    assert _compiled() == compiled + 1
+    assert after["b.beam"] == before["b.beam"]   # соседний модуль не тронут
 
 
 def test_deleted_module_is_pruned(tmp_path):

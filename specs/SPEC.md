@@ -78,15 +78,18 @@ parent: squeal-architecture
 - `client.py` — тонкий клиент сервера сборки (socket/json/pathlib, без импорта компилятора):
   пути сокета/pid/лога, `ping`/`stop`/`build_remote`, автостарт сервера.
 - `server.py` — сервер сборки: `python -m squeal.server <sock> <pid>`, JSON-строки
-  `{"op": build|ping|stop}`, последовательный accept, вызов `build()`; при выходе гасит демон
-  компилятора.
+  `{"op": build|ping|stop}`, последовательный accept, вызов `build()`; поднимает демон компилятора
+  при старте и гасит в `finally` (включая `SIGTERM`/`SIGINT`), поэтому тот живёт ровно столько же,
+  сколько сервер.
 - `etf.py` — энкодер External Term Format: формы → блоб без зависимостей. `str` кодируется как
   **charlist** (в формах `{string, L, "chars"}`), int — включая произвольную точность, float, tuple,
   list; сжатие zlib при выигрыше.
 - `compiler.py` — конвейер (`compile_source`, `build` с инкрементальным манифестом
   `build.json` и `--force`), `CompilerDaemon` (фоновый escript на unix-сокете:
   автостарт, `ping`/`stop`, сверка версии протокола, откат при недоступности) и `CompilerProcess`
-  (escript внутри процесса — для `--no-daemon` и как запасной путь);
+  (escript внутри процесса — для `--no-daemon` и как запасной путь; сам демон не поднимает,
+  живёт только как ребёнок сервера сборки, а в `--daemon`-режиме escript стережёт родителя по EOF
+  на stdin);
   `__main__.py` — командная строка (`build [DIR] [--erl] [--dump-forms] [--no-daemon] [--force]`,
   `daemon start|stop|status`); сборка идёт тонким клиентом сервера, внутри процесса — только
   как запасной путь.

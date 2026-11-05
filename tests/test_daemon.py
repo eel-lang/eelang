@@ -36,8 +36,9 @@ def _pid() -> str:
     return daemon_pid_file().read_text().strip()
 
 
-def test_build_starts_daemon_and_reuses_it(clean_processes, tmp_path):
+def test_build_uses_the_running_daemon(clean_processes, tmp_path):
     proj = _project(tmp_path)
+    DAEMON.start()                             # так делает сервер сборки при старте
     build(proj)
     pid = _pid()
     info = DAEMON.ping()
@@ -52,6 +53,7 @@ def test_build_starts_daemon_and_reuses_it(clean_processes, tmp_path):
 
 def test_daemon_stop_and_restart(clean_processes, tmp_path):
     proj = _project(tmp_path)
+    DAEMON.start()
     build(proj)
     assert daemon_socket().exists()
 
@@ -59,7 +61,7 @@ def test_daemon_stop_and_restart(clean_processes, tmp_path):
     assert not daemon_socket().exists()
     assert DAEMON.ping() is None
 
-    build(proj, force=True)                    # новый демон поднимается сам
+    DAEMON.start()                             # новый демон поднимает сервер
     assert DAEMON.ping() is not None
 
 
@@ -75,6 +77,7 @@ def test_no_daemon_flag_keeps_everything_off(clean_processes, tmp_path):
 
 
 def test_compile_error_through_daemon(clean_processes, tmp_path):
+    DAEMON.start()
     forms = [
         (Atom("attribute"), 0, Atom("module"), Atom("t")),
         (Atom("attribute"), 0, Atom("export"), [(Atom("m"), 0)]),

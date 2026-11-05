@@ -119,6 +119,7 @@ class CompilerDaemon:
 
     def __init__(self) -> None:
         self.timeout = 5.0
+        self._proc: subprocess.Popen | None = None
 
     # --- транспорт ---
 
@@ -182,9 +183,10 @@ class CompilerDaemon:
             except FileNotFoundError:
                 pass
         with open(daemon_log(), "ab") as log:
-            subprocess.Popen(
+            # stdin — труба: когда родитель умирает, она закрывается, и escript выходит сам
+            self._proc = subprocess.Popen(
                 ["escript", str(ESCRIPT), "--daemon", str(daemon_socket()), str(daemon_pid_file())],
-                stdin=subprocess.DEVNULL,
+                stdin=subprocess.PIPE,
                 stdout=subprocess.DEVNULL,
                 stderr=log,
                 start_new_session=True,
@@ -216,6 +218,16 @@ class CompilerDaemon:
             stopped = self._request((Atom("stop"),)) == "OK"
         except DaemonUnavailable:
             pass
+        if self._proc is not None:
+            try:
+                self._proc.stdin.close()      # закрыть трубу: escript поймёт, что родитель ушёл
+            except OSError:
+                pass
+            try:
+                self._proc.wait(timeout=5)
+            except subprocess.TimeoutExpired:
+                self._proc.kill()
+            self._proc = None
         for path in (daemon_socket(), daemon_pid_file()):
             try:
                 path.unlink()
@@ -223,8 +235,16 @@ class CompilerDaemon:
                 pass
         return stopped
 
-    def compile(self, forms_path: pathlib.Path, erl: bool) -> None:
-        self.ensure()
+    def compile(self, forms_path: pathlib.Path, erl: bool, *, autostart: bool = False) -> None:
+        """Скомпилировать блоб через демон.
+
+        ``autostart=False`` — демон не поднимаем: он живёт только как ребёнок сервера сборки
+        (жизненные циклы связаны), а без него вызывающий собирает внутри процесса.
+        """
+        if self.ping() is None:
+            if not autostart:
+                raise DaemonUnavailable("compiler daemon is not running")
+            self.ensure()
         reply = self._request(
             (Atom("compile"), str(forms_path), Atom("true") if erl else Atom("false"))
         )
@@ -369,9 +389,9 @@ def build(
         )
         if daemon:
             try:
-                DAEMON.compile(forms_path, erl)
+                DAEMON.compile(forms_path, erl)   # только если демон уже поднят сервером
             except DaemonUnavailable:
-                COMPILER.compile(forms_path, erl)  # не смогли поднять демон — не падаем
+                COMPILER.compile(forms_path, erl)  # сервера нет — собираем внутри процесса
         else:
             COMPILER.compile(forms_path, erl)
 

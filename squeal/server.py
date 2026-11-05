@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import json
 import os
+import signal
 import socket
 import sys
 import traceback
@@ -85,6 +86,10 @@ def _serve(conn: socket.socket) -> bool:
                     return False
 
 
+def _shutdown(_signum, _frame):
+    raise KeyboardInterrupt
+
+
 def main(argv: list[str]) -> int:
     if len(argv) != 2:
         print("usage: python -m squeal.server SOCKET PIDFILE", file=sys.stderr)
@@ -94,6 +99,11 @@ def main(argv: list[str]) -> int:
         os.unlink(sock_path)
     except FileNotFoundError:
         pass
+    # сигналы — тоже «остановка сервера»: демон компилятора не должен пережить родителя
+    signal.signal(signal.SIGTERM, _shutdown)
+    signal.signal(signal.SIGINT, _shutdown)
+
+    DAEMON.start()          # рождается вместе с сервером
     listener = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
     listener.bind(sock_path)
     listener.listen(8)
