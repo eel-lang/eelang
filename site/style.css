@@ -88,7 +88,7 @@ code,pre{font-family:var(--mono);font-stretch:88%;font-variant-ligatures:none}
   justify-content:center;background:#fdfcfa}
 h1{margin:0;font-family:'Fira Sans',var(--sans);font-weight:700;letter-spacing:-.025em;
   font-size:clamp(2.2rem,3.9vw,3.55rem);line-height:1.02}
-h1 em{font-style:normal;color:var(--pink)}
+h1 .muted{color:var(--faint)}
 .hero-sub{margin:20px 0 0;max-width:44ch;color:var(--muted);font-size:.95rem;line-height:1.62}
 .hero-sub code{background:var(--paper);border:1px solid var(--line-warm);border-radius:2px;padding:0 4px;
   font-size:.86em;color:var(--ink)}
