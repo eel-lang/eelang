@@ -1,4 +1,4 @@
-"""Background compiler daemon: autostart, reuse across processes, stop, fallback."""
+"""Compiler daemon (Erlang side): autostart, reuse, stop, errors via the API path."""
 
 from __future__ import annotations
 
@@ -8,14 +8,8 @@ import sys
 
 import pytest
 
-from squeal import etf
-from squeal.compiler import (
-    DAEMON,
-    PROTOCOL,
-    build,
-    daemon_pid_file,
-    daemon_socket,
-)
+from squeal import client, etf
+from squeal.compiler import DAEMON, PROTOCOL, build, daemon_pid_file, daemon_socket
 from squeal.errors import SquealError
 from squeal.term import Atom
 
@@ -23,9 +17,11 @@ ROOT = pathlib.Path(__file__).resolve().parent.parent
 
 
 @pytest.fixture
-def clean_daemon():
+def clean_processes():
+    client.stop()
     DAEMON.stop()
     yield
+    client.stop()
     DAEMON.stop()
 
 
@@ -40,7 +36,7 @@ def _pid() -> str:
     return daemon_pid_file().read_text().strip()
 
 
-def test_build_starts_daemon_and_reuses_it(clean_daemon, tmp_path):
+def test_build_starts_daemon_and_reuses_it(clean_processes, tmp_path):
     proj = _project(tmp_path)
     build(proj)
     pid = _pid()
@@ -54,24 +50,7 @@ def test_build_starts_daemon_and_reuses_it(clean_daemon, tmp_path):
     assert int(DAEMON.ping()["compiled"]) == 2
 
 
-def test_daemon_survives_the_client_process(clean_daemon, tmp_path):
-    proj = _project(tmp_path)
-
-    def run_cli(*extra):
-        return subprocess.run(
-            [sys.executable, "-m", "squeal", "build", str(proj), *extra],
-            cwd=ROOT, capture_output=True, text=True, check=True,
-        )
-
-    run_cli()
-    pid = _pid()
-    (proj / "src" / "hello.ee").write_text('def hello():\n    "hi again"\n')
-    run_cli()                                  # другая команда, другой процесс
-    assert _pid() == pid
-    assert int(DAEMON.ping()["compiled"]) == 2
-
-
-def test_daemon_stop_and_restart(clean_daemon, tmp_path):
+def test_daemon_stop_and_restart(clean_processes, tmp_path):
     proj = _project(tmp_path)
     build(proj)
     assert daemon_socket().exists()
@@ -84,21 +63,7 @@ def test_daemon_stop_and_restart(clean_daemon, tmp_path):
     assert DAEMON.ping() is not None
 
 
-def test_cli_daemon_status(clean_daemon, tmp_path):
-    def status():
-        return subprocess.run(
-            [sys.executable, "-m", "squeal", "daemon", "status"],
-            cwd=ROOT, capture_output=True, text=True,
-        )
-
-    assert status().returncode == 1
-    build(_project(tmp_path))
-    result = status()
-    assert result.returncode == 0
-    assert "running" in result.stdout
-
-
-def test_no_daemon_flag_keeps_it_off(clean_daemon, tmp_path):
+def test_no_daemon_flag_keeps_everything_off(clean_processes, tmp_path):
     proj = _project(tmp_path)
     subprocess.run(
         [sys.executable, "-m", "squeal", "build", str(proj), "--no-daemon"],
@@ -106,9 +71,10 @@ def test_no_daemon_flag_keeps_it_off(clean_daemon, tmp_path):
     )
     assert not daemon_socket().exists()
     assert DAEMON.ping() is None
+    assert client.ping() is None               # сервер сборки тоже не поднимался
 
 
-def test_compile_error_through_daemon(clean_daemon, tmp_path):
+def test_compile_error_through_daemon(clean_processes, tmp_path):
     forms = [
         (Atom("attribute"), 0, Atom("module"), Atom("t")),
         (Atom("attribute"), 0, Atom("export"), [(Atom("m"), 0)]),

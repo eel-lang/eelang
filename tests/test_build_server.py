@@ -1,0 +1,124 @@
+"""Build server: live Python process serving builds over a unix socket (no watcher)."""
+
+from __future__ import annotations
+
+import pathlib
+import subprocess
+import sys
+
+import pytest
+
+from squeal import client
+from squeal.compiler import DAEMON
+from squeal.errors import SquealError
+
+ROOT = pathlib.Path(__file__).resolve().parent.parent
+
+OK_SRC = 'def hello():\n    "hi"\n'
+
+
+@pytest.fixture
+def clean_servers():
+    client.stop()
+    DAEMON.stop()
+    yield
+    client.stop()
+    DAEMON.stop()
+
+
+def _project(tmp_path: pathlib.Path, source: str = OK_SRC) -> pathlib.Path:
+    proj = tmp_path / "app"
+    (proj / "src").mkdir(parents=True)
+    (proj / "src" / "hello.ee").write_text(source)
+    return proj
+
+
+def _cli(*args):
+    return subprocess.run(
+        [sys.executable, "-m", "squeal", *args], cwd=ROOT, capture_output=True, text=True
+    )
+
+
+def _beams(out: pathlib.Path) -> dict[str, int]:
+    return {p.name: p.stat().st_mtime_ns for p in (out / "ebin").glob("*.beam")}
+
+
+def test_first_build_starts_server_and_next_reuses_it(clean_servers, tmp_path):
+    proj = _project(tmp_path)
+    assert _cli("build", str(proj)).returncode == 0
+    pid = client.server_pid_file().read_text().strip()
+
+    (proj / "src" / "hello.ee").write_text('def hello():\n    "hi again"\n')
+    assert _cli("build", str(proj)).returncode == 0
+    assert client.server_pid_file().read_text().strip() == pid   # сервер тот же
+    assert client.ping()["builds"] == 2
+
+
+def test_build_remote_is_served_by_the_live_process(clean_servers, tmp_path):
+    proj = _project(tmp_path)
+    assert client.build_remote(proj) is True
+    out = proj / "build" / "dev" / "erlang" / proj.name
+    assert (out / "ebin" / "hello.beam").exists()
+    before = _beams(out)
+
+    assert client.build_remote(proj) is True          # ничего не менялось
+    assert _beams(out) == before                      # и ничего не пересобрано
+
+    (proj / "src" / "hello.ee").write_text('def hello():\n    "ho"\n')
+    assert client.build_remote(proj) is True
+    assert _beams(out)["hello.beam"] != before["hello.beam"]
+
+
+def test_compile_error_is_reported_and_server_survives(clean_servers, tmp_path):
+    proj = _project(tmp_path, 'def hello():\n    for x in [1]:\n        x\n')
+    with pytest.raises(SquealError, match="loop For is forbidden"):
+        client.build_remote(proj)
+
+    info = client.ping()
+    assert info is not None
+    assert info["errors"] >= 1
+
+    (proj / "src" / "hello.ee").write_text(OK_SRC)     # сервер продолжает работать
+    assert client.build_remote(proj) is True
+    assert (proj / "build" / "dev" / "erlang" / proj.name / "ebin" / "hello.beam").exists()
+
+
+def test_cli_reports_compile_errors(clean_servers, tmp_path):
+    proj = _project(tmp_path, 'def hello():\n    for x in [1]:\n        x\n')
+    result = _cli("build", str(proj))
+    assert result.returncode == 1
+    assert "squeal: " in result.stderr and "loop For is forbidden" in result.stderr
+
+
+def test_daemon_status_shows_both_processes(clean_servers, tmp_path):
+    assert _cli("daemon", "status").returncode == 1
+
+    _cli("build", str(_project(tmp_path)))
+    result = _cli("daemon", "status")
+    assert result.returncode == 0
+    assert "build server: running" in result.stdout
+    assert "compiler daemon: running" in result.stdout
+
+
+def test_daemon_stop_stops_both(clean_servers, tmp_path):
+    _cli("build", str(_project(tmp_path)))
+    assert client.ping() is not None
+    assert DAEMON.ping() is not None
+
+    assert _cli("daemon", "stop").returncode == 0
+    assert client.ping() is None
+    assert DAEMON.ping() is None
+
+
+def test_no_daemon_builds_in_process(clean_servers, tmp_path):
+    proj = _project(tmp_path)
+    assert _cli("build", str(proj), "--no-daemon").returncode == 0
+    assert client.ping() is None                      # сервер не поднимался
+    assert DAEMON.ping() is None                      # и демон компилятора тоже
+    assert (proj / "build" / "dev" / "erlang" / proj.name / "ebin" / "hello.beam").exists()
+
+
+def test_ping_reports_protocol(clean_servers, tmp_path):
+    client.build_remote(_project(tmp_path))
+    info = client.ping()
+    assert info["version"] == client.SERVER_PROTOCOL

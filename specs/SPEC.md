@@ -75,6 +75,11 @@ parent: squeal-architecture
 - `squeal_compile.escript` — сервер: запросы `{EtfPath, ErlFlag}.` из stdin, ответы `OK` /
   `ERR <base64>`; декодирует ETF, зовёт `compile:forms` (+ `return`), пишет `.beam` (и `.erl`
   по флагу через `erl_pp`); ошибки линта форматирует в `путь:строка: текст` (дамп наружу не выходит).
+- `client.py` — тонкий клиент сервера сборки (socket/json/pathlib, без импорта компилятора):
+  пути сокета/pid/лога, `ping`/`stop`/`build_remote`, автостарт сервера.
+- `server.py` — сервер сборки: `python -m squeal.server <sock> <pid>`, JSON-строки
+  `{"op": build|ping|stop}`, последовательный accept, вызов `build()`; при выходе гасит демон
+  компилятора.
 - `etf.py` — энкодер External Term Format: формы → блоб без зависимостей. `str` кодируется как
   **charlist** (в формах `{string, L, "chars"}`), int — включая произвольную точность, float, tuple,
   list; сжатие zlib при выигрыше.
@@ -83,7 +88,8 @@ parent: squeal-architecture
   автостарт, `ping`/`stop`, сверка версии протокола, откат при недоступности) и `CompilerProcess`
   (escript внутри процесса — для `--no-daemon` и как запасной путь);
   `__main__.py` — командная строка (`build [DIR] [--erl] [--dump-forms] [--no-daemon] [--force]`,
-  `daemon start|stop|status`).
+  `daemon start|stop|status`); сборка идёт тонким клиентом сервера, внутри процесса — только
+  как запасной путь.
 - `session.py` — shell-режим: клетка → формы; session хранит маппинг имён/классы/импорты.
 - `repl.py` + `repl.escript` — persistent Erlang-REPL (`erl_eval:exprs`, bindings живут;
   `'$pp'` — `erl_pp` формы для печати эквивалента; вывод `print` копится в process dictionary и
