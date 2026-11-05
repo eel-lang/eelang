@@ -148,6 +148,137 @@ name.startswith(prefix)</pre>
     </div>
   </section>
 
+  <!-- SYNTAX OVERVIEW -->
+  <section id="syntax">
+    <div class="big-head">
+      <h2>The syntax you need,<br><span class="muted">baked into Python.</span></h2>
+      <p>Every construct below is compiled, not interpreted: the compiler turns this Python into
+        Erlang abstract forms. Pick a category and read the code.</p>
+    </div>
+
+    <div class="syntax" data-tabs>
+      <div class="api-tabs" role="tablist" aria-label="Syntax examples" aria-orientation="vertical">
+        <button class="api-tab" id="tab-values" role="tab" aria-selected="true" aria-controls="syn-values" type="button"><span class="dot" aria-hidden="true"></span>Values</button>
+        <button class="api-tab" id="tab-operators" role="tab" aria-selected="false" aria-controls="syn-operators" tabindex="-1" type="button"><span class="dot" aria-hidden="true"></span>Operators</button>
+        <button class="api-tab" id="tab-control" role="tab" aria-selected="false" aria-controls="syn-control" tabindex="-1" type="button"><span class="dot" aria-hidden="true"></span>Control flow</button>
+        <button class="api-tab" id="tab-patterns" role="tab" aria-selected="false" aria-controls="syn-patterns" tabindex="-1" type="button"><span class="dot" aria-hidden="true"></span>Patterns</button>
+        <button class="api-tab" id="tab-functions" role="tab" aria-selected="false" aria-controls="syn-functions" tabindex="-1" type="button"><span class="dot" aria-hidden="true"></span>Functions</button>
+        <button class="api-tab" id="tab-classes" role="tab" aria-selected="false" aria-controls="syn-classes" tabindex="-1" type="button"><span class="dot" aria-hidden="true"></span>Classes</button>
+        <button class="api-tab" id="tab-comprehensions" role="tab" aria-selected="false" aria-controls="syn-comprehensions" tabindex="-1" type="button"><span class="dot" aria-hidden="true"></span>Comprehensions</button>
+        <button class="api-tab" id="tab-modules" role="tab" aria-selected="false" aria-controls="syn-modules" tabindex="-1" type="button"><span class="dot" aria-hidden="true"></span>Modules</button>
+      </div>
+
+      <div class="api-panels">
+        <div class="api-panel" id="syn-values" role="tabpanel" aria-labelledby="tab-values">
+          <div class="api-head">
+            <p>Quotes decide the type. Tuples, lists and dicts keep their Erlang shapes.</p>
+            <span class="api-file">values.ee</span>
+          </div>
+<pre><span class="k">def</span> <span class="fn">pair</span>():
+    (<span class="a">'ok'</span>, <span class="s">"ok"</span>, (<span class="n">1</span>, <span class="n">2</span>), [<span class="n">1</span>, <span class="n">2</span>], {<span class="a">'k'</span>: <span class="n">1</span>})
+<span class="c"># {ok, &lt;&lt;"ok"&gt;&gt;, {1, 2}, [1, 2], #{k =&gt; 1}}</span></pre>
+        </div>
+
+        <div class="api-panel" id="syn-operators" role="tabpanel" aria-labelledby="tab-operators" hidden>
+          <div class="api-head">
+            <p>Arithmetic keeps Python's semantics; booleans compile to <code>andalso</code> and <code>orelse</code>.</p>
+            <span class="api-file">operators.ee</span>
+          </div>
+<pre><span class="k">def</span> <span class="fn">calc</span>(a, b):
+    (a // b, a % b, a ** <span class="n">2</span>, a == b, <span class="k">not</span> (a &lt; b))</pre>
+        </div>
+
+        <div class="api-panel" id="syn-control" role="tabpanel" aria-labelledby="tab-control" hidden>
+          <div class="api-head">
+            <p><code>match</code> is an expression: every branch assigns the same variable.</p>
+            <span class="api-file">control.ee</span>
+          </div>
+<pre><span class="k">def</span> <span class="fn">classify</span>(n):
+    <span class="k">match</span> n:
+        <span class="k">case</span> <span class="n">0</span>:
+            r = <span class="a">'zero'</span>
+        <span class="k">case</span> _ <span class="k">if</span> n &lt; <span class="n">0</span>:
+            r = <span class="a">'negative'</span>
+        <span class="k">case</span> _:
+            r = <span class="a">'positive'</span>
+    r</pre>
+        </div>
+
+        <div class="api-panel" id="syn-patterns" role="tabpanel" aria-labelledby="tab-patterns" hidden>
+          <div class="api-head">
+            <p>Destructuring, constructor patterns and guards compile to real Erlang patterns.</p>
+            <span class="api-file">patterns.ee</span>
+          </div>
+<pre><span class="k">def</span> <span class="fn">first_two</span>(xs):
+    a, b, *rest = xs
+    (a, b)
+
+
+<span class="k">def</span> <span class="fn">swap</span>(p):
+    <span class="k">match</span> p:
+        <span class="k">case</span> (x, y):
+            q = (y, x)
+    q</pre>
+        </div>
+
+        <div class="api-panel" id="syn-functions" role="tabpanel" aria-labelledby="tab-functions" hidden>
+          <div class="api-head">
+            <p><code>def</code>, <code>lambda</code> and closures — and arity is part of a function's identity.</p>
+            <span class="api-file">functions.ee</span>
+          </div>
+<pre><span class="k">def</span> <span class="fn">twice</span>(f, x):
+    f(f(x))
+
+
+<span class="k">def</span> <span class="fn">bump</span>(n):
+    twice(<span class="k">lambda</span> x: x + <span class="n">1</span>, n)</pre>
+        </div>
+
+        <div class="api-panel" id="syn-classes" role="tabpanel" aria-labelledby="tab-classes" hidden>
+          <div class="api-head">
+            <p>A class compiles to a tagged tuple, and its constructor is inlined.</p>
+            <span class="api-file">classes.ee</span>
+          </div>
+<pre><span class="k">class</span> <span class="fn">Point</span>(StartingWithAtom):
+    x: <span class="fn">int</span>
+    y: <span class="fn">int</span>
+
+
+<span class="k">def</span> <span class="fn">shift</span>(p, dx):
+    <span class="k">match</span> p:
+        <span class="k">case</span> Point(x, y):
+            q = Point(x + dx, y)
+    q</pre>
+        </div>
+
+        <div class="api-panel" id="syn-comprehensions" role="tabpanel" aria-labelledby="tab-comprehensions" hidden>
+          <div class="api-head">
+            <p>List and dict comprehensions become Erlang comprehensions, filters included.</p>
+            <span class="api-file">comprehensions.ee</span>
+          </div>
+<pre><span class="k">def</span> <span class="fn">evens</span>(xs):
+    [x * <span class="n">2</span> <span class="k">for</span> x <span class="k">in</span> xs <span class="k">if</span> x % <span class="n">2</span> == <span class="n">0</span>]
+
+
+<span class="k">def</span> <span class="fn">by_id</span>(pairs):
+    {k: v <span class="k">for</span> k, v <span class="k">in</span> pairs}</pre>
+        </div>
+
+        <div class="api-panel" id="syn-modules" role="tabpanel" aria-labelledby="tab-modules" hidden>
+          <div class="api-head">
+            <p>The module is the path; imports are Python imports with Gleam's rules.</p>
+            <span class="api-file">modules.ee</span>
+          </div>
+<pre><span class="k">from</span> my.app.math <span class="k">import</span> add, mul <span class="k">as</span> times
+
+
+<span class="k">def</span> <span class="fn">total</span>(a, b):
+    times(add(a, b), <span class="n">2</span>)</pre>
+        </div>
+      </div>
+    </div>
+  </section>
+
   <!-- A MINUTE -->
   <section class="minute" id="quickstart">
     <div class="minute-left">

@@ -19,8 +19,10 @@
       });
       tab.addEventListener('keydown', function (event) {
         var next = null;
-        if (event.key === 'ArrowRight') next = (index + 1) % tabs.length;
-        if (event.key === 'ArrowLeft') next = (index - 1 + tabs.length) % tabs.length;
+        var down = event.key === 'ArrowRight' || event.key === 'ArrowDown';
+        var up = event.key === 'ArrowLeft' || event.key === 'ArrowUp';
+        if (down) next = (index + 1) % tabs.length;
+        if (up) next = (index - 1 + tabs.length) % tabs.length;
         if (event.key === 'Home') next = 0;
         if (event.key === 'End') next = tabs.length - 1;
         if (next === null) return;
@@ -92,7 +94,7 @@
   /* ---------- reveal on scroll ---------- */
   if (!reduced && 'IntersectionObserver' in window) {
     var candidates = document.querySelectorAll(
-      '.big-head, .square, .step, .status-col, .minute > *, .cta > *, .strip, .matrix-note, .viewer, .terminal'
+      '.big-head, .syntax, .square, .step, .status-col, .minute > *, .cta > *, .strip, .matrix-note, .viewer, .terminal'
     );
     var observer = new IntersectionObserver(function (entries) {
       entries.forEach(function (entry) {

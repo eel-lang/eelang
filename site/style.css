@@ -179,6 +179,30 @@ h2 .muted{color:var(--faint)}
   border-radius:3px;font-size:.58rem;line-height:1.9;color:#26242c;overflow-x:auto;
   scrollbar-width:thin;scrollbar-color:#d9d1c7 transparent}
 
+
+/* ---------- syntax overview ---------- */
+.syntax{display:grid;grid-template-columns:minmax(0,272px) minmax(0,1fr);gap:26px;
+  padding:4px 32px 44px}
+.api-tabs{display:flex;flex-direction:column;gap:2px}
+.api-tab{display:flex;align-items:center;gap:11px;width:100%;text-align:left;padding:9px 12px;
+  border:1px solid transparent;border-radius:8px;background:none;font-family:var(--sans);font-size:.92rem;
+  color:var(--muted);cursor:pointer;transition:.14s}
+.api-tab .dot{width:6px;height:6px;border-radius:50%;background:var(--line);flex:none;transition:.14s}
+.api-tab:hover{color:var(--ink);background:var(--paper)}
+.api-tab[aria-selected="true"]{color:var(--ink);background:#fff;border-color:var(--line);font-weight:600}
+.api-tab[aria-selected="true"] .dot{background:var(--pink)}
+.api-panels{display:flex;flex-direction:column}
+.api-panel{border:1px solid var(--line);border-radius:4px;overflow:hidden;background:#fff;
+  display:flex;flex-direction:column;flex:1;min-height:300px}
+.api-head{display:flex;align-items:center;justify-content:space-between;gap:20px;padding:12px 18px;
+  border-bottom:1px solid var(--line)}
+.api-head p{margin:0;color:var(--muted);font-size:.86rem;line-height:1.5}
+.api-head code{background:var(--paper);border:1px solid var(--line-warm);border-radius:2px;padding:0 3px;
+  color:var(--ink);font-size:.92em}
+.api-file{font-family:var(--mono);font-stretch:88%;font-size:.6rem;color:var(--faint);white-space:nowrap}
+.api-panel[hidden]{display:none}
+.api-panel pre{background:var(--subtle);padding:16px 18px;flex:1}
+
 /* ---------- a minute ---------- */
 .minute{display:grid;grid-template-columns:1fr 1fr}
 .minute-left{padding:46px 32px 46px 32px}
@@ -288,6 +312,10 @@ footer nav a:hover{color:var(--pink-strong)}
   .square:nth-child(2n){border-right:0}
   .square:nth-last-child(-n+3){border-bottom:1px solid var(--line)}
   .square:nth-last-child(-n+2){border-bottom:0}
+  .syntax{grid-template-columns:1fr;padding:4px 24px 32px;gap:14px}
+  .api-tabs{flex-direction:row;overflow-x:auto;gap:6px;padding-bottom:4px;scrollbar-width:thin}
+  .api-tab{width:auto;white-space:nowrap}
+  .api-head{flex-direction:column;align-items:flex-start;gap:5px}
   .minute{grid-template-columns:1fr}
   .minute-right{border-left:0;border-top:1px solid var(--line)}
   .minute-left{padding:32px 24px 24px}
