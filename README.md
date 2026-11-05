@@ -75,6 +75,8 @@ erl -pa my_app/build/dev/erlang/my_app/ebin -noshell \
 - `if`/`else` и `match`/`case` (в условии — только bool; несматченный match — «let it crash»);
 - классы `class T(StartingWithAtom): x: int` → кортеж `{t, …}`;
 - `lambda`, list/dict comprehensions, декораторы;
+- процессы: `match receive(): case …` (селективный приём), `case Timeout(ms):` — таймаут,
+  `send(pid, msg)`, `self()`, `spawn(lambda: …)`;
 - `print(x)` — печать в stdout (питоновское представление значений), возвращает `nil`;
 - `zip(a, b)` — пары до конца короткого списка, `enumerate(xs[, start])` — пары `(номер, значение)`;
   оба неленивые и принимают только списки;

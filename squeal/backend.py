@@ -12,7 +12,7 @@ from .errors import SquealError
 from .term import Atom
 
 # Встроенные функции: доступны, пока пользователь не определил имя сам.
-BUILTINS = frozenset({"print", "zip", "enumerate", "range"})
+BUILTINS = frozenset({"print", "zip", "enumerate", "range", "send", "self", "spawn"})
 
 RESERVED_NAMES = frozenset({
     "squeal_iter", "squeal_mod", "squeal_floordiv", "squeal_on_load",
@@ -489,8 +489,10 @@ class _Gen:
 
     def _case_tail(self, node) -> tuple:
         if self._tail_assign_target(
-            [node.then_body, node.else_body] if isinstance(node, ir.If)
+            [node.then_body, node.else_body]
+            if isinstance(node, ir.If)
             else [c.body for c in node.cases]
+            + ([node.after_body] if getattr(node, "after_body", ()) else [])
         ) is not None:
             target, case = self._case_value(node)
             return (Atom("match"), node.line, _var(node.line, self._bind(target)), case)
@@ -530,6 +532,9 @@ class _Gen:
                 (Atom("clause"), node.line, [_atom(node.line, "true")], [], then_body),
                 (Atom("clause"), node.line, [_atom(node.line, "false")], [], else_body),
             ])
+        if isinstance(node.subject, ir.Receive):
+            form, _targets = self._receive_build(node, tail=True)
+            return form
         subject = self.expr_form(node.subject)
         clauses = []
         for c in node.cases:
@@ -614,7 +619,184 @@ class _Gen:
                      self._decorator_value(dec, shell=self._shell_mode), [value])
         return (Atom("match"), line, _var(line, name), value)
 
+    def _receive_build(self, node, tail: bool) -> tuple:
+        """`match receive():` → Erlang receive с клаузами и, если есть, веткой after.
+
+        Возвращает (форма, цели веток) — цели нужны правилу «ветки присваивают одну переменную».
+        """
+        clauses = []
+        targets = []
+        for c in node.cases:
+            saved = (dict(self._scope), dict(self._taken), dict(self._defs))
+            patterns = self._case_patterns(c.pattern)
+            guard = [[self.expr_form(c.guard)]] if c.guard is not None else []
+            if tail:
+                body = self._branch_tail_body(c.body, c.line)
+            else:
+                c_target, branch_body, result = self._branch_body(c.body, c.line)
+                targets.append(c_target)
+                body = branch_body + [result]
+            self._scope, self._taken, self._defs = saved
+            for p in patterns:
+                clauses.append((Atom("clause"), c.line, [p], guard, body))
+
+        if node.after_timeout is None:
+            if not clauses:
+                raise SquealError(f"{node.line}: receive without case clauses")
+            return (Atom("receive"), node.line, clauses), targets
+
+        timeout = self.expr_form(node.after_timeout)
+        saved = (dict(self._scope), dict(self._taken), dict(self._defs))
+        if tail:
+            after_body = self._branch_tail_body(node.after_body, node.line)
+        else:
+            a_target, a_body, a_result = self._branch_body(node.after_body, node.line)
+            targets.append(a_target)
+            after_body = a_body + [a_result]
+        self._scope, self._taken, self._defs = saved
+        return (Atom("receive"), node.line, clauses, timeout, after_body), targets
+
     def _case_value(self, node):
+        if isinstance(node, ir.Match) and isinstance(node.subject, ir.Receive):
+            form, targets = self._receive_build(node, tail=False)
+            self._check_target(node.line, targets)
+            return targets[0], form
+        if isinstance(node, ir.If):
+            cond = self.expr_form(node.condition)
+            then_body = self._branch_tail(node.then_body, node.line)
+            else_body = self._branch_tail(node.else_body, node.line)
+            return (Atom("case"), node.line, cond, [
+                (Atom("clause"), node.line, [_atom(node.line, "true")], [], then_body),
+                (Atom("clause"), node.line, [_atom(node.line, "false")], [], else_body),
+            ])
+        if isinstance(node.subject, ir.Receive):
+            form, _targets = self._receive_build(node, tail=True)
+            return form
+        subject = self.expr_form(node.subject)
+        clauses = []
+        for c in node.cases:
+            saved_scope = dict(self._scope)
+            saved_taken = dict(self._taken)
+            saved_defs = dict(self._defs)
+            patterns = self._case_patterns(c.pattern)
+            guard = [[self.expr_form(c.guard)]] if c.guard is not None else []
+            body = self._branch_tail_body(c.body, c.line)
+            self._scope = saved_scope
+            self._taken = saved_taken
+            self._defs = saved_defs
+            for p in patterns:
+                clauses.append((Atom("clause"), c.line, [p], guard, body))
+        return (Atom("case"), node.line, subject, clauses)
+
+    # --- операторы ---
+
+    def stmt_form(self, stmt) -> tuple:
+        if isinstance(stmt, ir.Assign):
+            value = self.expr_form(stmt.value)
+            for name in _pattern_names(stmt.target):
+                self._drop_defs(name)  # присваивание перекрывает функцию
+            pattern = self._pattern(stmt.target)
+            return (Atom("match"), stmt.line, pattern, value)
+        if isinstance(stmt, ir.Expr):
+            return self.expr_form(stmt.value)
+        if isinstance(stmt, ir.Def):
+            return self.def_form(stmt, self._bind_def(stmt.name, len(stmt.params)))
+        if isinstance(stmt, ir.NestedDef):
+            return self._nested_def_form(stmt)
+        if isinstance(stmt, (ir.If, ir.Match)):
+            target, case = self._case_value(stmt)
+            return (Atom("match"), stmt.line, _var(stmt.line, self._bind(target)), case)
+        raise SquealError(f"cannot generate a statement for: {stmt!r}")
+
+    def def_form(self, stmt: ir.Def, name: Atom) -> tuple:
+        """`F = fun F(X) -> … end` — именованный fun, чтобы работала рекурсия."""
+        line = stmt.line
+        self._later_defs.discard((stmt.name, len(stmt.params)))
+        saved_scope = dict(self._scope)
+        saved_taken = dict(self._taken)
+        saved_defs = dict(self._defs)
+        param_forms = [_var(line, self._bind(p)) for p in stmt.params]
+        body = [self.stmt_form(s) for s in stmt.statements[:-1]]
+        body.append(self.tail_stmt_form(stmt.statements[-1]))
+        self._scope = saved_scope
+        self._taken = saved_taken
+        self._defs = saved_defs
+        fun = (
+            Atom("named_fun"),
+            line,
+            name,
+            [(Atom("clause"), line, param_forms, [], body)],
+        )
+        return (Atom("match"), line, _var(line, name), fun)
+
+    def _nested_def_form(self, stmt: ir.NestedDef) -> tuple:
+        """Вложенный `def` — привязка имени к named_fun (рекурсия) + декораторы сразу."""
+        line = stmt.line
+        if stmt.name in RESERVED_NAMES:
+            raise SquealError(f"{line}: name {stmt.name!r} is reserved by the compiler")
+        self._drop_defs(stmt.name)  # имя модульной функции/клетки перекрыто переменной
+        name = self._bind(stmt.name)
+        saved_scope = dict(self._scope)
+        saved_taken = dict(self._taken)
+        saved_defs = dict(self._defs)
+        param_forms = [_var(line, self._bind(p)) for p in stmt.params]
+        body = [self.stmt_form(s) for s in stmt.statements[:-1]]
+        body.append(self.tail_stmt_form(stmt.statements[-1]))
+        self._scope = saved_scope
+        self._taken = saved_taken
+        self._defs = saved_defs
+        value = (
+            Atom("named_fun"),
+            line,
+            name,
+            [(Atom("clause"), line, param_forms, [], body)],
+        )
+        for dec in reversed(stmt.decorators):
+            value = (Atom("call"), line,
+                     self._decorator_value(dec, shell=self._shell_mode), [value])
+        return (Atom("match"), line, _var(line, name), value)
+
+    def _receive_form(self, node, tail: bool) -> tuple:
+        """`match receive():` → Erlang receive с клаузами и, если есть, веткой after."""
+        clauses = []
+        for c in node.cases:
+            saved_scope = dict(self._scope)
+            saved_taken = dict(self._taken)
+            saved_defs = dict(self._defs)
+            patterns = self._case_patterns(c.pattern)
+            guard = [[self.expr_form(c.guard)]] if c.guard is not None else []
+            if tail:
+                body = self._branch_tail_body(c.body, c.line)
+            else:
+                _, branch_body, result = self._branch_body(c.body, c.line)
+                body = branch_body + [result]
+            self._scope = saved_scope
+            self._taken = saved_taken
+            self._defs = saved_defs
+            for p in patterns:
+                clauses.append((Atom("clause"), c.line, [p], guard, body))
+        if node.after_timeout is None:
+            return (Atom("receive"), node.line, clauses)
+        timeout = self.expr_form(node.after_timeout)
+        saved_scope = dict(self._scope)
+        saved_taken = dict(self._taken)
+        saved_defs = dict(self._defs)
+        if tail:
+            after_body = self._branch_tail_body(node.after_body, node.line)
+        else:
+            _, branch_body, result = self._branch_body(node.after_body, node.line)
+            after_body = branch_body + [result]
+        self._scope = saved_scope
+        self._taken = saved_taken
+        self._defs = saved_defs
+        return (Atom("receive"), node.line, clauses, timeout, after_body)
+
+    def _case_value(self, node):
+        if isinstance(node, ir.Match) and isinstance(node.subject, ir.Receive):
+            form = self._receive_form(node, tail=False)
+            target = self._check_target(node.line, [c.body for c in node.cases]
+                                       + ([node.after_body] if node.after_body else []))
+            return target, form
         if isinstance(node, ir.If):
             cond = self.expr_form(node.condition)
             t_target, t_body, t_result = self._branch(node.then_body, node.line)
@@ -826,6 +1008,12 @@ class _Gen:
         if isinstance(expr, ir.Method):
             return self.method_form(expr)
 
+        if isinstance(expr, ir.Receive):
+            binder = self._fresh(expr.line, "_squeal@r")
+            return (Atom("receive"), expr.line, [
+                (Atom("clause"), expr.line, [binder], [], [binder]),
+            ])
+
         if isinstance(expr, ir.ListComp):
             return self._listcomp_form(expr)
         if isinstance(expr, ir.DictComp):
@@ -868,6 +1056,18 @@ class _Gen:
             self._used_enumerate = True
             start = args[1] if arity == 2 else _int(line, 0)
             return self._helper_call(line, "squeal_enumerate", [start, args[0]])
+        if name == "send":
+            if arity != 2:
+                raise SquealError(f"{line}: send takes a pid and a message, got {arity} arguments")
+            return _remote_call(line, "erlang", "!", args)
+        if name == "self":
+            if arity != 0:
+                raise SquealError(f"{line}: self takes no arguments, got {arity}")
+            return _remote_call(line, "erlang", "self", [])
+        if name == "spawn":
+            if arity != 1:
+                raise SquealError(f"{line}: spawn takes one function, got {arity} arguments")
+            return _remote_call(line, "erlang", "spawn", args)
         if name == "range":
             if not 1 <= arity <= 3:
                 raise SquealError(

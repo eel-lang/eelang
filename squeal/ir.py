@@ -174,10 +174,20 @@ class Case:
 
 
 @dataclass(frozen=True)
+class Receive:
+    """``receive()`` — следующее сообщение из ящика (блокирует)."""
+
+    line: int
+
+
+@dataclass(frozen=True)
 class Match:
     subject: object
     cases: tuple  # (Case, ...)
     line: int
+    # `case Timeout(ms): …` в `match receive():` — Erlang-ветка `after ms -> …`
+    after_timeout: object | None = None
+    after_body: tuple = ()
 
 
 # --- лямбды и включения ---

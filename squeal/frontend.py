@@ -449,8 +449,26 @@ def _statement(node: ast.stmt, toks: dict, classes: dict):
             line=node.lineno,
         )
     if isinstance(node, ast.Match):
+        subject = _expr(node.subject, toks, classes)
         cases = []
-        for c in node.cases:
+        after_timeout = None
+        after_body = ()
+        for index, c in enumerate(node.cases):
+            timeout = _timeout_clause(c.pattern) if isinstance(subject, ir.Receive) else None
+            if timeout is not None:
+                if index != len(node.cases) - 1:
+                    raise SquealError(
+                        f"{c.pattern.lineno}: the Timeout clause must be the last one"
+                    )
+                if c.guard is not None:
+                    raise SquealError(
+                        f"{c.pattern.lineno}: the Timeout clause takes no guard"
+                    )
+                after_timeout = _expr(timeout, toks, classes)
+                after_body = _statements(c.body, toks, classes)
+                if not after_body:
+                    raise SquealError(f"{c.pattern.lineno}: branch has no value (empty block)")
+                continue
             cases.append(
                 ir.Case(
                     pattern=_match_pattern(c.pattern, toks, classes),
@@ -459,10 +477,16 @@ def _statement(node: ast.stmt, toks: dict, classes: dict):
                     line=c.pattern.lineno,
                 )
             )
+        if after_timeout is not None and not cases:
+            pass  # голый `receive after T -> …` тоже допустим
+        elif not cases:
+            raise SquealError(f"{node.lineno}: match without case clauses")
         return ir.Match(
-            subject=_expr(node.subject, toks, classes),
+            subject=subject,
             cases=tuple(cases),
             line=node.lineno,
+            after_timeout=after_timeout,
+            after_body=after_body,
         )
     if isinstance(node, (ast.For, ast.While)):
         raise SquealError(f"{node.lineno}: loop {type(node).__name__} is forbidden — squeal has no mutation")
@@ -497,6 +521,24 @@ def _target_elt(node: ast.AST) -> object:
             raise SquealError(f"{node.lineno}: star is only allowed for a name")
         return ir.PStar(node.value.id, node.lineno)
     return _target(node)
+
+
+def _timeout_clause(pattern: ast.AST) -> ast.AST | None:
+    """`case Timeout(ms):` → выражение ms; иначе None (обычный образец)."""
+    if not isinstance(pattern, ast.MatchClass):
+        return None
+    if not isinstance(pattern.cls, ast.Name) or pattern.cls.id != "Timeout":
+        return None
+    if pattern.kwd_patterns or len(pattern.patterns) != 1:
+        raise SquealError(
+            f"{pattern.lineno}: Timeout takes exactly one positional argument (milliseconds)"
+        )
+    inner = pattern.patterns[0]
+    if not isinstance(inner, ast.MatchValue):
+        raise SquealError(
+            f"{pattern.lineno}: Timeout expects a value in milliseconds"
+        )
+    return inner.value
 
 
 def _match_pattern(node: ast.AST, toks: dict, classes: dict) -> object:
@@ -637,6 +679,12 @@ def _expr(node: ast.AST, toks: dict, classes: dict) -> object:
                 args=tuple(_expr(a, toks, classes) for a in node.args),
                 line=node.lineno,
             )
+        if isinstance(node.func, ast.Name) and node.func.id == "receive":
+            if node.args or node.keywords:
+                raise SquealError(
+                    f"{node.lineno}: receive takes no arguments (use `case Timeout(ms):` for a timeout)"
+                )
+            return ir.Receive(line=node.lineno)
         if isinstance(node.func, ast.Name) and node.func.id in classes:
             if node.keywords:
                 raise SquealError(f"{node.lineno}: named constructor arguments are not supported")
