@@ -78,8 +78,11 @@ parent: squeal-architecture
 - `etf.py` — энкодер External Term Format: формы → блоб без зависимостей. `str` кодируется как
   **charlist** (в формах `{string, L, "chars"}`), int — включая произвольную точность, float, tuple,
   list; сжатие zlib при выигрыше.
-- `compiler.py` — конвейер (`compile_source`, `build`, `CompilerProcess` — переиспользуемый escript);
-  `__main__.py` — командная строка (`build [DIR] [--erl] [--dump-forms]`).
+- `compiler.py` — конвейер (`compile_source`, `build`), `CompilerDaemon` (фоновый escript на unix-сокете:
+  автостарт, `ping`/`stop`, сверка версии протокола, откат при недоступности) и `CompilerProcess`
+  (escript внутри процесса — для `--no-daemon` и как запасной путь);
+  `__main__.py` — командная строка (`build [DIR] [--erl] [--dump-forms] [--no-daemon]`,
+  `daemon start|stop|status`).
 - `session.py` — shell-режим: клетка → формы; session хранит маппинг имён/классы/импорты.
 - `repl.py` + `repl.escript` — persistent Erlang-REPL (`erl_eval:exprs`, bindings живут;
   `'$pp'` — `erl_pp` формы для печати эквивалента; вывод `print` копится в process dictionary и

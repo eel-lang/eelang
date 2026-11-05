@@ -35,7 +35,12 @@ def hello():
 ```
 python -m squeal build my_app            # .beam в build/dev/erlang/my_app/ebin
 python -m squeal build my_app --erl      # ещё и .erl рядом с каждым .beam
+squeal daemon stop                       # остановить фоновый компилятор
 ```
+
+Первая сборка поднимает фоновый демон компилятора (Erlang-VM), и он живёт, пока не выполнят
+`squeal daemon stop` — следующие сборки не тратят ~0.5 с на старт VM. `--no-daemon` собирает
+внутри процесса, `squeal daemon status` показывает pid, версию протокола и число сборок.
 
 Запуск:
 
