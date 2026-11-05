@@ -1,0 +1,268 @@
+---
+title: Eel — Python's syntax, Erlang's semantics
+description: Eel compiles .ee files straight to the BEAM: Python's syntax with Gleam's model — immutable by default, no loops, let it crash.
+brand: Eel
+status: Status: Alpha
+github: https://github.com/pwtail/squeal
+install: python3.15 -m squeal build my_app
+---
+
+<!--
+  Source of truth for site/index.html. Редактируй текст здесь, HTML собирается из этого файла.
+
+  Как читать разметку:
+  - `_курсив_` в заголовке (H1/H2) — серая подсветка, как вторая строка «Built on Gleam, …».
+  - `<br>` — принудительный перенос строки внутри заголовка.
+  - `###` — блок внутри секции: квадрат из шести принципов, таб в обзоре синтаксиса,
+    плитка в stdlib-сетке, пункт плюсов/минусов.
+  - Блок кода с первой строкой-подписью (`### Values · values.ee`) — панель кода с именем файла.
+  - `#якорь` в ссылке — id секции.
+-->
+
+# A _Python-shaped_ language for the _BEAM_.
+
+Immutability, pattern matching, comprehensions and hierarchical modules — written in the Python
+you already know, compiled to Erlang abstract forms through the same pipeline Gleam uses.
+
+**Build a project from a checkout**
+
+```text
+$ python3.15 -m squeal build my_app
+```
+
+CLI · Jupyter
+
+[Then read the syntax overview →](#syntax)
+
+### fib.ee
+_Example · Eel syntax, not in the compiler yet_
+
+```python
+def fib(n, current, next):
+    match n:
+        case 0:
+            current
+
+        case _ if n > 0:
+            fib(n - 1, next, current + next)
+
+
+def fib(n):
+    fib(n, 0, 1)
+```
+
+## Built on
+
+Erlang/OTP 29 · Gleam 1.19 parity · CPython 3.15 · Jupyter ipykernel
+
+## Built on Gleam,<br>_Eel follows these principles._
+
+These are the directions the language is being built against. Some are already in the compiler;
+the rest are on the roadmap.
+
+### 01 · IDE support
+_static analysis, first-class_
+
+A great static-analysis experience in the IDE is one of the goals — and the main target is PyCharm.
+
+```text
+target · PyCharm
+```
+
+### 02 · Great stdlib
+_batteries, with methods_
+
+A stdlib that is pleasant to use, with OOP-style methods on the core data structures.
+
+```text
+config.get(key)
+name.startswith(prefix)
+```
+
+### 03 · Optional static typing
+_never mandatory_
+
+Static typing is fully optional. When you reach for it, it is there to make the code clearer and
+more expressive.
+
+```text
+x: int   # optional
+```
+
+### 04 · All data types equally
+_no second-class data_
+
+Maps, records, native records and the rest get the same level of support — and optional types make
+all of them convenient.
+
+```text
+map · record · native record
+```
+
+### 05 · OTP first-class
+_not an afterthought_
+
+Working with OTP matters as much as a good standard library.
+
+```text
+OTP · first-class
+```
+
+### 06 · Python ecosystem friendly
+_BEAM ↔ CPython_
+
+One of the tasks is to bring the BEAM and CPython ecosystems closer, and to popularise projects
+like Hornbeam.
+
+```text
+hornbeam
+```
+
+## The syntax you need,<br>_baked into Python._
+
+Every construct below is compiled, not interpreted: the compiler turns this Python into Erlang
+abstract forms. Pick a category and read the code.
+
+### Values · values.ee
+Quotes decide the type. Tuples, lists and dicts keep their Erlang shapes.
+
+```python
+def pair():
+    ('ok', "ok", (1, 2), [1, 2], {'k': 1})
+# {ok, <<"ok">>, {1, 2}, [1, 2], #{k => 1}}
+```
+
+### Operators · operators.ee
+Arithmetic keeps Python's semantics; booleans compile to `andalso` and `orelse`.
+
+```python
+def calc(a, b):
+    (a // b, a % b, a ** 2, a == b, not (a < b))
+```
+
+### Control flow · control.ee
+`match` is an expression: every branch assigns the same variable.
+
+```python
+def classify(n):
+    match n:
+        case 0:
+            r = 'zero'
+        case _ if n < 0:
+            r = 'negative'
+        case _:
+            r = 'positive'
+    r
+```
+
+### Patterns · patterns.ee
+Destructuring, constructor patterns and guards compile to real Erlang patterns.
+
+```python
+def first_two(xs):
+    a, b, *rest = xs
+    (a, b)
+
+
+def swap(p):
+    match p:
+        case (x, y):
+            q = (y, x)
+    q
+```
+
+### Functions · functions.ee
+`def`, `lambda` and closures — and arity is part of a function's identity.
+
+```python
+def twice(f, x):
+    f(f(x))
+
+
+def bump(n):
+    twice(lambda x: x + 1, n)
+```
+
+### Classes · classes.ee
+A class compiles to a tagged tuple, and its constructor is inlined.
+
+```python
+class Point(StartingWithAtom):
+    x: int
+    y: int
+
+
+def shift(p, dx):
+    match p:
+        case Point(x, y):
+            q = Point(x + dx, y)
+    q
+```
+
+### Comprehensions · comprehensions.ee
+List and dict comprehensions become Erlang comprehensions, filters included.
+
+```python
+def evens(xs):
+    [x * 2 for x in xs if x % 2 == 0]
+
+
+def by_id(pairs):
+    {k: v for k, v in pairs}
+```
+
+### Modules · modules.ee
+The module is the path; imports are Python imports with Gleam's rules.
+
+```python
+from my.app.math import add, mul as times
+
+
+def total(a, b):
+    times(add(a, b), 2)
+```
+
+## OOP-styled standard library
+_planned surface · not in the compiler yet_
+
+### Strings
+- `name.startswith(prefix)` — prefix test, bytes included
+- `name.strip()` — trim whitespace on both ends
+- `line.split(sep)` — split into a list of strings
+- `path.replace(from, to)` — replace every occurrence
+- `sep.join(items)` — join a list back into one string
+
+### Lists
+- `xs.map(f)` — apply a function to every element
+- `xs.filter(pred)` — keep the elements that match
+- `xs.fold(acc, f)` — reduce to a single value
+- `xs.take(n)` — the first n elements
+- `xs.zip(ys)` — pairs, like Python's zip
+
+### Maps
+- `config.get(key)` — value or nil, never an exception
+- `m.put(key, value)` — a new map, the old one intact
+- `m.merge(other)` — what `|=` compiles to
+- `m.keys()` — keys, in no particular order
+- `m.items()` — pairs, for comprehensions
+
+## This is an early alpha.<br>_The code is 100% vibe-coded._
+
+It compiles real modules today, and it is not something you put in production yet. The honest list
+of what that buys you and what it costs:
+
+### Plus
+- **A small codebase you can fork** — the compiler is a handful of Python modules: read it in an
+  afternoon, fork it, and bend it to your own project.
+
+### Minus
+- **No type checker** — annotations are documentation. Eel does not check them; outside tools own
+  that, as in Python.
+- **No static analysis yet** — the IDE experience is a goal, not a feature: the analyzer is planned,
+  and PyCharm support does not exist today.
+- **The standard library is a sketch** — OOP-style methods on the core types are designed, not
+  implemented; today you work with bare Erlang forms.
+- **Pre-release, nothing to install** — runs from a checkout on Python 3.15 and OTP 29: no package,
+  no versioned releases, no stability promise.
+- **Written with AI, end to end** — expect uneven code, thin tests in places and APIs that move. The
+  parity suite with Gleam is the part that keeps it honest.

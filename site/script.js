@@ -94,7 +94,7 @@
   /* ---------- reveal on scroll ---------- */
   if (!reduced && 'IntersectionObserver' in window) {
     var candidates = document.querySelectorAll(
-      '.big-head, .syntax, .square, .step, .status-col, .minute > *, .cta > *, .strip, .matrix-note, .viewer, .terminal'
+      '.big-head, .syntax, .stdlib, .tradeoffs, .square, .strip, .viewer'
     );
     var observer = new IntersectionObserver(function (entries) {
       entries.forEach(function (entry) {

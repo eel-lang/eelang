@@ -48,7 +48,7 @@
       <span id="install-cmd" hidden>python3.15 -m squeal build my_app</span>
 
       <div class="tabs-mini"><span class="on">CLI</span><span>Jupyter</span></div>
-      <a class="after-link" href="#quickstart">Then follow the quickstart →</a>
+      <a class="after-link" href="#syntax">Then read the syntax overview →</a>
     </div>
 
     <div class="hero-right">
@@ -88,7 +88,7 @@
     <div class="big-head">
       <h2>Built on Gleam,<br><span class="muted">Eel follows these principles.</span></h2>
       <p>These are the directions the language is being built against. Some are already in the
-        compiler; the rest are on the roadmap — the status section below says which is which.</p>
+        compiler; the rest are on the roadmap.</p>
     </div>
 
     <div class="squares">
@@ -213,7 +213,6 @@ name.startswith(prefix)</pre>
     a, b, *rest = xs
     (a, b)
 
-
 <span class="k">def</span> <span class="fn">swap</span>(p):
     <span class="k">match</span> p:
         <span class="k">case</span> (x, y):
@@ -229,7 +228,6 @@ name.startswith(prefix)</pre>
 <pre><span class="k">def</span> <span class="fn">twice</span>(f, x):
     f(f(x))
 
-
 <span class="k">def</span> <span class="fn">bump</span>(n):
     twice(<span class="k">lambda</span> x: x + <span class="n">1</span>, n)</pre>
         </div>
@@ -242,7 +240,6 @@ name.startswith(prefix)</pre>
 <pre><span class="k">class</span> <span class="fn">Point</span>(StartingWithAtom):
     x: <span class="fn">int</span>
     y: <span class="fn">int</span>
-
 
 <span class="k">def</span> <span class="fn">shift</span>(p, dx):
     <span class="k">match</span> p:
@@ -259,7 +256,6 @@ name.startswith(prefix)</pre>
 <pre><span class="k">def</span> <span class="fn">evens</span>(xs):
     [x * <span class="n">2</span> <span class="k">for</span> x <span class="k">in</span> xs <span class="k">if</span> x % <span class="n">2</span> == <span class="n">0</span>]
 
-
 <span class="k">def</span> <span class="fn">by_id</span>(pairs):
     {k: v <span class="k">for</span> k, v <span class="k">in</span> pairs}</pre>
         </div>
@@ -270,7 +266,6 @@ name.startswith(prefix)</pre>
             <span class="api-file">modules.ee</span>
           </div>
 <pre><span class="k">from</span> my.app.math <span class="k">import</span> add, mul <span class="k">as</span> times
-
 
 <span class="k">def</span> <span class="fn">total</span>(a, b):
     times(add(a, b), <span class="n">2</span>)</pre>
@@ -382,152 +377,9 @@ name.startswith(prefix)</pre>
     </div>
   </section>
 
-  <!-- A MINUTE -->
-  <section class="minute" id="quickstart">
-    <div class="minute-left">
-      <p class="kicker">a minute with Eel</p>
-      <h2>One compiler,<br><span class="muted">three commands.</span></h2>
-      <p class="lede">Write <code>.ee</code>, build it, run it in Erlang. Every step below is a real
-        command with real output — click one, or just watch.</p>
-      <div class="steps">
-        <div class="step on">
-          <span class="num">01</span>
-          <div><h4>Check your tools</h4><code>python3.15 --version · erl</code>
-            <p>Python 3.15 parses the source; Erlang/OTP 29 runs what comes out. Nothing else is
-              installed.</p></div>
-        </div>
-        <div class="step">
-          <span class="num">02</span>
-          <div><h4>Write a module</h4><code>my_app/src/hello.ee</code></div>
-        </div>
-        <div class="step">
-          <span class="num">03</span>
-          <div><h4>Build it</h4><code>python3.15 -m squeal build my_app</code></div>
-        </div>
-        <div class="step">
-          <span class="num">04</span>
-          <div><h4>Run it</h4><code>erl -pa my_app/build/dev/erlang/my_app/ebin</code></div>
-        </div>
-        <div class="step">
-          <span class="num">05</span>
-          <div><h4>Read the Erlang</h4><code>build/.../ebin/hello.erl</code></div>
-        </div>
-      </div>
-    </div>
-    <div class="minute-right">
-      <div class="terminal">
-        <div class="term-bar">
-          <span class="dot"></span><span class="dot"></span><span class="dot"></span>
-          <span class="term-title">~/my_app — eel</span>
-          <span class="term-ctl">01 / 05</span>
-        </div>
-        <div class="term-body">
-<span class="ln" aria-hidden="true">1</span><span class="prompt">$</span> python3.15 -m squeal build my_app
-<span class="ln" aria-hidden="true">2</span>
-<span class="ln" aria-hidden="true">3</span><span class="c"># eel my_app → erlang</span>
-<span class="ln" aria-hidden="true">4</span>  src/hello.ee   →  hello.beam
-<span class="ln" aria-hidden="true">5</span>  src/fib.ee     →  fib.beam
-<span class="ln" aria-hidden="true">6</span>
-<span class="ln" aria-hidden="true">7</span><span class="prompt">$</span> erl -pa my_app/build/dev/erlang/my_app/ebin
-<span class="ln" aria-hidden="true">8</span><span class="prompt">1&gt;</span> hello:hello().
-<span class="ln" aria-hidden="true">9</span><span class="s">&lt;&lt;"hi"&gt;&gt;</span>
-<span class="ln" aria-hidden="true">10</span><span class="prompt">2&gt;</span> fib:fib(10).
-<span class="ln" aria-hidden="true">11</span><span class="n">55</span>
-        </div>
-        <div class="term-foot"><span>real output · eel</span><span>replay ↻</span></div>
-      </div>
-    </div>
-  </section>
-
-  <!-- MATRIX -->
-  <section class="matrix" id="parity">
-    <div class="big-head">
-      <h2>Eel is a small language.<br><span class="muted">And it says no a lot.</span></h2>
-      <p>Gleam is the reference for the semantics, Python for the syntax. Where the two disagree,
-        Eel follows Gleam — and proves it with tests.</p>
-    </div>
-    <div class="table-wrap">
-      <table>
-        <thead>
-          <tr><th>Property</th><th class="us">eel</th><th>Gleam</th><th>Python</th></tr>
-        </thead>
-        <tbody>
-          <tr><th>Syntax</th><td class="us">Python 3.15</td><td>ML-like</td><td>Python</td></tr>
-          <tr><th>Mutation</th><td class="us">No</td><td>No</td><td>Yes</td></tr>
-          <tr><th>Loops</th><td class="us">No</td><td>No</td><td>for / while</td></tr>
-          <tr><th>Pattern matching</th><td class="us">Yes, let it crash</td><td>Yes, exhaustive</td><td>match statement</td></tr>
-          <tr><th>Types</th><td class="us">Annotations as docs</td><td>Hindley–Milner</td><td>Optional hints</td></tr>
-          <tr><th>Compiles to</th><td class="us">BEAM, abstract forms</td><td>BEAM, abstract forms</td><td>—</td></tr>
-          <tr><th>Runtime dependencies</th><td class="us">0</td><td>0</td><td>Interpreter + packages</td></tr>
-        </tbody>
-      </table>
-    </div>
-    <p class="matrix-note">Gleam 1.19 parity is enforced by 19 pairs of equivalent modules: both
-      compilers must emit the same forms, compared after normalising line annotations. 104 tests in
-      total, run with <code>pytest</code>.</p>
-  </section>
-
-  <!-- STATUS -->
-  <section id="status">
-    <div class="big-head">
-      <h2>Honest about the stage.<br><span class="muted">This is milestone one.</span></h2>
-      <p>A compiler, a parity suite and a notebook. Types, static analysis and syntax beyond Python
-        are not here yet — and the page says so.</p>
-    </div>
-    <div class="status-grid">
-      <div class="status-col">
-        <h3>Works today</h3>
-        <ul>
-          <li class="done"><span class="tag">done</span><span>Compiler from <code>.ee</code> to the BEAM
-            <small>Abstract Erlang forms, then <code>compile:forms</code> — the Gleam pipeline.</small></span></li>
-          <li class="done"><span class="tag">done</span><span>Parity suite against Gleam
-            <small>19 equivalence pairs, compared form by form.</small></span></li>
-          <li class="done"><span class="tag">done</span><span>Jupyter notebook and persistent REPL
-            <small>Shell-mode cells over a live Erlang session.</small></span></li>
-        </ul>
-      </div>
-      <div class="status-col">
-        <h3>Next</h3>
-        <ul>
-          <li><span class="tag">now</span><span>Annotations as documentation
-            <small>Type annotations are not checked by Eel — outside tools own that, as in Python.</small></span></li>
-          <li><span class="tag">next</span><span>Static analysis
-            <small>A forked Python analyzer, later.</small></span></li>
-          <li><span class="tag">later</span><span>Syntax beyond Python
-            <small>Pattern-matching syntax and pipelines.</small></span></li>
-        </ul>
-      </div>
-    </div>
-  </section>
-
-  <!-- CTA -->
-  <section class="cta">
-    <div>
-      <h2>Try it on the module you have open right now.</h2>
-      <p>Point Eel at a directory, read the Erlang it prints. Your editor keeps working — the source
-        is ordinary Python.</p>
-    </div>
-    <div class="cta-right">
-      <div class="slab"><span class="cash">$</span> python3.15 -m squeal build my_app</div>
-      <p class="hint">Python 3.15 · Erlang/OTP 29 · no dependencies</p>
-      <a class="btn-cta" href="#quickstart">Quick start →</a>
-    </div>
-  </section>
-
 </main>
 </div>
 
-<footer>
-  <div class="inner">
-    <p><strong>Eel</strong> · Python syntax, Erlang semantics.</p>
-    <nav aria-label="Footer">
-      <a href="#language">Language</a>
-      <a href="#parity">Parity</a>
-      <a href="#quickstart">Quick start</a>
-      <a href="#status">Status</a>
-    </nav>
-  </div>
-</footer>
 
 <p id="copy-status" class="sr-only" role="status" aria-live="polite"></p>
 
