@@ -205,10 +205,10 @@ h2 .muted{color:var(--faint)}
 
 /* ---------- standard library teaser ---------- */
 .stdlib{padding:0 0 4px}
-.std-head{display:flex;align-items:flex-start;justify-content:space-between;gap:28px;flex-wrap:wrap;
-  padding:38px 32px 22px}
-.std-head h2{font-size:clamp(1.35rem,2.4vw,1.85rem);letter-spacing:-.02em}
-.std-note{margin:0;max-width:46ch;color:var(--muted);font-size:.88rem;line-height:1.6}
+.std-head{display:flex;align-items:flex-end;justify-content:space-between;gap:40px;flex-wrap:wrap;
+  padding:46px 32px 30px}
+.std-head h2{flex:1 1 22rem}
+.std-note{flex:1 1 22rem;max-width:44ch;margin:0;color:var(--muted);font-size:.88rem;line-height:1.6}
 .std-grid{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid var(--line)}
 .std-block{padding:20px 24px 22px;border-right:1px solid var(--line);border-bottom:1px solid var(--line)}
 .std-block:nth-child(3n){border-right:0}
@@ -276,7 +276,7 @@ footer nav a:hover{color:var(--pink-strong)}
   .square:nth-child(2n){border-right:0}
   .square:nth-last-child(-n+3){border-bottom:1px solid var(--line)}
   .square:nth-last-child(-n+2){border-bottom:0}
-  .std-head{padding:30px 24px 16px}
+  .std-head{padding:32px 24px 22px;align-items:flex-start}
   .std-grid{grid-template-columns:1fr}
   .std-block{border-right:0}
   .std-block:last-child{border-bottom:0}
