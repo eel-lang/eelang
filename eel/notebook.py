@@ -20,7 +20,8 @@ def find_comprehensions(node, out=None) -> list:
         out = []
     if isinstance(node, tuple):
         if node and isinstance(node[0], Atom) and node[0] in (Atom("lc"), Atom("mc")):
-            out.append(node)
+            if len(node) > 1 and node[1] != 0:      # аннотация 0 — служебная форма компилятора
+                out.append(node)
         for item in node:
             find_comprehensions(item, out)
     elif isinstance(node, list):

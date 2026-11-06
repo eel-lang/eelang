@@ -1187,9 +1187,10 @@ class _Gen:
         other = self._fresh(line, "_eel@r")
 
         def count_of(source):
+            # аннотация 0: включение служебное, а не написанное пользователем
             comp = (
-                Atom("lc"), line, e,
-                [(Atom("generate"), line, e, source), _op(line, "=:=", e, arg)],
+                Atom("lc"), 0, e,
+                [(Atom("generate"), 0, e, source), _op(0, "=:=", e, arg)],
             )
             return _remote_call(line, "erlang", "length", [comp])
 
