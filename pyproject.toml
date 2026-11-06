@@ -20,7 +20,7 @@ classifiers = [
 ]
 
 [project.urls]
-Repository = "https://github.com/squea-lang/eel"
+Repository = "https://github.com/eel-lang/eelang"
 
 [project.scripts]
 eel = "eel.__main__:main"
