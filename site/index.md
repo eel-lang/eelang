@@ -79,7 +79,6 @@ _no second-class data_
 Maps, records, native records and the rest get the same level of support — and optional types make
 all of them convenient.
 
-
 ### 05 · OTP first-class
 _not an afterthought_
 
@@ -191,7 +190,9 @@ def total(a, b):
 ```
 
 ## OOP-styled _standard library_
-_planned surface · not in the compiler yet_
+
+OOP-styling is an exotic feature of Eel: it makes the standard library pleasant to use, and it
+complicates nothing — outside the standard library, OOP is not allowed anywhere.
 
 ### Strings
 - `name.startswith(prefix)` — prefix test, bytes included
@@ -224,13 +225,5 @@ of what that buys you and what it costs:
   afternoon, fork it, and bend it to your own project.
 
 ### Minus
-- **No type checker** — annotations are documentation. Eel does not check them; outside tools own
-  that, as in Python.
-- **No static analysis yet** — the IDE experience is a goal, not a feature: the analyzer is planned,
-  and PyCharm support does not exist today.
-- **The standard library is a sketch** — OOP-style methods on the core types are designed, not
-  implemented; today you work with bare Erlang forms.
-- **Pre-release, nothing to install** — runs from a checkout on Python 3.15 and OTP 29: no package,
-  no versioned releases, no stability promise.
-- **Written with AI, end to end** — expect uneven code, thin tests in places and APIs that move. The
-  parity suite with Gleam is the part that keeps it honest.
+
+напиши, что всё остальное - это минусы

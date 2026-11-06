@@ -205,11 +205,10 @@ h2 .muted{color:var(--faint)}
 
 /* ---------- standard library teaser ---------- */
 .stdlib{padding:0 0 4px}
-.std-head{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;flex-wrap:wrap;
-  padding:38px 32px 20px}
+.std-head{display:flex;align-items:flex-start;justify-content:space-between;gap:28px;flex-wrap:wrap;
+  padding:38px 32px 22px}
 .std-head h2{font-size:clamp(1.35rem,2.4vw,1.85rem);letter-spacing:-.02em}
-.std-note{font-family:var(--mono);font-stretch:88%;font-size:.55rem;letter-spacing:.09em;
-  text-transform:uppercase;color:var(--faint)}
+.std-note{margin:0;max-width:46ch;color:var(--muted);font-size:.88rem;line-height:1.6}
 .std-grid{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid var(--line)}
 .std-block{padding:20px 24px 22px;border-right:1px solid var(--line);border-bottom:1px solid var(--line)}
 .std-block:nth-child(3n){border-right:0}

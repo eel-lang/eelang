@@ -388,7 +388,9 @@ def render_syntax(title: str, blocks) -> str:
 
 def render_stdlib(title: str, blocks) -> str:
     preamble, chunks = split_blocks(blocks)
-    note = next((b[1][1:-1] for b in preamble if b[0] == "p" and b[1].startswith("_")), "")
+    note = next((b[1] for b in preamble if b[0] == "p"), "")
+    if note.startswith("_") and note.endswith("_"):
+        note = note[1:-1]
     tiles = []
     for name, body in chunks:
         rows = []
@@ -410,7 +412,7 @@ def render_stdlib(title: str, blocks) -> str:
   <section class="stdlib" id="{SECTION_IDS['stdlib']}">
     <div class="std-head">
       <h2>{heading(title)}</h2>
-      <span class="std-note">{inline(note)}</span>
+      <p class="std-note">{inline(note)}</p>
     </div>
 
     <div class="std-grid">
