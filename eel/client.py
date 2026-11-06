@@ -120,13 +120,34 @@ def ensure() -> dict:
     return start()
 
 
-def stop() -> bool:
-    """Попросить сервер выйти; снять сокет и pid-файл."""
+def _alive(pid: int) -> bool:
+    try:
+        os.kill(pid, 0)
+    except OSError:
+        return False
+    return True
+
+
+def stop(wait: float = 5.0) -> bool:
+    """Попросить сервер выйти; снять сокет и pid-файл.
+
+    Ждём, пока процесс действительно исчезнет: сервер в `finally` гасит демон компилятора,
+    и если вернуть управление раньше, новый демон может быть убит умирающим сервером.
+    """
+    pid = None
+    try:
+        pid = int(server_pid_file().read_text().strip())
+    except (OSError, ValueError):
+        pass
     stopped = False
     try:
         stopped = bool(request({"op": "stop"}, timeout=10.0).get("ok"))
     except ServerUnavailable:
         pass
+    if pid is not None:
+        deadline = time.monotonic() + wait
+        while time.monotonic() < deadline and _alive(pid):
+            time.sleep(0.02)
     _clean_endpoint()
     return stopped
 

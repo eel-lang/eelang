@@ -87,8 +87,7 @@ erl -pa my_app/build/dev/erlang/my_app/ebin -noshell \
 - `==` как в Python (`1 == 1.0` → true), `// % **` — Python-семантика.
 
 Полные правила — в `specs/goal-and-requirements.md` и `specs/architecture.md`.
-Примеры: `eel.ipynb` — тур по языку по этапам, `stdlib.ipynb` — стандартная библиотека
-(`print`, `range`, `zip`, `enumerate`, методы строк/словарей, `Ok`/`Error`, процессы).
+Примеры — `eel.ipynb`: тур по языку по этапам.
 
 ## Разработка
 
