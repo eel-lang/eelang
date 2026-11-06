@@ -38,7 +38,7 @@ def test_def_compiles_to_named_fun():
 
 def test_class_registers_and_erases():
     s = Session()
-    forms, _ = compile_cell("class T(StartingWithAtom):\n    x: int\n", s)
+    forms, _ = compile_cell("class T(AtomPrefixed):\n    x: int\n", s)
     assert forms == []
     assert "T" in s.classes
     forms, _ = compile_cell("T(1)\n", s)
@@ -129,7 +129,7 @@ def test_shell_mode_pow_and_comprehension():
 
 def test_class_redefinition_across_cells_is_allowed():
     s = Session()
-    src = "class T(StartingWithAtom):\n    x: int\n"
+    src = "class T(AtomPrefixed):\n    x: int\n"
     assert compile_cell(src, s)[0] == []
     assert compile_cell(src, s)[0] == []  # re-running the cell is not an error
 
@@ -139,7 +139,7 @@ def test_class_duplicate_within_cell_errors():
     from eel.errors import EelError
     with pytest.raises(EelError):
         compile_cell(
-            "class T(StartingWithAtom):\n    x: int\nclass T(StartingWithAtom):\n    y: int\n",
+            "class T(AtomPrefixed):\n    x: int\nclass T(AtomPrefixed):\n    y: int\n",
             Session(),
         )
 
@@ -378,7 +378,7 @@ def test_builtin_result_classes_can_be_redefined_in_shell():
     try:
         forms, _ = compile_cell("Ok(1)\n", s)
         assert repl.eval_forms(forms) == ("ok", "{ok,1}")
-        forms, _ = compile_cell("class Ok(StartingWithAtom):\n    a: int\n    b: int\n", s)
+        forms, _ = compile_cell("class Ok(AtomPrefixed):\n    a: int\n    b: int\n", s)
         repl.eval_forms(forms)
         forms, _ = compile_cell("Ok(1, 2)\n", s)
         assert repl.eval_forms(forms) == ("ok", "{ok,1,2}")

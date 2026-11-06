@@ -294,7 +294,7 @@ pub fn get(t: CustomType) -> Int {
 }
 """
     eel = """\
-class CustomType(StartingWithAtom):
+class CustomType(AtomPrefixed):
     x: int
     y: int
 def make():
@@ -419,7 +419,7 @@ def test_parity_string_escape():
 def test_parity_class_guard():
     assert_parity(
         "pub type T {\n  T(x: Int)\n}\npub fn g(v: T) -> Int {\n  let r = case v {\n    T(x) if x > 0 -> x\n    _ -> 0\n  }\n  r\n}\n",
-        "class T(StartingWithAtom):\n    x: int\ndef g(v):\n    match v:\n        case T(x) if x > 0:\n            r = x\n        case _:\n            r = 0\n    r\n",
+        "class T(AtomPrefixed):\n    x: int\ndef g(v):\n    match v:\n        case T(x) if x > 0:\n            r = x\n        case _:\n            r = 0\n    r\n",
         "cg", "parity_cg",
     )
 

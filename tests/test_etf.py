@@ -68,7 +68,7 @@ def test_unsupported_type_is_loud():
 def test_forms_from_etf_equal_text_forms(tmp_path):
     """Оракул: `binary_to_term(ETF)` =:= `file:consult(текстовые формы)`."""
     source = (
-        "class T(StartingWithAtom):\n"
+        "class T(AtomPrefixed):\n"
         "    a: int\n"
         "    b: int\n"
         "\n"

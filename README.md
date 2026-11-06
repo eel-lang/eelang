@@ -73,7 +73,7 @@ erl -pa my_app/build/dev/erlang/my_app/ebin -noshell \
   (новое Erlang-имя `X@1`);
 - атомы — одинарные кавычки `'ok'`, строки — двойные `"..."`;
 - `if`/`else` и `match`/`case` (в условии — только bool; несматченный match — «let it crash»);
-- классы `class T(StartingWithAtom): x: int` → кортеж `{t, …}`;
+- классы `class T(AtomPrefixed): x: int` → кортеж `{t, …}`;
 - `lambda`, list/dict comprehensions, декораторы;
 - процессы: `match receive(): case …` (селективный приём), `case Timeout(ms):` — таймаут,
   `send(pid, msg)`, `self()`, `spawn(lambda: …)`;

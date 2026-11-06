@@ -99,9 +99,9 @@ class Session:
             )
         fields = frontend._class_fields(node)
         base = frontend._base_name(node)
-        if base != "StartingWithAtom":
+        if base != frontend.BASE_CLASS:
             raise EelError(
-                f"{node.lineno}: base class {base!r} is not supported — only StartingWithAtom"
+                f"{node.lineno}: base class {base!r} is not supported — only AtomPrefixed"
             )
         if node.name in seen:
             raise EelError(

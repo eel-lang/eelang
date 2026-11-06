@@ -41,6 +41,9 @@ _UNARY = {ast.USub: "USub", ast.UAdd: "UAdd", ast.Not: "Not"}
 # Встроенные конструкторы (прелюдия как у Gleam): Result = Ok(a) | Error(e).
 BUILTIN_CLASSES = {"Ok": ("value",), "Error": ("value",)}
 
+#: Базовый класс пользовательских типов (тег-атом в кортеже).
+BASE_CLASS = "AtomPrefixed"
+
 # Маркер присваивания с образцом: `Ctor(args) = expr` переписывается в
 # `__pattern_match__(Ctor(args), expr)`, потому что CPython не принимает call-цель.
 PATTERN_MARKER = "__pattern_match__"
@@ -117,10 +120,10 @@ def _collect_classes(tree: ast.Module) -> dict:
             )
             fields = _class_fields(node)
             base = _base_name(node)
-            if base != "StartingWithAtom":
+            if base != BASE_CLASS:
                 raise EelError(
                     f"{node.lineno}: base class {base!r} is not supported — only "
-                    "StartingWithAtom (NativeRecord/Map come later)"
+                    "AtomPrefixed (NativeRecord/Map come later)"
                 )
             if node.name in classes and node.name not in builtin_names:
                 raise EelError(f"{node.lineno}: duplicate definition of class {node.name}")
@@ -154,7 +157,7 @@ def _class_fields(node: ast.ClassDef) -> tuple:
 
 def _base_name(node: ast.ClassDef) -> str:
     if not node.bases:
-        raise EelError(f"{node.lineno}: a class needs a base class (StartingWithAtom)")
+        raise EelError(f"{node.lineno}: a class needs a base class (AtomPrefixed)")
     if len(node.bases) != 1 or not isinstance(node.bases[0], ast.Name):
         raise EelError(f"{node.lineno}: exactly one base class name")
     return node.bases[0].id

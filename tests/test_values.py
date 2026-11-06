@@ -265,7 +265,7 @@ def test_cli_error_exit_code():
     assert "Traceback" not in r.stderr
 
 
-_SRC_CLASS = "class CustomType(StartingWithAtom):\n    x: int\n    y: int\n"
+_SRC_CLASS = "class CustomType(AtomPrefixed):\n    x: int\n    y: int\n"
 
 
 def test_constructor_form():
@@ -294,7 +294,8 @@ def test_class_base_errors():
     for source in [
         "class Foo(NativeRecord):\n    x: int\n",
         "class Foo:\n    x: int\n",
-        "class Foo(StartingWithAtom):\n    x = 1\n",
+        "class Foo(StartingWithAtom):\n    x: int\n",   # прежнее имя убрано
+        "class Foo(AtomPrefixed):\n    x = 1\n",
     ]:
         with pytest.raises(EelError):
             compile_source(source, "src/m.eel", "m")
@@ -305,7 +306,7 @@ def test_builtin_result_classes_can_be_redefined():
     from eel.errors import EelError
 
     src = (
-        "class Ok(StartingWithAtom):\n    value: int\n    code: int\n\n"
+        "class Ok(AtomPrefixed):\n    value: int\n    code: int\n\n"
         "def make(x):\n    Ok(x, 7)\n\n"
         "def total(v):\n    match v:\n        case Ok(a, b):\n            r = a + b\n    r\n"
     )
@@ -329,8 +330,8 @@ def test_builtin_result_classes_can_be_redefined():
     # повторное определение пользовательского класса — по-прежнему ошибка
     with pytest.raises(EelError, match="duplicate definition of class Ok"):
         compile_source(
-            "class Ok(StartingWithAtom):\n    a: int\n\n"
-            "class Ok(StartingWithAtom):\n    a: int\n",
+            "class Ok(AtomPrefixed):\n    a: int\n\n"
+            "class Ok(AtomPrefixed):\n    a: int\n",
             "src/m.eel", "m",
         )
 
@@ -622,8 +623,8 @@ def test_constructor_arity():
     import pytest
     from eel.errors import EelError
     for src in [
-        "class T(StartingWithAtom):\n    x: int\ndef f():\n    T(1, 2)\n",
-        "class T(StartingWithAtom):\n    x: int\ndef f(v):\n    match v:\n        case T(x, y):\n            r = x\n        case _:\n            r = 0\n    r\n",
+        "class T(AtomPrefixed):\n    x: int\ndef f():\n    T(1, 2)\n",
+        "class T(AtomPrefixed):\n    x: int\ndef f(v):\n    match v:\n        case T(x, y):\n            r = x\n        case _:\n            r = 0\n    r\n",
     ]:
         with pytest.raises(EelError):
             compile_source(src, "src/m.eel", "m")
@@ -634,7 +635,7 @@ def test_duplicate_class_error():
     from eel.errors import EelError
     with pytest.raises(EelError):
         compile_source(
-            "class T(StartingWithAtom):\n    x: int\nclass T(StartingWithAtom):\n    y: int\n",
+            "class T(AtomPrefixed):\n    x: int\nclass T(AtomPrefixed):\n    y: int\n",
             "src/m.eel", "m")
 
 
@@ -886,7 +887,7 @@ def test_decorator_errors():
     from eel.errors import EelError
     for src in [
         "@(lambda f: f)\ndef g():\n    1\n",              # not a name/module/call
-        "@dec\nclass T(StartingWithAtom):\n    x: int\n",  # a class
+        "@dec\nclass T(AtomPrefixed):\n    x: int\n",  # a class
     ]:
         with pytest.raises(EelError):
             compile_source(src, "src/m.eel", "m")

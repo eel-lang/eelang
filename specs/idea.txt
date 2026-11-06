@@ -67,7 +67,7 @@ match expr:
 
 Вместо атомов рекомендуется использовать типы - так же, как в gleam.Они определяются примерно так (все названия - чтобы объяснить схему)
 
-class CustomType(StartingWithAtom):
+class CustomType(AtomPrefixed):
   x: int
   y: int
 
