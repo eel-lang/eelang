@@ -278,12 +278,17 @@ def render_marks(built_on: str) -> str:
         return f'<span class="mark-item">{html.escape(text)}</span>'
 
     marks = "".join(mark_item(item) for item in mark_items)
+    inspired = ""
     if len(parts) == 2 and parts[1].strip():
-        marks += '<span class="strip-tag">inspired by</span>' + mark_item(parts[1].strip())
+        inspired = (
+            '<span class="inspired"><span class="strip-tag">inspired by</span>'
+            + mark_item(parts[1].strip())
+            + "</span>"
+        )
 
     return f"""      <div class="hero-meta">
         <span class="label">Built on</span>
-        {marks}
+        {marks}{inspired}
       </div>"""
 
 

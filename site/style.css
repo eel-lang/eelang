@@ -155,7 +155,8 @@ pre::-webkit-scrollbar-thumb{background:#d9d1c7;border-radius:4px}
   font-stretch:96%;display:flex;align-items:center;gap:6px}
 .mark-item span{font-weight:500;font-size:.74rem;color:var(--faint);letter-spacing:0}
 .strip-tag{font-family:var(--mono);font-stretch:88%;font-size:.55rem;letter-spacing:.12em;
-  text-transform:uppercase;color:var(--faint);margin-left:8px}
+  text-transform:uppercase;color:var(--faint)}
+.hero-meta .inspired{margin-left:auto;display:flex;align-items:baseline;gap:8px}
 
 /* ---------- section headings ---------- */
 .big-head{display:grid;grid-template-columns:1.15fr .85fr;gap:40px;align-items:end;padding:46px 32px 30px}

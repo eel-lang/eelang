@@ -26,7 +26,7 @@ you already know, compiled to Erlang abstract forms through the same pipeline Gl
 
 Built on: Erlang/OTP 29 · CPython 3.15 · Inspired by: Gleam
 
-[Then read the syntax overview →](#syntax)
+[Read the syntax overview →](#syntax)
 
 ### fib.eel
 _one function with a match, instead of Erlang's multiple function clauses_
