@@ -434,11 +434,11 @@ def render_tradeoffs(title: str, blocks) -> str:
             if not item:
                 continue
             strong, _, rest = item.partition(" — ")
+            detail = f"\n              <small>{inline(rest)}</small>" if rest else ""
             items.append(
                 f"""          <li>
             <span class="mark" aria-hidden="true">{mark}</span>
-            <span>{inline(strong)}
-              <small>{inline(rest)}</small></span>
+            <span>{inline(strong)}{detail}</span>
           </li>"""
             )
         columns.append(

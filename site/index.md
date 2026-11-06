@@ -65,6 +65,7 @@ A stdlib that is pleasant to use, with OOP-style methods on the core data struct
 dic.get(my_key)
 my_list.map(my_func)
 name.startswith(prefix)
+sep.join(lines)
 ```
 
 ### 03 · Optional static typing
@@ -217,13 +218,12 @@ complicates nothing — outside the standard library, OOP is not allowed anywher
 
 ## This is an early alpha.<br>_100% vibe-coded._
 
-It compiles real modules today, and it is not something you put in production yet. The honest list
-of what that buys you and what it costs:
+It compiles real modules today, and it is not something you put in production yet: the code was
+written mostly with DeepSeek 4 Flash, in a vibe-coding loop.
 
 ### Plus
 - **A small codebase you can fork** — the compiler is a handful of Python modules: read it in an
   afternoon, fork it, and bend it to your own project.
 
 ### Minus
-
-напиши, что всё остальное - это минусы
+- **Everything else is a minus.**
