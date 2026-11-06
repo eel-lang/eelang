@@ -82,7 +82,7 @@ _BEAM ↔ CPython_
 One of the tasks is to bring the BEAM and CPython ecosystems closer, and to enable projects
 like Hornbeam.
 
-## _Almost_ Python syntax
+## Almost _Python_ syntax
 
 Every construct below is compiled, not interpreted: the compiler turns this Python into Erlang
 abstract forms. Pick a category and read the code.
