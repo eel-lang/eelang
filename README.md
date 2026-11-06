@@ -1,21 +1,21 @@
 # Eel
 
-Gleam-подобный язык для BEAM (виртуальной машины Erlang) с синтаксисом Python.
-Исходники — файлы `.eel`; компилятор генерирует Erlang Abstract Format и `.beam` так же,
-как Gleam 1.19.
+A Gleam-like language for the BEAM (the Erlang VM) with Python syntax.
+Sources are `.eel` files; the compiler emits the Erlang Abstract Format and `.beam` files the
+same way Gleam 1.19 does.
 
-## Установка
+## Installation
 
 ```
-pip install eelang      # язык называется eel, но на PyPI имя «eel» занято другой библиотекой
+pip install eelang      # the language is eel, but PyPI's "eel" belongs to another library
 ```
 
-Пакет требует Python 3.15 и Erlang/OTP с `escript` в `PATH`. После установки доступны
-`eel build DIR` и `python -m eel build DIR`.
+The package needs Python 3.15 and Erlang/OTP with `escript` in `PATH`. After installation both
+`eel build DIR` and `python -m eel build DIR` are available.
 
-## Быстрый старт
+## Quick start
 
-Проект — каталог с деревом `src/`:
+A project is a directory with a `src/` tree:
 
 ```
 my_app/
@@ -30,31 +30,30 @@ def hello():
     "hi"
 ```
 
-Сборка:
+Build:
 
 ```
-python -m eel build my_app            # .beam в build/dev/erlang/my_app/ebin
-python -m eel build my_app --erl      # ещё и .erl рядом с каждым .beam
-eel daemon stop                       # остановить фоновый компилятор
+python -m eel build my_app            # .beam into build/dev/erlang/my_app/ebin
+python -m eel build my_app --erl      # also write .erl next to every .beam
+eel daemon stop                       # stop the background compiler
 ```
 
-Сборка инкрементальная: пересобираются только изменившиеся модули (хэш содержимого, а не mtime),
-удалённые `.eel` убирают свои `.beam`; `--force` пересобирает всё.
+Builds are incremental: only changed modules are recompiled (content hash, not mtime), and removed
+`.eel` files drop their `.beam`; `--force` rebuilds everything.
 
-Фоновая часть двухслойная: **сервер сборки** (живой Python-процесс, принимает сборки по unix-сокету)
-держит внутри **демон компилятора** (Erlang-VM). Слежения за файлами нет — сборка идёт только по
-запросу, но без старта интерпретатора и VM: правка одного модуля в проекте из 40 — 4–6 мс по сокету,
-70–85 мс обычным `eel build` (остальное — старт CPython). Своя интеграция (редактор, LSP, хук)
-может говорить с сокетом напрямую: `from eel import client; client.build_remote(path)`.
-Оба процесса живут вместе: `eel daemon start` поднимает сервер и демон компилятора,
-`eel daemon stop` гасит оба, а если сервер убить (даже `kill -9`), демон компилятора уходит сам —
-он стережёт родителя по закрытию stdin. `--no-daemon` собирает в процессе без фоновых процессов.
+The background part has two layers: a **build server** (a live Python process accepting builds over
+a unix socket) that holds the **compiler daemon** (an Erlang VM). Nothing watches the filesystem —
+builds happen only on request, but without paying for interpreter and VM startup: editing one module
+in a 40-module project costs 4–6 ms over the socket, 70–85 ms through a plain `eel build` (the rest
+is CPython startup). A custom integration (editor, LSP, hook) can talk to the socket directly:
+`from eel import client; client.build_remote(path)`.
 
-Первая сборка поднимает фоновый демон компилятора (Erlang-VM), и он живёт, пока не выполнят
-`eel daemon stop` — следующие сборки не тратят ~0.5 с на старт VM. `--no-daemon` собирает
-внутри процесса, `eel daemon status` показывает pid, версию протокола и число сборок.
+Both processes live together: `eel daemon start` brings up the server and the compiler daemon,
+`eel daemon stop` shuts both down, and if the server is killed (even with `kill -9`) the compiler
+daemon leaves on its own — it watches its parent through stdin closing. `--no-daemon` builds
+in-process with no background processes at all.
 
-Запуск:
+Run it:
 
 ```
 erl -pa my_app/build/dev/erlang/my_app/ebin -noshell \
@@ -62,34 +61,35 @@ erl -pa my_app/build/dev/erlang/my_app/ebin -noshell \
 # => <<"hi">>
 ```
 
-Модуль — это путь файла под `src/`: `src/a/b/c.eel` → модуль `a@b@c`; импорт
-`from a.b.c import f` → вызов `a@b@c:f(...)`.
+A module is the path of its file under `src/`: `src/a/b/c.eel` → module `a@b@c`; the import
+`from a.b.c import f` becomes a call to `a@b@c:f(...)`.
 
-## Язык
+## Language
 
-Синтаксис Python, семантика Gleam/Erlang:
+Python syntax, Gleam/Erlang semantics:
 
-- неизменяемость: циклов `for`/`while` нет, мутация запрещена; `x = x + 1` — переприсваивание
-  (новое Erlang-имя `X@1`);
-- атомы — одинарные кавычки `'ok'`, строки — двойные `"..."`;
-- `if`/`else` и `match`/`case` (в условии — только bool; несматченный match — «let it crash»);
-- классы `class T(AtomPrefixed): x: int` → кортеж `{t, …}`;
-- `lambda`, list/dict comprehensions, декораторы;
-- процессы: `match receive(): case …` (селективный приём), `case Timeout(ms):` — таймаут,
+- immutability: no `for`/`while` loops, no mutation; `x = x + 1` is a rebinding
+  (a new Erlang name `X@1`);
+- atoms use single quotes `'ok'`, strings use double quotes `"..."`;
+- `if`/`else` and `match`/`case` (the condition must be a bool; an unmatched match is "let it crash");
+- classes `class T(AtomPrefixed): x: int` compile to a tuple `{t, …}`;
+- `lambda`, list/dict comprehensions, decorators;
+- processes: `match receive(): case …` (selective receive), `case Timeout(ms):` for the timeout,
   `send(pid, msg)`, `self()`, `spawn(lambda: …)`;
-- `print(x)` — печать в stdout (питоновское представление значений), возвращает `nil`;
-- `zip(a, b)` — пары до конца короткого списка, `enumerate(xs[, start])` — пары `(номер, значение)`;
-  оба неленивые и принимают только списки;
-- `range(...)` — питоновский range, но неленивый: возвращает список;
-- `print`/`zip`/`enumerate`/`range` можно переопределить своим `def` — имя разрешается как обычное (по имени);
-- методы стандартной библиотеки: `d.keys()/values()/items()/get()`, `s.startswith/endswith/
-  lower/upper/strip/lstrip/rstrip/split/join/replace/splitlines`, `xs.count(x)` у списков и кортежей;
-- `==` как в Python (`1 == 1.0` → true), `// % **` — Python-семантика.
+- `print(x)` writes to stdout (Python-like value display) and returns `nil`;
+- `zip(a, b)` yields pairs up to the shorter list, `enumerate(xs[, start])` yields `(index, value)`
+  pairs; both are eager and accept lists only;
+- `range(...)` is Python's range, but eager: it returns a list;
+- `print`/`zip`/`enumerate`/`range` can be redefined with your own `def` — names resolve like any
+  other name (by name);
+- standard-library methods: `d.keys()/values()/items()/get()`, `s.startswith/endswith/
+  lower/upper/strip/lstrip/rstrip/split/join/replace/splitlines`, `xs.count(x)` on lists and tuples;
+- `==` behaves like Python (`1 == 1.0` → true), `// % **` follow Python semantics.
 
-Полные правила — в `specs/goal-and-requirements.md` и `specs/architecture.md`.
-Примеры — `eel.ipynb`: тур по языку по этапам.
+The full rules live in `specs/goal-and-requirements.md` and `specs/architecture.md`.
+Examples — `eel.ipynb`: a stage-by-stage tour of the language.
 
-## Разработка
+## Development
 
 ```
 python -m venv .venv
@@ -97,6 +97,6 @@ python -m venv .venv
 .venv/bin/python -m pytest
 ```
 
-Тесты включают 18 паритет-пар с Gleam: на эквивалентном коде eel и Gleam 1.19.2 генерируют
-одинаковые Erlang-формы. Для них нужен установленный `gleam` в `PATH` (сам компилятор Gleam в
-репозиторий не входит — для справки держите локальный клон `gleam/`, он в `.gitignore`).
+The suite includes 18 parity pairs with Gleam: for equivalent code eel and Gleam 1.19.2 produce
+identical Erlang forms. They need a `gleam` binary in `PATH` (the Gleam compiler itself is not part
+of this repository — keep a local clone in `gleam/` for reference, it is in `.gitignore`).

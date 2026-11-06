@@ -1,4 +1,4 @@
-"""ETF-кодировщик: типы, round-trip через Erlang и оракул «формы совпадают с текстом»."""
+"""The ETF encoder: types, a round trip through Erlang, and the "forms equal the text" oracle."""
 
 from __future__ import annotations
 
@@ -50,7 +50,7 @@ def test_round_trip_types(tmp_path):
 
 
 def test_strings_are_charlists_not_binaries(tmp_path):
-    """В формах `str` — charlist: `{string, L, "chars"}` иначе сломает compile:forms."""
+    """In the forms `str` is a charlist: `{string, L, "chars"}`, otherwise compile:forms breaks."""
     assert _decode(tmp_path, "ab") == "[97,98]"
     assert _decode(tmp_path, "") == "[]"
 
@@ -66,7 +66,7 @@ def test_unsupported_type_is_loud():
 
 
 def test_forms_from_etf_equal_text_forms(tmp_path):
-    """Оракул: `binary_to_term(ETF)` =:= `file:consult(текстовые формы)`."""
+    """The oracle: `binary_to_term(ETF)` =:= `file:consult(the textual forms)`."""
     source = (
         "class T(AtomPrefixed):\n"
         "    a: int\n"

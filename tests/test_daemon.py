@@ -38,16 +38,16 @@ def _pid() -> str:
 
 def test_build_uses_the_running_daemon(clean_processes, tmp_path):
     proj = _project(tmp_path)
-    DAEMON.start()                             # так делает сервер сборки при старте
+    DAEMON.start()                             # this is what the build server does at startup
     build(proj)
     pid = _pid()
     info = DAEMON.ping()
     assert info["version"] == str(PROTOCOL)
 
-    # правим исходник, чтобы вторая сборка действительно компилировала
+    # edit the source so the second build really compiles something
     (proj / "src" / "hello.eel").write_text('def hello():\n    "hi again"\n')
     build(proj)
-    assert _pid() == pid                       # тот же процесс Erlang
+    assert _pid() == pid                       # the same Erlang process
     assert int(DAEMON.ping()["compiled"]) == 2
 
 
@@ -61,7 +61,7 @@ def test_daemon_stop_and_restart(clean_processes, tmp_path):
     assert not daemon_socket().exists()
     assert DAEMON.ping() is None
 
-    DAEMON.start()                             # новый демон поднимает сервер
+    DAEMON.start()                             # the server starts a new daemon
     assert DAEMON.ping() is not None
 
 
@@ -73,7 +73,7 @@ def test_no_daemon_flag_keeps_everything_off(clean_processes, tmp_path):
     )
     assert not daemon_socket().exists()
     assert DAEMON.ping() is None
-    assert client.ping() is None               # сервер сборки тоже не поднимался
+    assert client.ping() is None               # the build server was not started either
 
 
 def test_compile_error_through_daemon(clean_processes, tmp_path):
@@ -93,4 +93,4 @@ def test_compile_error_through_daemon(clean_processes, tmp_path):
     with pytest.raises(EelError) as exc:
         DAEMON.compile(blob, False)
     assert str(exc.value) == "src/t.eel:3: function nope/0 is not defined"
-    assert DAEMON.ping() is not None           # демон жив после ошибки
+    assert DAEMON.ping() is not None           # the daemon survives an error

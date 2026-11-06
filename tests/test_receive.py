@@ -150,7 +150,7 @@ def test_semantics_in_erl():
     script = """
         Self = self(),
         S = spawn(fun() -> Self ! {s, msg:selective()} end),
-        S ! {error, 1},          % не подходит по образцу — остаётся в ящике
+        S ! {error, 1},          % matches no pattern — stays in the mailbox
         S ! {ok, 7},
         Sel = receive {s, V} -> V end,
         G = spawn(fun() -> Self ! {g, msg:guarded()} end),

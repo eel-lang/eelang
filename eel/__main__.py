@@ -1,4 +1,4 @@
-"""CLI eel (в духе gleam): подкоманды; в первой сборке — только build."""
+"""The eel CLI (in the spirit of gleam): subcommands; the first release knows only build."""
 
 from __future__ import annotations
 
@@ -45,7 +45,7 @@ def main(argv: list[str] | None = None) -> int:
 
 
 def _build(args) -> int:
-    """Сначала тонкий клиент сервера; сборка внутри процесса — запасной путь."""
+    """The thin server client first; building in-process is the fallback."""
     from . import client
     from .errors import EelError
 

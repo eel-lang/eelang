@@ -27,7 +27,7 @@ def test_build_and_run():
 
     ebin = tmp / "build" / "dev" / "erlang" / tmp.name / "ebin"
     assert (ebin / "hello.beam").exists()
-    # .erl — только по флагу --erl (по умолчанию формы идут ETF-блобом)
+    # .erl only with --erl (by default the forms travel as an ETF blob)
     assert not (ebin / "hello.erl").exists()
     artefacts = tmp / "build" / "dev" / "erlang" / tmp.name / "_eel_artefacts"
     assert (artefacts / "forms.etf").exists()
@@ -41,7 +41,7 @@ def test_build_and_run():
     )
     assert '<<"hi">>' in out.stdout
 
-    # --erl дописывает исходник рядом с .beam
+    # --erl writes the source next to the .beam
     subprocess.run(
         [sys.executable, "-m", "eel", "build", str(tmp), "--erl"],
         cwd=ROOT, check=True, capture_output=True,

@@ -1,7 +1,7 @@
-"""Тонкий клиент сервера сборки: только сокет, JSON и пути.
+"""The thin client of the build server: just a socket, JSON and paths.
 
-Держится намеренно лёгким — этот модуль импортирует CLI до того, как решит, нужен ли вообще
-тяжёлый компилятор: сборка в живом сервере стоит ~3 мс, а импорт `eel.compiler` — десятки.
+Deliberately lightweight — the CLI imports this module before deciding whether the heavy
+compiler is needed at all: a build in the live server costs ~3 ms, while importing `eel.compiler` costs dozens.
 """
 
 from __future__ import annotations
@@ -16,7 +16,7 @@ import time
 
 from .errors import EelError
 
-#: Версия протокола «клиент ↔ сервер сборки».
+#: The "client ↔ build server" protocol version.
 SERVER_PROTOCOL = 1
 
 _CACHE = pathlib.Path(
@@ -25,7 +25,7 @@ _CACHE = pathlib.Path(
 
 
 def install_key() -> str:
-    """Ключ по пути установки: у разных копий eel — свои серверы."""
+    """A key by install path: different eel copies get their own servers."""
     package = pathlib.Path(__file__).resolve().parent
     return hashlib.sha1(str(package).encode("utf-8")).hexdigest()[:12]
 
@@ -43,11 +43,11 @@ def server_log() -> pathlib.Path:
 
 
 class ServerUnavailable(RuntimeError):
-    """Сервер недоступен — вызывающий решает, поднимать ли его или собирать внутри процесса."""
+    """The server is unreachable — the caller decides to start it or build in-process."""
 
 
 def request(payload: dict, timeout: float = 300.0) -> dict:
-    """Отправить запрос серверу (одна JSON-строка) и вернуть ответ."""
+    """Send one JSON-line request to the server and return the reply."""
     sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
     sock.settimeout(timeout)
     try:
@@ -70,7 +70,7 @@ def request(payload: dict, timeout: float = 300.0) -> dict:
 
 
 def ping(timeout: float = 2.0) -> dict | None:
-    """``{"version": 1, "builds": 3}`` или None, если сервер не отвечает."""
+    """``{"version": 1, "builds": 3}``, or None when the server does not answer."""
     try:
         reply = request({"op": "ping"}, timeout=timeout)
     except ServerUnavailable:
@@ -87,8 +87,8 @@ def _clean_endpoint() -> None:
 
 
 def start() -> dict:
-    """Поднять сервер сборки в фоне и дождаться готовности."""
-    import subprocess  # тяжёлый импорт — только для того, кто действительно запускает сервер
+    """Start the build server in the background and wait until it is ready."""
+    import subprocess  # a heavy import, only for whoever actually starts the server
 
     server_socket().parent.mkdir(parents=True, exist_ok=True)
     _clean_endpoint()
@@ -111,11 +111,11 @@ def start() -> dict:
 
 
 def ensure() -> dict:
-    """Живой сервер нужной версии — или поднять новый."""
+    """A live server of the right version — or start a new one."""
     info = ping()
     if info is not None and info.get("version") == SERVER_PROTOCOL:
         return info
-    if info is not None:  # чужая версия протокола
+    if info is not None:  # a foreign protocol version
         stop()
     return start()
 
@@ -129,10 +129,10 @@ def _alive(pid: int) -> bool:
 
 
 def stop(wait: float = 5.0) -> bool:
-    """Попросить сервер выйти; снять сокет и pid-файл.
+    """Ask the server to exit; remove the socket and the pid file.
 
-    Ждём, пока процесс действительно исчезнет: сервер в `finally` гасит демон компилятора,
-    и если вернуть управление раньше, новый демон может быть убит умирающим сервером.
+    We wait for the process to really disappear: the server stops the compiler daemon in its
+    `finally`, and returning earlier could let the dying server kill a freshly started daemon.
     """
     pid = None
     try:
@@ -159,9 +159,9 @@ def build_remote(
     dump_forms: bool = False,
     force: bool = False,
 ) -> bool:
-    """Собрать через сервер. True — сделано; False — сервер недоступен (собирать внутри процесса).
+    """Build through the server. True — done; False — no server (build in-process).
 
-    Ошибки компиляции поднимаются как `EelError` с текстом от сервера.
+    Compile errors are raised as `EelError` with the server's text.
     """
     try:
         ensure()

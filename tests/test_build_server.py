@@ -50,7 +50,7 @@ def test_first_build_starts_server_and_next_reuses_it(clean_servers, tmp_path):
 
     (proj / "src" / "hello.eel").write_text('def hello():\n    "hi again"\n')
     assert _cli("build", str(proj)).returncode == 0
-    assert client.server_pid_file().read_text().strip() == pid   # сервер тот же
+    assert client.server_pid_file().read_text().strip() == pid   # the same server
     assert client.ping()["builds"] == 2
 
 
@@ -61,8 +61,8 @@ def test_build_remote_is_served_by_the_live_process(clean_servers, tmp_path):
     assert (out / "ebin" / "hello.beam").exists()
     before = _beams(out)
 
-    assert client.build_remote(proj) is True          # ничего не менялось
-    assert _beams(out) == before                      # и ничего не пересобрано
+    assert client.build_remote(proj) is True          # nothing changed
+    assert _beams(out) == before                      # and nothing was rebuilt
 
     (proj / "src" / "hello.eel").write_text('def hello():\n    "ho"\n')
     assert client.build_remote(proj) is True
@@ -78,7 +78,7 @@ def test_compile_error_is_reported_and_server_survives(clean_servers, tmp_path):
     assert info is not None
     assert info["errors"] >= 1
 
-    (proj / "src" / "hello.eel").write_text(OK_SRC)     # сервер продолжает работать
+    (proj / "src" / "hello.eel").write_text(OK_SRC)     # the server keeps working
     assert client.build_remote(proj) is True
     assert (proj / "build" / "dev" / "erlang" / proj.name / "ebin" / "hello.beam").exists()
 
@@ -113,8 +113,8 @@ def test_daemon_stop_stops_both(clean_servers, tmp_path):
 def test_no_daemon_builds_in_process(clean_servers, tmp_path):
     proj = _project(tmp_path)
     assert _cli("build", str(proj), "--no-daemon").returncode == 0
-    assert client.ping() is None                      # сервер не поднимался
-    assert DAEMON.ping() is None                      # и демон компилятора тоже
+    assert client.ping() is None                      # no server was started
+    assert DAEMON.ping() is None                      # nor the compiler daemon
     assert (proj / "build" / "dev" / "erlang" / proj.name / "ebin" / "hello.beam").exists()
 
 
@@ -127,7 +127,7 @@ def test_ping_reports_protocol(clean_servers, tmp_path):
 def test_compiler_daemon_is_born_with_the_server(clean_servers, tmp_path):
     assert DAEMON.ping() is None
     client.ensure()
-    assert DAEMON.ping() is not None           # без единой сборки
+    assert DAEMON.ping() is not None           # without a single build
 
 
 def test_compiler_daemon_dies_with_the_server(clean_servers, tmp_path):
@@ -145,18 +145,18 @@ def test_compiler_daemon_dies_when_the_server_is_killed(clean_servers, tmp_path)
     client.ensure()
     assert DAEMON.ping() is not None
     pid = int(client.server_pid_file().read_text())
-    os.kill(pid, signal.SIGKILL)               # сервер умирает без шанса прибраться
+    os.kill(pid, signal.SIGKILL)               # the server dies with no chance to clean up
 
     deadline = time.monotonic() + 10
     while time.monotonic() < deadline and DAEMON.ping() is not None:
         time.sleep(0.05)
-    assert DAEMON.ping() is None               # escript ушёл по EOF на stdin
+    assert DAEMON.ping() is None               # the escript left on stdin EOF
 
 
 def test_library_build_does_not_start_the_daemon(clean_servers, tmp_path):
     from eel.compiler import build
 
     proj = _project(tmp_path)
-    build(proj)                                # API без сервера: escript внутри процесса
-    assert DAEMON.ping() is None               # демон рождается только вместе с сервером
+    build(proj)                                # API without a server: an in-process escript
+    assert DAEMON.ping() is None               # the daemon is born only with the server
     assert (proj / "build" / "dev" / "erlang" / proj.name / "ebin" / "hello.beam").exists()

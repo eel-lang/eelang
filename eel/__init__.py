@@ -1,3 +1,3 @@
-"""Eel — Gleam-подобный язык для BEAM с синтаксисом Python."""
+"""Eel — a Gleam-like language for the BEAM with Python syntax."""
 
 __version__ = "0.1.0"

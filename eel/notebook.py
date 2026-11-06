@@ -1,9 +1,9 @@
-"""Jupyter-интеграция eel без кастомного kernel.
+"""Eel's Jupyter integration, with no custom kernel.
 
-Подключается как IPython-расширение (``c.InteractiveShellApp.extensions =
-['eel.notebook']`` в ``ipython_config.py``). Ячейка остаётся Python-текстом —
-автокомплит/линт даёт Python-LSP; выполнение перехватывается: Python выполняет
-``pass``, а исходник компилируется eel'ом и исполняется в persistent Erlang-REPL.
+It plugs in as an IPython extension (``c.InteractiveShellApp.extensions =
+['eel.notebook']`` in ``ipython_config.py``). A cell stays Python text —
+autocomplete and linting come from the Python LSP; execution is intercepted: Python runs
+``pass``, while the source is compiled by eel and run in a persistent Erlang REPL.
 """
 
 from __future__ import annotations
@@ -15,12 +15,12 @@ from .term import Atom
 
 
 def find_comprehensions(node, out=None) -> list:
-    """Найти все формы включений (`lc`/`mc`) в списке форм клетки."""
+    """Find every comprehension form (`lc`/`mc`) in a cell's forms."""
     if out is None:
         out = []
     if isinstance(node, tuple):
         if node and isinstance(node[0], Atom) and node[0] in (Atom("lc"), Atom("mc")):
-            if len(node) > 1 and node[1] != 0:      # аннотация 0 — служебная форма компилятора
+            if len(node) > 1 and node[1] != 0:      # annotation 0 means a compiler-internal form
                 out.append(node)
         for item in node:
             find_comprehensions(item, out)
@@ -31,7 +31,7 @@ def find_comprehensions(node, out=None) -> list:
 
 
 def compact(source: str) -> str:
-    """erl_pp переносит строки — сжимаем в одну для консоли."""
+    """erl_pp wraps lines — squeeze them into one for the console."""
     s = " ".join(source.split())
     for a, b in (("[ ", "["), (" ]", "]"), ("#{ ", "#{"), (" }", "}")):
         s = s.replace(a, b)
@@ -40,7 +40,7 @@ def compact(source: str) -> str:
 
 def load_ipython_extension(ipython) -> None:
     if getattr(ipython, "_eel_notebook", None) is not None:
-        return  # уже загружено
+        return  # already loaded
     from . import frontend
     from .errors import EelError
     from .repl import ErlangRepl
@@ -49,11 +49,11 @@ def load_ipython_extension(ipython) -> None:
     state = {"session": Session(), "repl": None, "raw_cell": None}
 
     def let_cleanup(lines):
-        """Переписывает `Ctor(args) = expr` до Python-парсера (иначе SyntaxError)."""
+        """Rewrite `Ctor(args) = expr` before Python's parser (otherwise a SyntaxError)."""
         return frontend.rewrite_pattern_assignments("".join(lines)).splitlines(keepends=True)
 
     class _NoopTransformer(ast.NodeTransformer):
-        """Заменяет тело ячейки на pass — Python ничего не выполняет."""
+        """Replace the cell body with pass — Python executes nothing."""
 
         def visit_Module(self, node):  # noqa: N802
             node.body = [ast.Pass()]
@@ -69,7 +69,7 @@ def load_ipython_extension(ipython) -> None:
             or result.error_before_exec is not None
             or result.error_in_exec is not None
         ):
-            return  # Python уже показал ошибку (например, SyntaxError)
+            return  # Python has already shown the error (a SyntaxError, say)
         try:
             if state["repl"] is None:
                 state["repl"] = ErlangRepl()
@@ -86,7 +86,7 @@ def load_ipython_extension(ipython) -> None:
             else:
                 sys.stderr.write(f"eel runtime error: {value}\n")
         except SyntaxError:
-            pass  # клетка — не валидный Python-синтаксис, это уже видно в выводе
+            pass  # the cell is not valid Python syntax; that is visible in the output already
         except EelError as exc:
             sys.stderr.write(f"eel: {exc}\n")
 

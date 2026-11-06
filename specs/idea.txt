@@ -1,29 +1,31 @@
-я собираюсь сделать gleam с питоновским синтаксисом, назвать его eel. Расширение файлов .eel
+I am going to build Gleam with Python syntax and call it eel. File extension: `.eel`.
 
-**Идея**
+**The idea**
 
-для статического анализа использовать форкнутый статический анализатор для питона (например, на Kotlin, для пайчарм)
-для компиляции кода использовать питоновский пакет и питоновский парсер. Это - потому что синтаксис eel совпадает с синтаксисом питона. Со временем, будем поддерживать дополнительный синтаксис, кроме питоновского (паттерн матчинг, пайплайны). Но пока (milestone 1) - чистый питоновский.
+For static analysis, use a forked Python static analyser (for example a Kotlin one, for PyCharm).
+For compilation, use the Python package and the Python parser — because eel's syntax matches
+Python's. Over time we will support syntax beyond Python's (pattern matching, pipelines), but for
+now (milestone 1) it is plain Python syntax.
 
-**Без мутирующих операций**
+**No mutating operations**
 
-синтаксис - питоновский, из которого выкидываем мутирующие операции. Например, выкидываем циклы for.
-Переменная может быть присвоена заново: x = x + 1. Маппинг имен переменных на эрланговские - такой же, как в gleam.
+The syntax is Python's, minus the mutating operations. For example, `for` loops are dropped.
+A variable may be reassigned: `x = x + 1`. Variable names map to Erlang the same way as in Gleam.
 
-Например, работа со списками и словарями:
+For example, working with lists and dicts:
 
 head, *rest = my_list
 my_map |= {'key': 'value'}
 
-**импорты** иерархические, синтаксис для них питоновский
+**Imports** are hierarchical, with Python syntax for them:
 
 from my.custom.pak import my_fun
 
-Так же сделано и в gleam.
+Gleam does it the same way.
 
 **if, case**
 
-со временем будет так:
+Eventually it will look like this:
 
 value =
   if condition:
@@ -37,7 +39,7 @@ val = match expr:
   case expr2:
     do_second()
 
-Но пока используем питоновский синтаксис:
+But for now we use Python's syntax:
 
 if condition:
   value = a
@@ -50,22 +52,24 @@ match expr:
   case expr2:
     val = do_second()
 
-Компилятор проверяет, что последняя операция - присваивание и что присваивается одна и та же переменная
+The compiler checks that the last operation is an assignment and that the same variable is assigned.
 
 **Let it crash**
 
-Это касается оператора match. Один из вариантов должен сматчится - иначе ошибка в рантайме и крэш процесса. Этим eel отличается от gleam, где компилятор не скомпилирует этот код и заставит перечислить все варианты в case.
+This concerns the match operator. One of the variants must match — otherwise it is a runtime error and
+the process crashes. This is how eel differs from Gleam, where the compiler refuses to compile such
+code and forces you to enumerate all variants in the case.
 
+**Pattern matching**
 
-**Паттерн матчинг**
+For now — through match..case. In the longer term — `let MyPattern = Expr`.
 
-Пока - через match..case. В дальней перспективе - let MyPattern = Expr
+**Atoms**
 
-**атомы**
+Through single quotes: `'ok'`.
 
-через одинарные кавычки 'ok'
-
-Вместо атомов рекомендуется использовать типы - так же, как в gleam.Они определяются примерно так (все названия - чтобы объяснить схему)
+Instead of atoms, types are recommended — the same as in Gleam. They are defined roughly like this
+(all names are there to explain the scheme):
 
 class CustomType(AtomPrefixed):
   x: int
@@ -75,38 +79,42 @@ match val:
   case CustomType(x, y):
     result = (x, y)
 
-это эквивалентно
+This is equivalent to:
 
 match val:
   case ('custom_type', x, y):
     result = (x, y)
 
-Кроме этого, могут быть такие типы (тоже - для схемы)
+Besides that, there can be types like these (also for the scheme):
 
 class CustomRecord(NativeRecord):
   x: int
   y: int
 
-NativeRecord - нативный рекорд из OTP29, который не теряет свой тип в рантайме
+NativeRecord is the native OTP 29 record that does not lose its type at runtime.
 
 class CustomMap(Map):
   x: int
   y: int
 
+**Implementation language**
 
-**Язык реализации**
+It is Python. In the future some parts are planned to be implemented in spy (static python).
 
-Это питон. В перспективы, некоторые части планируется реализовать на spy (static python).
+Important: although reusing Gleam's code is not planned for now, the abstractions must be the same —
+at least at the very lowest level, which generates abstract Erlang. Code for identical syntax nodes
+must be generated identically. Code must be generated into the Abstract Erlang Forms, just like in
+Gleam.
 
-Важно: Хотя пока не планируется переиспользовать код из Gleam, абстракции должны использоваться те же. По крайней - мере, абстракция на самом нижнем уровне, который генерирует абстрактный эрланг. И код для разных синтаксических узлов должен генерироваться такой же. Код должен генерироваться в Abstract Erlang Forms, также как в gleam.
-
-
-**Предыдущие реализации**
+**Previous implementations**
 
 ~/rw/eel_beam
 
-Отличия: главное - в том, что тогда я хотел сделать эрланг с питоновским синтаксисом. Сейчас же - делаю по образу и подобию gleam. В частности, это проявилось в том, что naming convention тогда был из эрланга, но не только в этом.
+Differences: the main one is that back then I wanted to make Erlang with Python syntax. Now I am
+making it in the image of Gleam. In particular this showed up in the naming convention, which came
+from Erlang back then — but not only there.
 
-Также CPython там - это форкнутый парсер CPython. Здесь же я беру стоковый питон 3.15
+Also, CPython there was a forked CPython parser. Here I take stock Python 3.15.
 
-Сходство - в том, что язык реализации - питон. ~/rw/eel_beam/eel - питоновский код. Туда можно подсматривать, если очень нужно.
+The similarity is the implementation language, Python. ~/rw/eel_beam/eel is Python code. You can peek
+into it if you really need to.

@@ -71,7 +71,7 @@ def test_arity_errors():
 def test_zip_can_be_shadowed():
     src = "def zip(a, b):\n    a\n\ndef m(xs, ys):\n    zip(xs, ys)\n"
     names = _function_names(src)
-    assert Atom("eel_zip") not in names  # встроенная не подключается
+    assert Atom("eel_zip") not in names  # the builtin is not pulled in
     tmp = pathlib.Path(tempfile.mkdtemp())
     (tmp / "src").mkdir()
     (tmp / "src" / "m.eel").write_text(src)
@@ -143,7 +143,7 @@ def test_shell_mode():
         forms, _ = compile_cell('enumerate({"a": 2})\n', s)
         assert repl.eval_forms(forms)[0] == "error"
 
-        # переопределение встроенной: действует по имени в следующих клетках
+        # overriding the builtin: it applies by name in later cells
         forms, _ = compile_cell("def zip(a, b):\n    a\n", s)
         repl.eval_forms(forms)
         forms, _ = compile_cell("zip([7], [8])\n", s)

@@ -1,8 +1,8 @@
-"""Бэкенд: IR → Erlang Abstract Format (как значения Python).
+"""Backend: IR → the Erlang Abstract Format (as Python values).
 
-Формы повторяют Gleam 1.19 для совпадающих конструкций (см. specs/architecture.md);
-операторы Python-семантики (``// % **``) и деструктуризация — собственные формы.
-Аннотация каждой формы — строка исходника ``.eel``.
+The forms repeat Gleam 1.19 for matching constructs (see specs/architecture.md);
+the Python-semantics operators (``// % **``) and destructuring are our own forms.
+Every form is annotated with the ``.eel`` source line.
 """
 
 from __future__ import annotations
@@ -11,7 +11,7 @@ from . import ir
 from .errors import EelError
 from .term import Atom
 
-# Встроенные функции: доступны, пока пользователь не определил имя сам.
+# Built-in functions: available until the user defines the name themselves.
 BUILTINS = frozenset({"print", "zip", "enumerate", "range", "send", "self", "spawn"})
 
 RESERVED_NAMES = frozenset({
@@ -45,7 +45,7 @@ _OP_SYMBOL = {
 
 
 def variable_name(name: str) -> Atom:
-    """``x`` → ``X``, ``my_list`` → ``My_list`` (как у Gleam)."""
+    """``x`` → ``X``, ``my_list`` → ``My_list`` (as in Gleam)."""
     return Atom(name[0].upper() + name[1:])
 
 
@@ -79,7 +79,7 @@ def _op(line, op, left, right) -> tuple:
 
 
 def _pattern_names(pat) -> list:
-    """Имена, связываемые образцом (для перекрытия определений присваиванием)."""
+    """The names a pattern binds (so an assignment can shadow definitions)."""
     if isinstance(pat, (ir.PName, ir.PStar)):
         return [pat.name]
     if isinstance(pat, (ir.PList, ir.PTuple)):
@@ -91,11 +91,11 @@ def _pattern_names(pat) -> list:
 
 
 
-# --- методы стандартной библиотеки ---
+# --- standard-library methods ---
 
 
 def _list_expr(line: int, forms: list) -> tuple:
-    """Список-литерал как выражение: cons-цепочка."""
+    """A list literal as an expression: a cons chain."""
     out = (Atom("nil"), line)
     for form in reversed(forms):
         out = (Atom("cons"), line, form, out)
@@ -117,7 +117,7 @@ def _m_startswith(line, v, args):
 
 
 def _m_endswith(line, v, args):
-    # string:suffix/2 в OTP нет: точное сравнение хвоста через binary:part/3
+    # OTP has no string:suffix/2: compare the tail exactly with binary:part/3
     def size(form):
         return _remote_call(line, "erlang", "byte_size", [form])
 
@@ -199,18 +199,18 @@ class _Gen:
         self._decorated: list = []
 
     def _helper_call(self, line, name, args) -> tuple:
-        """Вызов хелпера: в модуле — локальная функция, в REPL — связанный fun."""
+        """A helper call: a local function in a module, a bound fun in the REPL."""
         if self._shell_mode:
             return (Atom("call"), line, _var(line, name), args)
         return _local_call(line, name, args)
 
-    # --- имена переменных ---
+    # --- variable names ---
 
     def _allocate(self, name: str) -> Atom:
-        """Новое Erlang-имя для привязки.
+        """A fresh Erlang name for a binding.
 
-        Счётчик ведётся по базовому Erlang-имени: `N` и `n` маппятся в `N`, поэтому второе
-        получает `N@1` (иначе два разных питоновских имени столкнулись бы).
+        The counter is kept per base Erlang name: `N` and `n` both map to `N`, so the second
+        one becomes `N@1` (otherwise two different Python names would collide).
         """
         base = variable_name(name)
         count = self._taken.get(base, 0)
@@ -228,10 +228,10 @@ class _Gen:
         return new
 
     def _bind_def(self, name: str, arity: int) -> Atom:
-        """Определение функции: имя различается по арности (как в Erlang/Gleam)."""
+        """A function definition: the name is distinguished by arity (as in Erlang/Gleam)."""
         new = self._allocate(name)
         self._defs[(name, arity)] = new
-        self._scope[name] = new  # функция — тоже значение (последняя арность)
+        self._scope[name] = new  # a function is a value too (the latest arity)
         return new
 
     def _resolve(self, name: str, line: int) -> Atom:
@@ -240,7 +240,7 @@ class _Gen:
             raise EelError(f"{line}: name {name!r} is not defined")
         return erlang
 
-    # --- модуль и функции ---
+    # --- module and functions ---
 
     def module_forms(self, module: ir.Module) -> list:
         self._imports = dict(module.imports)
@@ -320,7 +320,7 @@ class _Gen:
 
     @staticmethod
     def _key_form(line: int, head: str, name: str, arity: int) -> tuple:
-        """Литерал-кортеж `{head, name, arity}` как форма-выражение."""
+        """The tuple literal `{head, name, arity}` as an expression form."""
         return (Atom("tuple"), line, [
             (Atom("atom"), line, Atom(head)),
             (Atom("atom"), line, Atom(name)),
@@ -334,7 +334,7 @@ class _Gen:
         return _remote_call(line, "persistent_term", "get", [key])
 
     def _decorated_module_form(self, function: ir.Function) -> tuple:
-        """Обёртка: `f(A, B) -> (persistent_term:get({Mod, f, N}))(A, B).`"""
+        """The wrapper: `f(A, B) -> (persistent_term:get({Mod, f, N}))(A, B).`"""
         line = function.line
         arity = len(function.params)
         params = [_var(line, f"P{i}") for i in range(arity)]
@@ -351,7 +351,7 @@ class _Gen:
         )
 
     def on_load_form(self) -> tuple:
-        """`eel_on_load/0`: применяет декораторы один раз при загрузке модуля."""
+        """`eel_on_load/0`: applies the decorators once, when the module loads."""
         line = 0
         puts = []
         for function, impl in self._decorated:
@@ -377,11 +377,11 @@ class _Gen:
         )
 
     def _decorator_value(self, dec, shell: bool) -> tuple:
-        """Форма значения-декоратора (fun арности 1)."""
+        """The form of a decorator value (a fun of arity 1)."""
         line = dec.line
         if isinstance(dec, ir.FunRef):
-            # имя в scope (вложенная функция/переменная) — вызов через переменную;
-            # импортированное имя — remote fun; иначе это функция модуля
+            # a name in scope (a nested function/variable) — call it through the variable;
+            # an imported name — a remote fun; otherwise it is a function of the module
             if shell or dec.name in self._scope:
                 return _var(line, self._resolve(dec.name, line))
             if dec.name in self._imports:
@@ -408,7 +408,7 @@ class _Gen:
 
     @staticmethod
     def _remote_fun(line: int, module: str, name: str) -> tuple:
-        """`fun mod:name/1` — арность обязана быть формой {integer, Line, N}."""
+        """`fun mod:name/1` — the arity must be an {integer, Line, N} form."""
         return (
             Atom("fun"),
             line,
@@ -421,7 +421,7 @@ class _Gen:
         )
 
     def decorated_def_forms(self, stmt: ir.Def) -> list:
-        """Shell-режим: placeholder через process dictionary + применение декораторов."""
+        """Shell mode: a placeholder through the process dictionary plus the decorators."""
         line = stmt.line
         arity = len(stmt.params)
         name = self._bind_def(stmt.name, arity)
@@ -454,22 +454,22 @@ class _Gen:
         put = _remote_call(line, "erlang", "put", [key, decorated])
         return [(Atom("match"), line, _var(line, name), placeholder), put]
 
-    # --- операторы ---
+    # --- statements ---
 
     def tail_stmt_form(self, stmt) -> tuple:
-        """Последний оператор тела: `if`/`match` может отдать значение без хвостового
-        присваивания. Старое поведение (все ветки присваивают одну переменную)
-        сохраняется — переменная остаётся связанной."""
+        """The last statement of a body: `if`/`match` may yield a value without a trailing
+        assignment. The old behaviour (all branches assign one variable) is kept —
+        the variable stays bound."""
         if isinstance(stmt, (ir.If, ir.Match)):
             return self._case_tail(stmt)
         return self.stmt_form(stmt)
 
     def _tail_of(self, stmt):
-        """Имя, которое ветка связывает в хвосте, или None."""
+        """The name a branch binds in its tail, or None."""
         if isinstance(stmt, ir.Assign) and isinstance(stmt.target, ir.PName):
             return stmt.target.name
         if isinstance(stmt, ir.NestedDef):
-            return stmt.name  # вложенный def тоже связывает имя
+            return stmt.name  # a nested def binds a name too
         if isinstance(stmt, ir.If):
             return self._tail_assign_target([stmt.then_body, stmt.else_body])
         if isinstance(stmt, ir.Match):
@@ -551,13 +551,13 @@ class _Gen:
                 clauses.append((Atom("clause"), c.line, [p], guard, body))
         return (Atom("case"), node.line, subject, clauses)
 
-    # --- операторы ---
+    # --- statements ---
 
     def stmt_form(self, stmt) -> tuple:
         if isinstance(stmt, ir.Assign):
             value = self.expr_form(stmt.value)
             for name in _pattern_names(stmt.target):
-                self._drop_defs(name)  # присваивание перекрывает функцию
+                self._drop_defs(name)  # an assignment shadows a function
             pattern = self._pattern(stmt.target)
             return (Atom("match"), stmt.line, pattern, value)
         if isinstance(stmt, ir.Expr):
@@ -572,7 +572,7 @@ class _Gen:
         raise EelError(f"cannot generate a statement for: {stmt!r}")
 
     def def_form(self, stmt: ir.Def, name: Atom) -> tuple:
-        """`F = fun F(X) -> … end` — именованный fun, чтобы работала рекурсия."""
+        """`F = fun F(X) -> … end` — a named fun, so recursion works."""
         line = stmt.line
         self._later_defs.discard((stmt.name, len(stmt.params)))
         saved_scope = dict(self._scope)
@@ -593,11 +593,11 @@ class _Gen:
         return (Atom("match"), line, _var(line, name), fun)
 
     def _nested_def_form(self, stmt: ir.NestedDef) -> tuple:
-        """Вложенный `def` — привязка имени к named_fun (рекурсия) + декораторы сразу."""
+        """A nested `def` — bind a name to a named_fun (recursion) plus decorators at once."""
         line = stmt.line
         if stmt.name in RESERVED_NAMES:
             raise EelError(f"{line}: name {stmt.name!r} is reserved by the compiler")
-        self._drop_defs(stmt.name)  # имя модульной функции/клетки перекрыто переменной
+        self._drop_defs(stmt.name)  # a module/cell function name is shadowed by a variable
         name = self._bind(stmt.name)
         saved_scope = dict(self._scope)
         saved_taken = dict(self._taken)
@@ -620,9 +620,9 @@ class _Gen:
         return (Atom("match"), line, _var(line, name), value)
 
     def _receive_build(self, node, tail: bool) -> tuple:
-        """`match receive():` → Erlang receive с клаузами и, если есть, веткой after.
+        """`match receive():` → an Erlang receive with clauses and, if present, an after branch.
 
-        Возвращает (форма, цели веток) — цели нужны правилу «ветки присваивают одну переменную».
+        Returns (form, branch targets) — the targets feed the "branches assign one variable" rule.
         """
         clauses = []
         targets = []
@@ -688,13 +688,13 @@ class _Gen:
                 clauses.append((Atom("clause"), c.line, [p], guard, body))
         return (Atom("case"), node.line, subject, clauses)
 
-    # --- операторы ---
+    # --- statements ---
 
     def stmt_form(self, stmt) -> tuple:
         if isinstance(stmt, ir.Assign):
             value = self.expr_form(stmt.value)
             for name in _pattern_names(stmt.target):
-                self._drop_defs(name)  # присваивание перекрывает функцию
+                self._drop_defs(name)  # an assignment shadows a function
             pattern = self._pattern(stmt.target)
             return (Atom("match"), stmt.line, pattern, value)
         if isinstance(stmt, ir.Expr):
@@ -709,7 +709,7 @@ class _Gen:
         raise EelError(f"cannot generate a statement for: {stmt!r}")
 
     def def_form(self, stmt: ir.Def, name: Atom) -> tuple:
-        """`F = fun F(X) -> … end` — именованный fun, чтобы работала рекурсия."""
+        """`F = fun F(X) -> … end` — a named fun, so recursion works."""
         line = stmt.line
         self._later_defs.discard((stmt.name, len(stmt.params)))
         saved_scope = dict(self._scope)
@@ -730,11 +730,11 @@ class _Gen:
         return (Atom("match"), line, _var(line, name), fun)
 
     def _nested_def_form(self, stmt: ir.NestedDef) -> tuple:
-        """Вложенный `def` — привязка имени к named_fun (рекурсия) + декораторы сразу."""
+        """A nested `def` — bind a name to a named_fun (recursion) plus decorators at once."""
         line = stmt.line
         if stmt.name in RESERVED_NAMES:
             raise EelError(f"{line}: name {stmt.name!r} is reserved by the compiler")
-        self._drop_defs(stmt.name)  # имя модульной функции/клетки перекрыто переменной
+        self._drop_defs(stmt.name)  # a module/cell function name is shadowed by a variable
         name = self._bind(stmt.name)
         saved_scope = dict(self._scope)
         saved_taken = dict(self._taken)
@@ -757,7 +757,7 @@ class _Gen:
         return (Atom("match"), line, _var(line, name), value)
 
     def _receive_form(self, node, tail: bool) -> tuple:
-        """`match receive():` → Erlang receive с клаузами и, если есть, веткой after."""
+        """`match receive():` → an Erlang receive with clauses and, if present, an after branch."""
         clauses = []
         for c in node.cases:
             saved_scope = dict(self._scope)
@@ -815,7 +815,7 @@ class _Gen:
                 saved_scope = dict(self._scope)
                 saved_taken = dict(self._taken)
                 saved_defs = dict(self._defs)
-                patterns = self._case_patterns(c.pattern)  # связывает переменные образца
+                patterns = self._case_patterns(c.pattern)  # binds the pattern variables
                 guard = [[self.expr_form(c.guard)]] if c.guard is not None else []
                 c_target, c_body, c_result = self._branch_body(c.body, c.line)
                 self._scope = saved_scope
@@ -915,7 +915,7 @@ class _Gen:
             form = (Atom("cons"), line, self._pattern(item), form)
         return form
 
-    # --- выражения ---
+    # --- expressions ---
 
     def expr_form(self, expr) -> tuple:
         if isinstance(expr, ir.Int):
@@ -1025,10 +1025,10 @@ class _Gen:
             )
         raise EelError(f"cannot generate an expression for: {expr!r}")
 
-    # --- встроенные функции (переопределяемые по имени) ---
+    # --- built-in functions (redefinable by name) ---
 
     def _is_builtin_name(self, name: str) -> bool:
-        """Встроенное имя свободно: его не перекрывает ни определение, ни scope, ни импорт."""
+        """A builtin name is free: no definition, scope entry or import shadows it."""
         if name in self._scope or name in self._imports:
             return False
         defined = {k[0] for k in self._defs} | {k[0] for k in self._module_defs}
@@ -1081,7 +1081,7 @@ class _Gen:
         raise EelError(f"{line}: unknown builtin {name}")
 
     def method_form(self, expr: ir.Method) -> tuple:
-        """Метод stdlib: диспетчеризация по имени и типу получателя в рантайме."""
+        """An stdlib method: dispatch by name and receiver type at runtime."""
         line = expr.line
         name = expr.name
         arity = len(expr.args)
@@ -1104,7 +1104,7 @@ class _Gen:
         if name == "count" and arity == 1:
             return self._count_form(line, recv, args[0])
 
-        # str (binary): string:* принимают и chardata — проверяем is_binary
+        # str (a binary): string:* also takes chardata — so check is_binary
         if name == "join" and arity == 1:
             self._used_join = True
             return self._as_binary(
@@ -1127,7 +1127,7 @@ class _Gen:
         )
 
     def _fresh(self, line: int, base: str) -> tuple:
-        """Свежее имя привязки (`@` — чтобы не столкнуться с пользовательским)."""
+        """A fresh binder name (`@` keeps it clear of user names)."""
         self._temp += 1
         return (Atom("var"), line, Atom(f"{base}{self._temp}"))
 
@@ -1143,7 +1143,7 @@ class _Gen:
 
     @staticmethod
     def _bad_argument(line, name, value) -> tuple:
-        """`erlang:error({bad_argument, метод, значение})` — неверный аргумент метода."""
+        """`erlang:error({bad_argument, method, value})` — a wrong method argument."""
         return _remote_call(line, "erlang", "error", [
             (Atom("tuple"), line,
              [_atom(line, "bad_argument"), _atom(line, name), value]),
@@ -1151,14 +1151,14 @@ class _Gen:
 
     @staticmethod
     def _bad_receiver(line, name, value) -> tuple:
-        """`erlang:error({bad_receiver, метод, значение})` — причина падения названа."""
+        """`erlang:error({bad_receiver, method, value})` — the crash reason is named."""
         return _remote_call(line, "erlang", "error", [
             (Atom("tuple"), line,
              [_atom(line, "bad_receiver"), _atom(line, name), value]),
         ])
 
     def _splitlines_form(self, line, v) -> tuple:
-        """Python `splitlines`: пустая строка → [], хвостовой перевод не даёт пустого элемента."""
+        """Python `splitlines`: an empty string → [], a trailing newline adds no empty item."""
         empty_bin = (Atom("bin"), line, [])
         global_opt = _list_expr(line, [(Atom("atom"), line, Atom("global"))])
         separators = _list_expr(
@@ -1187,7 +1187,7 @@ class _Gen:
         other = self._fresh(line, "_eel@r")
 
         def count_of(source):
-            # аннотация 0: включение служебное, а не написанное пользователем
+            # annotation 0: the comprehension is internal, not written by the user
             comp = (
                 Atom("lc"), 0, e,
                 [(Atom("generate"), 0, e, source), _op(0, "=:=", e, arg)],
@@ -1274,7 +1274,7 @@ class _Gen:
     def _listcomp_form(self, expr: ir.ListComp) -> tuple:
         saved_scope = dict(self._scope)
         saved_taken = dict(self._taken)
-        self._taken = {}  # цели включений — локальный scope, имена не наследуют X@N
+        self._taken = {}  # comprehension targets are a local scope, names do not inherit X@N
         quals = self._qualifiers(expr.qualifiers)
         elt = self.expr_form(expr.element)
         self._scope = saved_scope
@@ -1326,7 +1326,7 @@ class _Gen:
         return out
 
     def iter_helper(self) -> tuple:
-        """eel_iter/1: map → ключи, список → как есть (иначе bad_generator)."""
+        """eel_iter/1: map → keys, list → as is (anything else is a bad_generator)."""
         line = 0
         m = _var(line, "M")
         l = _var(line, "L")
@@ -1343,7 +1343,7 @@ class _Gen:
         )
 
     def print_helpers(self) -> list:
-        """eel_print/1 + eel_str/1 (+ tuple/map): питоновское представление для print."""
+        """eel_print/1 + eel_str/1 (+ tuple/map): the Python-like display for print."""
         line = 0
 
         def call(name, args):
@@ -1430,7 +1430,7 @@ class _Gen:
         return [print_fn, str_fn, tuple_fn, map_fn]
 
     def join_helper(self) -> tuple:
-        """eel_join/2: iolist из частей; не-строка — {bad_argument, join, Часть}."""
+        """eel_join/2: an iolist of the parts; a non-string is {bad_argument, join, Part}."""
         line = 0
         sep = _var(line, "Sep")
         head = _var(line, "H")
@@ -1449,7 +1449,7 @@ class _Gen:
         ])
 
     def zip_helper(self) -> tuple:
-        """eel_zip/2: списки только, обрезка по короткому (Python), иначе bad_argument."""
+        """eel_zip/2: lists only, trimmed to the shorter one (Python), otherwise bad_argument."""
         line = 0
         a, b = _var(line, "A"), _var(line, "B")
         is_list = lambda v: _remote_call(line, "erlang", "is_list", [v])  # noqa: E731
@@ -1464,7 +1464,7 @@ class _Gen:
         ])
 
     def enumerate_helper(self) -> tuple:
-        """eel_enumerate/2: (Start, List) → [{N, X}]; только список."""
+        """eel_enumerate/2: (Start, List) → [{N, X}]; a list only."""
         line = 0
         start, items = _var(line, "Start"), _var(line, "List")
         is_int = lambda v: _remote_call(line, "erlang", "is_integer", [v])  # noqa: E731
@@ -1479,7 +1479,7 @@ class _Gen:
         ])
 
     def range_helper(self) -> tuple:
-        """eel_range/3: питоновский range (стоп не включается, шаг любой, пустые — [])."""
+        """eel_range/3: Python's range (stop excluded, any step, empty ranges are [])."""
         line = 0
         start, stop, step = (
             _var(line, "Start"), _var(line, "Stop"), _var(line, "Step")
@@ -1488,7 +1488,7 @@ class _Gen:
         not_int = lambda v: (Atom("op"), line, Atom("not"), is_int(v))  # noqa: E731
         greater = lambda x, y: _op(line, ">", x, y)  # noqa: E731
         ge = lambda x, y: _op(line, ">=", x, y)  # noqa: E731
-        le = lambda x, y: _op(line, "=<", x, y)  # Erlang пишет =< , not <=
+        le = lambda x, y: _op(line, "=<", x, y)  # Erlang spells it =< , not <=
         less = lambda x, y: _op(line, "<", x, y)  # noqa: E731
         zero = _int(line, 0)
         recurse = _local_call(
@@ -1504,7 +1504,7 @@ class _Gen:
              [self._bad_argument(line, "range", step)]),
             (Atom("clause"), line, [start, stop, step], [[_op(line, "=:=", step, zero)]],
              [self._bad_argument(line, "range", zero)]),
-            # пустые диапазоны: шаг «в другую сторону» — как в Python
+            # empty ranges: a step pointing the other way — as in Python
             (Atom("clause"), line, [start, stop, step],
              [[greater(step, zero), ge(start, stop)]], [(Atom("nil"), line)]),
             (Atom("clause"), line, [start, stop, step],
@@ -1544,8 +1544,8 @@ class _Gen:
         return self._num_helper("eel_floordiv", line, div_int, div_float)
 
     def pow_helpers(self) -> list:
-        """Приватные _eel_pow/2 и _eel_pow_loop/3: int**int (≥0) — целочисленно,
-        иначе math:pow."""
+        """The private _eel_pow/2 and _eel_pow_loop/3: int**int (≥0) stays integral,
+        otherwise math:pow."""
         line = 0
         a = _var(line, "A")
         b = _var(line, "B")

@@ -102,7 +102,7 @@ def test_print_representation_in_erl():
 def test_print_can_be_shadowed():
     src = "def print(x):\n    x * 2\n\ndef m(v):\n    print(v)\n"
     names = _function_names(src)
-    assert Atom("eel_print") not in names  # встроенная не подключается
+    assert Atom("eel_print") not in names  # the builtin is not pulled in
     tmp = pathlib.Path(tempfile.mkdtemp())
     (tmp / "src").mkdir()
     (tmp / "src" / "m.eel").write_text(src)

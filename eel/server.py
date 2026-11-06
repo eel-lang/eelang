@@ -1,15 +1,15 @@
-"""Сервер сборки: живой Python-процесс, который собирает проект по запросу.
+"""The build server: a live Python process that builds a project on request.
 
-Запускается в фоне (`python -m eel.server <sock> <pid>`) и принимает по unix-сокету
-одну JSON-строку на запрос:
+It starts in the background (`python -m eel.server <sock> <pid>`) and accepts, over a unix
+socket, one JSON line per request:
 
     {"op": "build", "root": "...", "erl": false, "dump_forms": false, "force": false}
     {"op": "ping"}
     {"op": "stop"}
 
-Ответ — тоже одна JSON-строка: ``{"ok": true, ...}`` или ``{"ok": false, "error": "..."}``.
-За файлами сервер не следит: сборка происходит только по запросу — зато не платит за старт
-интерпретатора и импорт компилятора (см. `eel/client.py`).
+The reply is one JSON line as well: ``{"ok": true, ...}`` or ``{"ok": false, "error": "..."}``.
+The server does not watch the filesystem: a build happens only on request, but it does not pay
+for interpreter startup or the compiler import (see `eel/client.py`).
 """
 
 from __future__ import annotations
@@ -29,7 +29,7 @@ STATE = {"builds": 0, "errors": 0}
 
 
 def _handle(payload: dict) -> tuple[dict, bool]:
-    """Обработать один запрос: (ответ, продолжать ли работу)."""
+    """Handle one request: (the reply, whether to keep running)."""
     op = payload.get("op")
     try:
         if op == "build":
@@ -54,14 +54,14 @@ def _handle(payload: dict) -> tuple[dict, bool]:
     except EelError as exc:
         STATE["errors"] += 1
         return {"ok": False, "error": str(exc)}, True
-    except Exception:  # noqa: BLE001 — один плохой запрос не должен ронять сервер
+    except Exception:  # noqa: BLE001 — one bad request must not bring the server down
         STATE["errors"] += 1
         traceback.print_exc()
         return {"ok": False, "error": "internal build server error (see log)"}, True
 
 
 def _serve(conn: socket.socket) -> bool:
-    """Обслужить соединение: True — продолжать, False — остановиться."""
+    """Serve one connection: True — keep running, False — stop."""
     with conn:
         buffer = b""
         while True:
@@ -99,11 +99,11 @@ def main(argv: list[str]) -> int:
         os.unlink(sock_path)
     except FileNotFoundError:
         pass
-    # сигналы — тоже «остановка сервера»: демон компилятора не должен пережить родителя
+    # signals mean "stop the server" too: the compiler daemon must not outlive its parent
     signal.signal(signal.SIGTERM, _shutdown)
     signal.signal(signal.SIGINT, _shutdown)
 
-    DAEMON.start()          # рождается вместе с сервером
+    DAEMON.start()          # born together with the server
     listener = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
     listener.bind(sock_path)
     listener.listen(8)

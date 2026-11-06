@@ -33,7 +33,7 @@ def test_second_build_recompiles_nothing(tmp_path):
     before = _beams(out)
 
     build(proj)
-    assert _beams(out) == before            # ничего не пересобрано и не перезаписано
+    assert _beams(out) == before            # nothing rebuilt, nothing rewritten
 
 
 def test_only_changed_module_recompiles(tmp_path):
@@ -45,7 +45,7 @@ def test_only_changed_module_recompiles(tmp_path):
     build(proj)
     after = _beams(out)
     assert after["a.beam"] != before["a.beam"]
-    assert after["b.beam"] == before["b.beam"]   # соседний модуль не тронут
+    assert after["b.beam"] == before["b.beam"]   # the neighbouring module is untouched
 
 
 def test_deleted_module_is_pruned(tmp_path):
@@ -87,7 +87,7 @@ def test_erl_flag_adds_the_missing_artifact(tmp_path):
 
     build(proj, erl=True)
     assert (out / "ebin" / "a.erl").exists()
-    assert _beams(out)["a.beam"] != before["a.beam"]   # модуль пересобран
+    assert _beams(out)["a.beam"] != before["a.beam"]   # the module was rebuilt
 
 
 def test_broken_manifest_rebuilds(tmp_path):

@@ -1,4 +1,4 @@
-"""Проверки: семантика, которой нет в синтаксисе (см. specs/architecture.md)."""
+"""Checks: semantics that are not in the syntax (see specs/architecture.md)."""
 
 from __future__ import annotations
 
@@ -8,8 +8,8 @@ from .ir import Module
 
 
 def check(module: Module) -> None:
-    """Дубли определяются по паре (имя, арность): как в Erlang/Gleam,
-    `fib/1` и `fib/3` — разные функции. Имена хелперов зарезервированы."""
+    """Duplicates are keyed by (name, arity): as in Erlang/Gleam,
+    `fib/1` and `fib/3` are different functions. Helper names are reserved."""
     seen = set()
     for function in module.functions:
         if function.name in RESERVED_NAMES:

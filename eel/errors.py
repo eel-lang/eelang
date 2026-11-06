@@ -1,5 +1,5 @@
-"""Ошибки компиляции eel."""
+"""Eel compile errors."""
 
 
 class EelError(Exception):
-    """Ошибка компиляции: нарушение правил языка или недопустимый код."""
+    """A compile error: a broken language rule or invalid code."""

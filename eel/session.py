@@ -1,7 +1,7 @@
-"""Shell-режим компилятора для Jupyter: клетка → Erlang-выражения (не модуль).
+"""The compiler's shell mode for Jupyter: a cell → Erlang expressions (not a module).
 
-Клетка — последовательность операторов, как тело функции. Состояние (маппинг имён
-`X@N`, классы, импорты) живёт между клетками в :class:`Session`.
+A cell is a sequence of statements, like a function body. The state (the name mapping
+`X@N`, classes, imports) lives between cells in :class:`Session`.
 """
 
 from __future__ import annotations
@@ -21,9 +21,9 @@ class Session:
         self._gen._imports = self.imports
 
     def compile(self, source: str) -> tuple[list, bool]:
-        """Исходник клетки → (формы, подавлять_вывод).
+        """A cell source → (forms, suppress_output).
 
-        ``подавлять_вывод`` — True, когда клетка только определяет (def/class/import).
+        ``suppress_output`` is True when the cell only defines (def/class/import).
         """
         source = frontend.rewrite_pattern_assignments(source)
         toks = frontend._source_chars(source)
@@ -114,7 +114,7 @@ class Session:
                     f"{node.lineno}: classes {node.name} and {other} produce the same tag {tag!r}"
                 )
         seen.add(node.name)
-        # переопределение между ячейками разрешено: повторный запуск клетки — не ошибка
+        # redefinition between cells is allowed: re-running a cell is not an error
         self.classes[node.name] = fields
 
     def _import(self, node: ast.stmt) -> None:

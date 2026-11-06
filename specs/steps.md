@@ -1,102 +1,102 @@
-# Eel — этапы сборки
+# Eel — build stages
 
-Рабочий план, не спецификация: в spec-граф не входит, меняется свободно. Каждый этап
-закрывается конкретным критерием; сама работа по этапу идёт через `brainstorming`.
-Объём — первая сборка из goal doc; NativeRecord/Map и статический анализатор — за пределами.
-Порядок — test-first: эталонные формы Gleam пишутся до кода eel.
+A working plan, not a specification: it is not part of the spec graph and changes freely. Every
+stage is closed by a concrete criterion, and the work inside a stage goes through `brainstorming`.
+The scope is the first release from the goal document; NativeRecord/Map and the static analyser are
+out of it. The order is test-first: the reference Gleam forms are written before the eel code.
 
-## Этап 1 — Harness паритета + сквозной скелет
+## Stage 1 — Parity harness + end-to-end skeleton
 
-pytest-инфраструктура сравнения: `gleam` 1.19.2 компилирует `.gleam`-модуль, формы достаются
-`beam_lib:chunks(Beam, [abstract_code])`, сравниваются с формами eel после нормализации
-аннотаций строк. Плюс минимальный конвейер `ast.parse → IR → формы → compile:forms → .beam`,
-доведённый до зелёного первого теста.
+The pytest comparison infrastructure: `gleam` 1.19.2 compiles a `.gleam` module, the forms come from
+`beam_lib:chunks(Beam, [abstract_code])`, and they are compared with eel's forms after normalising
+line annotations. Plus a minimal pipeline `ast.parse → IR → forms → compile:forms → .beam` driven to
+the first green test.
 
-**Критерий:** первый тест-пара (`def hello(): 'hi'` ≡ `pub fn hello() { "hi" }`) зелёный.
+**Criterion:** the first test pair (`def hello(): 'hi'` ≡ `pub fn hello() { "hi" }`) is green.
 
-## Этап 2 — Значения и выражения
+## Stage 2 — Values and expressions
 
-Пары на литералы, атомы, кортежи/списки/словари, операторы, вызовы — пишутся до реализации.
+Pairs for literals, atoms, tuples/lists/dicts, operators and calls — written before the
+implementation.
 
-**Критерий:** все пары этапа зелёные; модуль со всеми типами значений работает в `erl`.
+**Criterion:** every pair of the stage is green; a module with all value types runs in `erl`.
 
-## Этап 3 — Присваивание и неизменяемость
+## Stage 3 — Assignment and immutability
 
-Пары: `x = x + 1` ≡ `let x = x + 1`, `head, *rest = l` ≡ `[head, ..rest]`. `|=`-слияние —
-аналога в Gleam нет → обычный тест. Запреты `for`/`while`/`del`/мутаций — тесты на ошибку
-компиляции.
+Pairs: `x = x + 1` ≡ `let x = x + 1`, `head, *rest = l` ≡ `[head, ..rest]`. The `|=` merge has no
+counterpart in Gleam → a plain test. `for`/`while`/`del`/mutation bans — compile-error tests.
 
-**Критерий:** пары этапа зелёные; `for` в коде → ошибка компиляции с позицией.
+**Criterion:** the stage's pairs are green; `for` in code → a compile error with a position.
 
-## Этап 4 — Ветвления
+## Stage 4 — Branching
 
-Пары: `if` ≡ `case c { True -> …; False -> … }`; исчерпывающий `match` ≡ исчерпывающий `case`.
-Неисчерпываемый match («let it crash») — аналога нет → обычный тест на `{case_clause, V}`.
+Pairs: `if` ≡ `case c { True -> …; False -> … }`; an exhaustive `match` ≡ an exhaustive `case`.
+A non-exhaustive match ("let it crash") has no counterpart → a plain test for `{case_clause, V}`.
 
-**Критерий:** пары этапа зелёные; несматченный match роняет процесс с `case_clause`.
+**Criterion:** the stage's pairs are green; an unmatched match crashes the process with `case_clause`.
 
-## Этап 5 — Классы-типы
+## Stage 5 — Class types
 
-Пары: `class T(AtomPrefixed)` ≡ `pub type T { T(…) }`; образцы классов ≡ образцы
-конструкторов.
+Pairs: `class T(AtomPrefixed)` ≡ `pub type T { T(…) }`; class patterns ≡ constructor patterns.
 
-**Критерий:** пары этапа зелёные; пример `CustomType` из goal doc компилируется и матчится.
+**Criterion:** the stage's pairs are green; the `CustomType` example from the goal document compiles
+and matches.
 
-## Этап 6 — Лямбды и включения
+## Stage 6 — Lambdas and comprehensions
 
-Пары: `lambda` ≡ `fn`. Включений в Gleam нет → обычные тесты: **20 тестов отображения** —
-нужное питоновское включение превращается в нужное эрланговское:
+Pairs: `lambda` ≡ `fn`. Gleam has no comprehensions → plain tests: **20 mapping tests**, where the
+right Python comprehension turns into the right Erlang one:
 `[x * 2 for x in l]` → `[X * 2 || X <- L]`, `{k: v for k, v in m.items()}` → `#{K => V || K := V <- M}`,
-`{k: 1 for k in m}` → `#{K => 1 || K <- eel_iter(M)}`, фильтры, вложенные генераторы,
-образцы-цели генераторов, `.items()` вне генератора → `maps:to_list(M)`, set comprehension →
-ошибка компиляции.
+`{k: 1 for k in m}` → `#{K => 1 || K <- eel_iter(M)}`, filters, nested generators, pattern targets of
+generators, `.items()` outside a generator → `maps:to_list(M)`, a set comprehension → a compile error.
 
-**Критерий:** пары и 20 тестов включений зелёные.
+**Criterion:** the pairs and the 20 comprehension tests are green.
 
-## Этап 7 — Модули и импорты
+## Stage 7 — Modules and imports
 
-Пары: `from a.b.c import f` ≡ `import a/b/c` (модули `a@b@c`), вывод в
+Pairs: `from a.b.c import f` ≡ `import a/b/c` (modules `a@b@c`), output into
 `build/dev/erlang/<app>/ebin`.
 
-**Критерий:** проект из двух модулей с иерархическим импортом собирается, пары зелёные.
+**Criterion:** a two-module project with a hierarchical import builds, the pairs are green.
 
-## Этап 8 — Порог паритета
+## Stage 8 — Parity threshold
 
-Довести суммарно до 10–20 паритет-тестов (порог из goal doc); недостающие пары — по пробелам
-предыдущих этапов.
+Bring the total to 10–20 parity tests (the threshold from the goal document); the missing pairs come
+from the gaps of the earlier stages.
 
-**Критерий:** pytest зелёный, ≥ 10–20 пар эквивалентных модулей.
+**Criterion:** pytest is green, ≥ 10–20 pairs of equivalent modules.
 
-## Этап 9 — Ошибки и полировка
+## Stage 9 — Errors and polish
 
-Сообщения компилятора с файлом и строкой `.eel`, README с примером, чистка.
+Compiler messages with the `.eel` file and line, a README with an example, cleanup.
 
-**Критерий:** ошибки указывают в исходник eel; новый человек может собрать hello-world
-по README.
+**Criterion:** errors point into the eel source; a newcomer can build hello-world by following the
+README.
 
-## Почему такой порядок
+## Why this order
 
-- **Test-first:** эталон-оракул (формы Gleam) существует раньше кода eel — каждая
-  конструкция с первого дня сверяется с эталоном, дрейф генерации невозможен.
-- **Harness первым (этап 1):** сравнение и нормализация — самый рискованный кусок; скелет
-  доводится до первого зелёного теста на минимуме кода.
-- **2→7 по зависимости конструкций:** значения → присваивание → ветвления (хвостовые
-  присваивания опираются на присваивание) → классы (образцы классов поверх match) →
-  лямбды/включения → модули. Каждый этап заканчивается зелёным pytest.
-- **Пары пишутся по ходу, а не в конце** — порог в 10–20 добирается к этапу 8, а не стартует там.
+- **Test-first:** the oracle (Gleam's forms) exists before the eel code — every construct is checked
+  against the reference from day one, so generation drift is impossible.
+- **Harness first (stage 1):** the comparison and normalisation are the riskiest piece; the skeleton
+  is driven to its first green test on a minimum of code.
+- **2→7 by construct dependency:** values → assignment → branching (tail assignments rest on
+  assignment) → classes (class patterns on top of match) → lambdas/comprehensions → modules. Every
+  stage ends with a green pytest.
+- **Pairs are written along the way, not at the end** — the 10–20 threshold is reached by stage 8
+  instead of starting there.
 
-## Ограничения test-first (приняты)
+## Limits of test-first (accepted)
 
-- Пара требует аналога в Gleam. Без пар остаются: `|=`-слияние, неисчерпываемый match
-  («let it crash»), включения — их поведение закрывают обычные тесты.
-- Пары на match — только исчерпываемые: иначе Gleam добавляет fallthrough-клаузу, которой
-  у eel нет по дизайну.
+- A pair needs a Gleam counterpart. Without pairs remain: the `|=` merge, the non-exhaustive match
+  ("let it crash") and comprehensions — plain tests cover their behaviour.
+- Match pairs are exhaustive only: otherwise Gleam adds a fallthrough clause that eel deliberately
+  does not have.
 
-## Рассмотренные альтернативы
+## Alternatives considered
 
-- **Вертикальный срез без harness-впереди** (паритет этапом в конце): быстрее стартует, но
-  формы сверяются с эталоном поздно, дрейф копится.
-- **Слоистый порядок** (весь фронтенд → весь IR → весь бэкенд): дольше без работающего
-  результата, ошибки слоя копятся до конца.
-- **По примерам из goal doc**: с первого дня компилируются примеры спеки, но whitelist
-  всплывает кусками позже.
+- **A vertical slice without the harness first** (parity as a final stage): starts faster, but the
+  forms are checked against the reference late and drift accumulates.
+- **Layered order** (the whole frontend → the whole IR → the whole backend): longer without a working
+  result, and layer errors pile up until the end.
+- **Following the goal document's examples**: the spec's examples compile from day one, but the
+  whitelist surfaces in pieces later.

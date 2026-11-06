@@ -1,59 +1,82 @@
 ---
 id: eel-goal-and-requirements
 type: goal-and-requirements
-title: Eel — Gleam с питоновским синтаксисом
+title: Eel — Gleam with Python syntax
 status: active
 ---
 
 # Eel
 
-Gleam-подобный язык для BEAM с синтаксисом Python; исходники — файлы `.eel`.
+A Gleam-like language for the BEAM with Python syntax; sources are `.eel` files.
 
-## Обзор
+## Overview
 
-Eel — язык для виртуальной машины BEAM, сделанный по образу и подобию Gleam: та же модель (неизменяемость, пользовательские типы вместо атомов, иерархические модули) и тот же способ компиляции — генерация Abstract Erlang Forms. Разница — в исходном синтаксисе: eel пишется на синтаксисе Python и опирается на питоновский тулинг (стоковый парсер CPython 3.15; статический анализ — через форк питоновского анализатора, вне первой сборки).
+Eel is a language for the BEAM, built in the image of Gleam: the same model (immutability, custom
+types instead of atoms, hierarchical modules) and the same way of compiling — emitting the Abstract
+Erlang Format. The difference is the source syntax: eel is written in Python syntax and leans on
+Python tooling (the stock CPython 3.15 parser; static analysis — through a fork of a Python analyser,
+outside the first release).
 
-Осознанные отличия от Gleam: типизация динамическая (аннотации типов — для выразительности и документации, проверяются сторонними инструментами, как в Python) и «let it crash» в match (см. Возможности) — Gleam увлёкся типами и отошёл от принципов Erlang.
+Deliberate differences from Gleam: typing is dynamic (type annotations are for expressiveness and
+documentation, checked by third-party tools, as in Python) and `match` is "let it crash" (see
+Capabilities) — Gleam got carried away with types and drifted away from Erlang's principles.
 
-## Проблема
+## The problem
 
-Автору нужна семантика Gleam — неизменяемость, пользовательские типы, иерархические модули, BEAM — но с синтаксисом Python и питоновским тулингом (стоковый парсер 3.15, форк питоновского статического анализатора). Gleam этого не даёт: у него ML-подобный синтаксис, а кроме того он слишком увлёкся типами и отошёл от принципов Erlang («let it crash») — типы там не совсем опциональны.
+The author wants Gleam's semantics — immutability, custom types, hierarchical modules, the BEAM — but
+with Python syntax and Python tooling (the stock 3.15 parser, a fork of a Python static analyser).
+Gleam does not offer that: its syntax is ML-like, and on top of that it got carried away with types
+and drifted away from Erlang's principles ("let it crash") — its types are not really optional.
 
-## Возможности
+## Capabilities
 
-Первая полезная сборка — компилятор eel → BEAM для чистого питоновского синтаксиса.
+The first useful release is an eel → BEAM compiler for plain Python syntax.
 
-- **Компиляция в BEAM.** Исходники `.eel` компилируются в Abstract Erlang Forms (та же низкоуровневая схема генерации, что у Gleam), затем в Erlang-модули.
-- **Синтаксис — чистый Python.** Парсится стоковым парсером CPython 3.15. Дополнительный синтаксис сверх Python в эту сборку не входит.
-- **Без мутирующих операций.** Циклов `for` нет; повторное присваивание разрешено (`x = x + 1`). Маппинг имён переменных в Erlang — как в Gleam.
-- **Деструктуризация и слияние.** `head, *rest = my_list`; `my_map |= {'key': 'value'}`.
-- **Процессы и сообщения.** `match receive():` — селективный приём с образцами и guards, таймаут
-  клаузой `case Timeout(ms):`; `send`, `self`, `spawn(lambda: …)`.
-- **Методы стандартной библиотеки.** `dic.keys()`, `s.split(",")`, `xs.count(1)` — питоновский синтаксис
-  вызова метода у значения stdlib (`str`, `dict`, `list`, `tuple`). Это вызов функции OTP, а не объекты:
-  список методов закрыт (whitelist в компиляторе), сторонний код методов определять не может,
-  мутирующих методов нет.
-- **Переопределяемые встроенные.** `print`, `zip`, `enumerate` — обычные имена: пользователь может
-  определить свою функцию с тем же именем (по имени, как в Python), встроенная тогда не используется.
-  Так же переопределяются типы прелюдии: свой `class Ok(AtomPrefixed)` заменяет `Ok`.
-- **range.** `range(stop)`, `range(start, stop)`, `range(start, stop, step)` — питоновская семантика
-  (стоп не включается), неленивая: возвращает список; только целые числа.
-- **zip и enumerate.** `zip(a, b)` — пары до конца короткого списка; `enumerate(xs[, start])` — пары
-  `(номер, значение)`. Неленивые (возвращают список), принимают только списки.
-- **Вложенные функции.** `def` внутри тела — замыкание-значение (`fun`): работает как вложенная
-  питоновская функция, с рекурсией и декораторами; питоновская семантика имени (обычная переменная).
-- **print.** `print(x)` — встроенная печать в stdout с питоновским представлением значений (строка
-  как текст, атом без кавычек, список/кортеж/словарь в питоновском виде); ровно один аргумент,
-  возвращает `nil`.
-- **Иерархические импорты.** Питоновский синтаксис (`from my.custom.pak import my_fun`), модульная система — как в Gleam.
-- **if и case питоновским синтаксисом.** Компилятор проверяет, что последняя операция каждой ветки — присваивание одной и той же переменной.
-- **match..case с «let it crash».** Исчерпываемость не требуется: если ни один case не совпал — ошибка в рантайме, процесс падает. Gleam в таком случае не скомпилирует код.
-- **Атомы и пользовательские типы.** Атомы — одинарными кавычками (`'ok'`); вместо атомов рекомендуются типы, как в Gleam. `class CustomType(AtomPrefixed)` с полями `x: int, y: int` (аннотации — только документация) компилируется в кортеж `('custom_type', x, y)`. Также: `class CustomRecord(NativeRecord)` — нативный рекорд OTP29, сохраняющий тип в рантайме; `class CustomMap(Map)`.
+- **Compilation to the BEAM.** `.eel` sources compile to the Abstract Erlang Format (the same
+  low-level generation scheme Gleam uses), then to Erlang modules.
+- **Syntax is plain Python.** Parsed by the stock CPython 3.15 parser. Syntax beyond Python is not
+  part of this release.
+- **No mutating operations.** There are no `for` loops; rebinding is allowed (`x = x + 1`). Variable
+  names map to Erlang the same way as in Gleam.
+- **Destructuring and merging.** `head, *rest = my_list`; `my_map |= {'key': 'value'}`.
+- **Processes and messages.** `match receive():` is a selective receive with patterns and guards, the
+  timeout is the `case Timeout(ms):` clause; plus `send`, `self`, `spawn(lambda: …)`.
+- **Standard-library methods.** `dic.keys()`, `s.split(",")`, `xs.count(1)` — Python's method-call
+  syntax on an stdlib value (`str`, `dict`, `list`, `tuple`). These are calls to OTP functions, not
+  objects: the method list is closed (a compiler whitelist), third-party code cannot define methods,
+  and there are no mutating methods.
+- **Redefinable builtins.** `print`, `zip`, `enumerate` are ordinary names: the user may define a
+  function with the same name (by name, as in Python), and the builtin is then not used. Prelude
+  types are redefinable the same way: your own `class Ok(AtomPrefixed)` replaces `Ok`.
+- **range.** `range(stop)`, `range(start, stop)`, `range(start, stop, step)` — Python semantics
+  (the stop is excluded), eager: it returns a list; integers only.
+- **zip and enumerate.** `zip(a, b)` yields pairs up to the shorter list; `enumerate(xs[, start])`
+  yields `(index, value)` pairs. Eager (they return a list) and list-only.
+- **Nested functions.** `def` inside a body is a closure value (`fun`): it behaves like a nested
+  Python function, with recursion and decorators, and Python name semantics (a plain variable).
+- **print.** `print(x)` is built-in output to stdout with Python-like value display (a string as
+  text, an atom without quotes, a list/tuple/dict in Python form); exactly one argument, returns
+  `nil`.
+- **Hierarchical imports.** Python syntax (`from my.custom.pak import my_fun`), the module system is
+  like Gleam's.
+- **if and case in Python syntax.** The compiler checks that the last operation of every branch is an
+  assignment to the same variable.
+- **match..case with "let it crash".** Exhaustiveness is not required: if no case matched, it is a
+  runtime error and the process dies. Gleam would refuse to compile such code.
+- **Atoms and custom types.** Atoms use single quotes (`'ok'`); types are recommended instead of
+  atoms, as in Gleam. `class CustomType(AtomPrefixed)` with fields `x: int, y: int` (annotations are
+  documentation only) compiles to the tuple `{custom_type, x, y}`. Also: `class CustomRecord(NativeRecord)`
+  — the native OTP 29 record that keeps its type at runtime; `class CustomMap(Map)`.
 
-## Технические заметки
+## Technical notes
 
-- **Реализация — Python.** Парсер — стоковый CPython 3.15 через питоновский пакет, не форк — в отличие от eel_beam.
-- **Код Gleam не переиспользуется**, но абстракции — те же; особенно нижний уровень: генерация Abstract Erlang Forms, и для одинаковых синтаксических узлов должен генерироваться одинаковый код.
-- **Тесты паритета.** 10–20 тестов, проверяющих, что на эквивалентном коде Gleam и eel генерируют одинаковый код.
-- **Статический анализ** — форк статического анализатора Python (как вариант — анализатор PyCharm на Kotlin); не входит в первую сборку. Проверка типов — сторонними инструментами, как в Python.
-- **Справочный материал** — `~/rw/eel_beam/eel`: единственное достоинство eel_beam — что это работающий код; подсматривать можно.
+- **Implemented in Python.** The parser is stock CPython 3.15 through the Python package, not a fork —
+  unlike eel_beam.
+- **Gleam's code is not reused**, but the abstractions are the same; especially the low level: the
+  generation of the Abstract Erlang Format, where identical syntax nodes must produce identical code.
+- **Parity tests.** 10–20 tests checking that Gleam and eel produce the same code for equivalent
+  sources.
+- **Static analysis** — a fork of a Python static analyser (an option being PyCharm's Kotlin
+  analyser); not part of the first release. Type checking is left to third-party tools, as in Python.
+- **Reference material** — `~/rw/eel_beam/eel`: the only good thing about eel_beam is that it is
+  working code; looking over its shoulder is allowed.

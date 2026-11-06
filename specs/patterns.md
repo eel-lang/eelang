@@ -1,68 +1,69 @@
 ---
 id: eel-patterns
 type: module-design
-title: Eel — образцы (pattern matching)
+title: Eel — patterns (pattern matching)
 status: active
 parent: eel-architecture
 ---
 
-# Eel — образцы
+# Eel — patterns
 
-Образец — форма значения: связывает имена и проверяет совпадение. Образцы компилируются в
-Erlang-образцы тех же форм, что у Gleam (закреплено паритет-тестами); несовпадение **роняет
-процесс** (let it crash), а не возвращает «не нашлось». Живут во фронтенде (разбор и проверки) и
-бэкенде (генерация форм); присваивание с образцом-конструктором дополнительно требует переписывания исходника.
+A pattern is the shape of a value: it binds names and checks that the value matches. Patterns
+compile to Erlang patterns of the same forms Gleam produces (pinned by the parity tests); a
+mismatch **crashes the process** (let it crash) instead of returning "not found". Patterns live in
+the frontend (parsing and checks) and the backend (form generation); a pattern assignment with a
+constructor additionally needs a source rewrite.
 
-## Где допустимы
+## Where patterns are allowed
 
-- **Присваивание** `Pattern = expr` — валидный Python: имя, кортеж/список, `*rest`.
-- **Присваивание с образцом** `Ctor(args) = expr` — невалидно для Python (нельзя присвоить вызову), поэтому
-  исходник переписывается до парсинга (ниже). Допускает вложенные конструкторы, списки/кортежи,
-  `*rest`, литералы, `_`.
-- **`match`/`case`** — основной синтаксис, плюс `|` (or) и `if guard`.
+- **Assignment** `Pattern = expr` — valid Python: a name, a tuple/list, `*rest`.
+- **Pattern assignment** `Ctor(args) = expr` — invalid Python (you cannot assign to a call), so the
+  source is rewritten before parsing (see below). Allows nested constructors, lists/tuples, `*rest`,
+  literals, `_`.
+- **`match`/`case`** — the main syntax, plus `|` (or) and `if guard`.
 
-## Компиляция
+## Compilation
 
-| Образец | Erlang |
+| Pattern | Erlang |
 |---|---|
-| `имя` | `{var, 'Name'}` — новое имя; при повторе в коде — `X@N` |
+| `name` | `{var, 'Name'}` — a new name; on rebinding — `X@N` |
 | `_` | `{var, '_'}` |
-| литерал | `{integer, …}`, `{float, …}`, `{bin, …}`, `{atom, …}` |
+| literal | `{integer, …}`, `{float, …}`, `{bin, …}`, `{atom, …}` |
 | `(a, b)` | `{tuple, [A, B]}` |
 | `[h, *t]` | `{cons, H, T}`; `[a, b]` → `{cons, A, {cons, B, nil}}` |
 | `{'k': v}` | `{map, [{map_field_exact, K, V}]}` |
-| `T(x, y)` | `{tuple, [{atom, t}, X, Y]}` — тег `snake_case`, как у Gleam |
-| `p1 \| p2` | клауза на каждый альтернатив с общим телом |
+| `T(x, y)` | `{tuple, [{atom, t}, X, Y]}` — the tag is `snake_case`, as in Gleam |
+| `p1 \| p2` | one clause per alternative, sharing the body |
 
-`Ok`/`Error` — встроенные (прелюдия): `Ok(x)` → `{ok, x}`, `Error(e)` → `{error, e}`.
+`Ok`/`Error` are built in (the prelude): `Ok(x)` → `{ok, x}`, `Error(e)` → `{error, e}`.
 
-## Правила
+## Rules
 
-- **Связывание**: каждое имя — новая Erlang-переменная. Повтор имени внутри одного образца —
-  ошибка компиляции (иначе Erlang молча сравнивал бы разные переменные). В `match` это ловит ещё и
-  питоновский парсер, в образце присваивания — проверка фронтенда; в `x, x = …` Python просто
-  переприсваивает имя, и eel, как и Python, оставляет последнее значение.
-- **Несовпадение** → падение: `badmatch` для присваивания, `case_clause` для `match`.
-  Исчерпываемость компилятор не требует — отличие от Gleam.
-- **Значение** присваивания — RHS: обе формы дают один `{match, образец, значение}`.
-- **Or-образцы не связывают имён** — иначе альтернативы разошлись бы по переменным.
-- **Класс-образец** сверяет арность с полями класса и различает список и кортеж по скобкам
-  исходника: `[a, b]` — список, `(a, b)` — кортеж. Python-`match` их не различает, поэтому
-  фронтенд читает скобки токенизатором.
-- **Литералы строгие** (Erlang `=:=`): `case 1` не совпадёт с `1.0` — в Python-`match` совпадёт.
-  Числа разных типов — разные значения.
-- **`*`** — одна, последняя, только в списке.
-- Связывания ветки `case` не утекают наружу (scope ветки).
+- **Binding**: every name becomes a new Erlang variable. Repeating a name inside one pattern is a
+  compile error (otherwise Erlang would silently compare distinct variables). In `match` Python's own
+  parser catches it; in an assignment pattern the frontend check does; in `x, x = …` Python simply
+  rebinds the name, and eel, like Python, keeps the last value.
+- **Mismatch** → crash: `badmatch` for an assignment, `case_clause` for `match`. The compiler does
+  not require exhaustiveness — a difference from Gleam.
+- **The value** of an assignment is the RHS: both forms produce a single `{match, Pattern, Value}`.
+- **Or-patterns do not bind names** — otherwise the alternatives would diverge by variables.
+- **Class patterns** check the arity against the class fields and tell a list from a tuple by the
+  source brackets: `[a, b]` is a list, `(a, b)` is a tuple. Python's `match` does not distinguish
+  them, so the frontend reads the brackets with the tokenizer.
+- **Literals are strict** (Erlang `=:=`): `case 1` does not match `1.0`, whereas Python's `match`
+  would match them. Numbers of different types are different values.
+- **`*`** — one, at the end, lists only.
+- Bindings made inside a `case` branch do not leak out (branch scope).
 
-## Присваивание с образцом: переписывание исходника
+## Pattern assignment: the source rewrite
 
-`Ctor(args) = expr` невалиден для Python, поэтому `rewrite_pattern_assignments` до `ast.parse` заменяет оператор
-на `__pattern_match__(Ctor(args), expr)` — валидный вызов; фронтенд строит из него `Assign` с
-образцом. Число строк сохраняется, поэтому позиции в ошибках не съезжают. В ноутбуке переписывание
-стоит input-трансформером (до парсера Python), поэтому SyntaxError не возникает — ценой того, что
-подсветка и автокомплит такую строку не понимают.
+`Ctor(args) = expr` is invalid Python, so `rewrite_pattern_assignments` replaces the statement with
+`__pattern_match__(Ctor(args), expr)` — a valid call — before `ast.parse`; the frontend turns it into
+an `Assign` with a pattern. The line count is preserved, so error positions do not shift. In the
+notebook the rewrite is installed as an input transformer (before Python's parser), so no SyntaxError
+appears — at the cost of highlighting and autocomplete not understanding such a line.
 
-## Не поддерживается
+## Not supported
 
-`as`-образцы; именованные поля класса `T(x=…)`; `mod.T`; ключ словаря не литерал; `*` не в конце и
-больше одной.
+`as` patterns; named class fields `T(x=…)`; `mod.T`; a non-literal dict key; `*` anywhere but the end,
+and more than one.

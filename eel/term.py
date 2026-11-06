@@ -1,8 +1,8 @@
-"""Erlang-термы как значения Python и их печать в текст.
+"""Erlang terms as Python values, and printing them to text.
 
-Атом — подкласс str (``Atom``), чтобы отличать его от строкового литерала.
-Формы бэкенда — вложенные кортежи/списки/Atom/str/int, которые печатает
-:func:`term_to_erlang` в текст, читаемый ``file:consult``.
+An atom is a ``str`` subclass (``Atom``) so it can be told from a string literal.
+Backend forms are nested tuples/lists/Atom/str/int, which
+:func:`term_to_erlang` prints into text that ``file:consult`` can read.
 """
 
 from __future__ import annotations
@@ -11,7 +11,7 @@ import re
 
 _BARE_ATOM = re.compile(r"^[a-z][a-zA-Z0-9_@]*$")
 
-# Слова Erlang, которые нельзя печатать голым атомом.
+# Erlang words that cannot be printed as a bare atom.
 _RESERVED = {
     "after", "and", "andalso", "band", "begin", "bnot", "bor", "bsl", "bsr",
     "bxor", "case", "catch", "cond", "div", "else", "end", "fun", "if", "let",
@@ -21,11 +21,11 @@ _RESERVED = {
 
 
 class Atom(str):
-    """Атом Erlang."""
+    """An Erlang atom."""
 
 
 def _float_text(value: float) -> str:
-    """Erlang-float: всегда с десятичной точкой (``1e-05`` → ``1.0e-5``)."""
+    """An Erlang float: always with a decimal point (``1e-05`` → ``1.0e-5``)."""
     r = repr(value)
     if "e" in r or "E" in r:
         mantissa, exp = re.split("[eE]", r)
@@ -58,7 +58,7 @@ def _string_text(value: str) -> str:
         elif ch == "\v":
             out.append("\\v")
         elif o < 0x20 or o > 0x7E:
-            out.append("\\x{%X}" % o)  # не-ASCII/управляющие → \x{HEX}
+            out.append("\\x{%X}" % o)  # non-ASCII/control characters → \x{HEX}
         else:
             out.append(ch)
     out.append('"')
@@ -66,7 +66,7 @@ def _string_text(value: str) -> str:
 
 
 def term_to_erlang(term) -> str:
-    """Печать терма как Erlang-текст."""
+    """Print a term as Erlang text."""
     if isinstance(term, Atom):
         name = str(term)
         if name in _RESERVED or not _BARE_ATOM.match(name):

@@ -294,7 +294,7 @@ def test_class_base_errors():
     for source in [
         "class Foo(NativeRecord):\n    x: int\n",
         "class Foo:\n    x: int\n",
-        "class Foo(StartingWithAtom):\n    x: int\n",   # прежнее имя убрано
+        "class Foo(StartingWithAtom):\n    x: int\n",   # the old name was removed
         "class Foo(AtomPrefixed):\n    x = 1\n",
     ]:
         with pytest.raises(EelError):
@@ -325,9 +325,9 @@ def test_builtin_result_classes_can_be_redefined():
     )
     assert out.stdout.strip() == "{ok,1,7} 8"
 
-    # без переопределения работает прелюдия
+    # without an override the prelude works
     assert compile_source("def f():\n    Ok(1)\n", "src/m.eel", "m")
-    # повторное определение пользовательского класса — по-прежнему ошибка
+    # redefining a user class is still an error
     with pytest.raises(EelError, match="duplicate definition of class Ok"):
         compile_source(
             "class Ok(AtomPrefixed):\n    a: int\n\n"

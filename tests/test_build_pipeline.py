@@ -27,9 +27,9 @@ def test_default_build_writes_beam_and_etf_only(tmp_path):
 
     assert (ebin / "hello.beam").exists()
     assert (ebin / "app.app").exists()
-    assert not (ebin / "hello.erl").exists()          # .erl только по флагу
-    assert (artefacts / "forms.etf").exists()          # формы — одним ETF-блобом
-    assert not list(artefacts.glob("*.abstr"))         # читаемый текст — только по флагу
+    assert not (ebin / "hello.erl").exists()          # .erl only with the flag
+    assert (artefacts / "forms.etf").exists()          # the forms are one ETF blob
+    assert not list(artefacts.glob("*.abstr"))         # readable text only with the flag
     assert not (artefacts / "_jobs.term").exists()
 
 
@@ -58,8 +58,8 @@ def test_compiled_module_runs(tmp_path):
 
 def test_compiler_process_is_reused(tmp_path):
     proj = _project(tmp_path)
-    build(proj)                       # прогреваем: процесс точно есть
+    build(proj)                       # warm up: the process definitely exists
     starts = COMPILER.starts
     build(proj)
     build(proj)
-    assert COMPILER.starts == starts  # повторные сборки не поднимают Erlang-VM заново
+    assert COMPILER.starts == starts  # repeated builds do not start the Erlang VM again

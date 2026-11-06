@@ -1,5 +1,8 @@
-я хочу настроить ноутбуки jupyter для eel
+I want to set up Jupyter notebooks for eel.
 
-но хочу сделать не Kernel для языка eel а по-другому. Дело в том, что я хочу переиспользовать статический анализ, автокомплит и прочее для питона. Ты не видишь способа это сделать?
+But I do not want to make a kernel for the eel language — something else instead. The point is that
+I want to reuse static analysis, autocomplete and the rest of Python's tooling. Do you see a way to
+do that?
 
-Если нет, то нужно использовать Kernel для питона, но игнорировать результат выполнения, а использовать какой-то хук после вычисления ячейки для компиляции и вычисления в эрланг-консоли.
+If not, we should use the Python kernel but ignore the execution result, and instead use some
+post-cell hook to compile the cell and evaluate it in an Erlang console.

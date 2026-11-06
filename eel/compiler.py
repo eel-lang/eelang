@@ -1,4 +1,4 @@
-"""Конвейер компиляции: source → IR → проверки → формы → .beam."""
+"""The compilation pipeline: source → IR → checks → forms → .beam."""
 
 from __future__ import annotations
 
@@ -18,13 +18,13 @@ from .term import Atom, term_to_erlang
 
 ESCRIPT = pathlib.Path(__file__).parent / "eel_compile.escript"
 
-#: Версия протокола «клиент ↔ escript»; при расхождении демон перезапускается.
+#: The "client ↔ escript" protocol version; on a mismatch the daemon is restarted.
 PROTOCOL = 2
 
-#: Версия формата артефактов сборки: меняем — прежний манифест считается недействительным.
+#: The build-artefact format version: bump it and the old manifest is invalidated.
 BUILD_FORMAT = 1
 
-#: Исходники, влияющие на результат сборки: их хэш инвалидирует манифест.
+#: Sources that affect the build result: their hash invalidates the manifest.
 _BUILDER_SOURCES = (
     "compiler.py",
     "frontend.py",
@@ -44,7 +44,7 @@ _CACHE = pathlib.Path(
 
 
 def compile_source(source: str, path: str, name: str) -> list:
-    """Исходник → Erlang-формы (значения Python)."""
+    """A source → Erlang forms (Python values)."""
     try:
         module = frontend.parse_module(source, path, name)
         checks.check(module)
@@ -62,7 +62,7 @@ def module_name(relative_path: pathlib.PurePath) -> str:
 
 
 def builder_fingerprint() -> str:
-    """Хэш исходников компилятора: изменили кодогенерацию — пересобираем всё."""
+    """A hash of the compiler sources: change code generation and everything is rebuilt."""
     global _FINGERPRINT
     if _FINGERPRINT is None:
         digest = hashlib.sha256()
@@ -90,7 +90,7 @@ def _save_manifest(path: pathlib.Path, builder: str, modules: dict) -> None:
 
 
 def _install_key() -> str:
-    """Ключ по пути escript: у разных установок eel — разные демоны."""
+    """A key by escript path: different eel installations get different daemons."""
     return hashlib.sha1(str(ESCRIPT.resolve()).encode("utf-8")).hexdigest()[:12]
 
 
@@ -107,21 +107,21 @@ def daemon_log() -> pathlib.Path:
 
 
 class DaemonUnavailable(RuntimeError):
-    """Демон недоступен — можно тихо откатиться к escript внутри процесса."""
+    """The daemon is unreachable — we may silently fall back to an in-process escript."""
 
 
 class CompilerDaemon:
-    """Фоновый escript на unix-сокете: живёт, пока не попросят остановиться.
+    """A background escript on a unix socket: it lives until asked to stop.
 
-    Первый `build` поднимает его, дальнейшие команды (в том числе из других процессов)
-    переиспользуют уже поднятую Erlang-VM.
+    The first `build` starts it, later commands (from other processes too)
+    reuse the Erlang VM already running.
     """
 
     def __init__(self) -> None:
         self.timeout = 5.0
         self._proc: subprocess.Popen | None = None
 
-    # --- транспорт ---
+    # --- transport ---
 
     def _connect(self) -> socket.socket:
         sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
@@ -134,7 +134,7 @@ class CompilerDaemon:
         return sock
 
     def _request(self, term) -> str:
-        """Отправить запрос, вернуть строку ответа (``OK …`` / ``ERR …``)."""
+        """Send a request and return the reply line (``OK …`` / ``ERR …``)."""
         line = term_to_erlang(term) + ".\n"
         try:
             sock = self._connect()
@@ -158,10 +158,10 @@ class CompilerDaemon:
     def _payload(reply: str) -> str:
         return base64.b64decode(reply.split(" ", 1)[1]).decode("utf-8").strip()
 
-    # --- управление ---
+    # --- control ---
 
     def ping(self) -> dict | None:
-        """``{"version": "2", "compiled": "5"}`` или None, если демон не отвечает."""
+        """``{"version": "2", "compiled": "5"}``, or None when the daemon does not answer."""
         try:
             reply = self._request((Atom("ping"),))
         except DaemonUnavailable:
@@ -175,7 +175,7 @@ class CompilerDaemon:
         return info
 
     def start(self) -> dict:
-        """Поднять демон и дождаться готовности."""
+        """Start the daemon and wait until it is ready."""
         daemon_socket().parent.mkdir(parents=True, exist_ok=True)
         for stale in (daemon_socket(), daemon_pid_file()):
             try:
@@ -183,7 +183,7 @@ class CompilerDaemon:
             except FileNotFoundError:
                 pass
         with open(daemon_log(), "ab") as log:
-            # stdin — труба: когда родитель умирает, она закрывается, и escript выходит сам
+            # stdin is a pipe: when the parent dies it closes, and the escript exits by itself
             self._proc = subprocess.Popen(
                 ["escript", str(ESCRIPT), "--daemon", str(daemon_socket()), str(daemon_pid_file())],
                 stdin=subprocess.PIPE,
@@ -203,16 +203,16 @@ class CompilerDaemon:
         )
 
     def ensure(self) -> dict:
-        """Живой демон нужной версии — или поднять новый."""
+        """A live daemon of the right version — or start a new one."""
         info = self.ping()
         if info is not None and info.get("version") == str(PROTOCOL):
             return info
-        if info is not None:  # чужая версия протокола — перезапустить
+        if info is not None:  # a foreign protocol version — restart it
             self.stop()
         return self.start()
 
     def stop(self) -> bool:
-        """Попросить демон выйти; снять сокет и pid-файл."""
+        """Ask the daemon to exit; remove the socket and the pid file."""
         stopped = False
         try:
             stopped = self._request((Atom("stop"),)) == "OK"
@@ -220,7 +220,7 @@ class CompilerDaemon:
             pass
         if self._proc is not None:
             try:
-                self._proc.stdin.close()      # закрыть трубу: escript поймёт, что родитель ушёл
+                self._proc.stdin.close()      # close the pipe: the escript sees the parent is gone
             except OSError:
                 pass
             try:
@@ -236,10 +236,10 @@ class CompilerDaemon:
         return stopped
 
     def compile(self, forms_path: pathlib.Path, erl: bool, *, autostart: bool = False) -> None:
-        """Скомпилировать блоб через демон.
+        """Compile a blob through the daemon.
 
-        ``autostart=False`` — демон не поднимаем: он живёт только как ребёнок сервера сборки
-        (жизненные циклы связаны), а без него вызывающий собирает внутри процесса.
+        ``autostart=False`` — the daemon is not started: it lives only as a child of the build
+        server (the lifetimes are tied); without it the caller builds in-process.
         """
         if self.ping() is None:
             if not autostart:
@@ -256,7 +256,7 @@ class CompilerDaemon:
 
 
 class CompilerProcess:
-    """escript внутри процесса: запасной путь и `--no-daemon`."""
+    """An escript inside the process: the fallback path and `--no-daemon`."""
 
     def __init__(self) -> None:
         self._proc: subprocess.Popen | None = None
@@ -276,7 +276,7 @@ class CompilerProcess:
         return self._proc
 
     def compile(self, forms_path: pathlib.Path, erl: bool) -> None:
-        """Скомпилировать ETF-блоб с формами; ошибки — EelError с текстом от escript."""
+        """Compile an ETF blob of forms; errors are EelError with the escript's text."""
         proc = self._ensure()
         request = term_to_erlang(
             (Atom("compile"), str(forms_path), Atom("true") if erl else Atom("false"))
@@ -317,7 +317,7 @@ atexit.register(COMPILER.close)
 
 
 def _needs_rebuild(entry, digest, ebin, artefacts, name, erl, dump_forms) -> bool:
-    """Пересобирать ли модуль: нет записи, другой хэш, пропали нужные артефакты."""
+    """Whether a module must be rebuilt: no entry, another hash, missing artefacts."""
     if entry != digest:
         return True
     if not (ebin / f"{name}.beam").exists():
@@ -337,11 +337,11 @@ def build(
     daemon: bool = True,
     force: bool = False,
 ) -> pathlib.Path:
-    """Компилирует ``src/*.eel`` в ``build/dev/erlang/<app>/ebin``.
+    """Compile ``src/*.eel`` into ``build/dev/erlang/<app>/ebin``.
 
-    ``erl`` — дополнительно писать ``.erl`` рядом с ``.beam``; ``dump_forms`` — писать читаемые
-    ``.abstr``; ``daemon`` — использовать фоновый демон (иначе escript внутри процесса);
-    ``force`` — пересобрать всё, игнорируя манифест (иначе только изменившиеся модули).
+    ``erl`` — also write ``.erl`` next to each ``.beam``; ``dump_forms`` — write readable
+    ``.abstr``; ``daemon`` — use the background daemon (otherwise an in-process escript);
+    ``force`` — rebuild everything, ignoring the manifest (otherwise changed modules only).
     """
     root = pathlib.Path(root).resolve()
     src = root / "src"
@@ -378,7 +378,7 @@ def build(
                 "".join(term_to_erlang(form) + ".\n" for form in forms)
             )
 
-    for gone in sorted(set(previous) - set(current)):   # модуль удалён или переименован
+    for gone in sorted(set(previous) - set(current)):   # the module was removed or renamed
         for stale in (ebin / f"{gone}.beam", ebin / f"{gone}.erl", artefacts / f"{gone}.abstr"):
             stale.unlink(missing_ok=True)
 
@@ -389,9 +389,9 @@ def build(
         )
         if daemon:
             try:
-                DAEMON.compile(forms_path, erl)   # только если демон уже поднят сервером
+                DAEMON.compile(forms_path, erl)   # only if the server has already started it
             except DaemonUnavailable:
-                COMPILER.compile(forms_path, erl)  # сервера нет — собираем внутри процесса
+                COMPILER.compile(forms_path, erl)  # no server — build inside the process
         else:
             COMPILER.compile(forms_path, erl)
 

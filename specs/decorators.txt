@@ -1,6 +1,6 @@
-добавляем поддержку декораторов, декорировать можно функции
+Add support for decorators; functions can be decorated.
 
-синтаксис декораторов - как в питоне. Самый богатый - представлен ниже
+The decorator syntax is Python's. The richest form is shown below:
 
 @mod.funtion(x, y, z)
 def f():

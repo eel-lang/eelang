@@ -1,250 +1,322 @@
 ---
 id: eel-architecture
 type: architecture-design
-title: "Eel — компилятор: архитектура"
+title: "Eel — the compiler: architecture"
 status: active
 parent: eel-goal-and-requirements
 ---
 
-# Eel — компилятор: архитектура
+# Eel — the compiler: architecture
 
-Две части: правила языка — отображение eel на Erlang, и устройство компилятора (пайплайн `.eel` → `.beam`).
+Two parts: the language rules — how eel maps onto Erlang — and the shape of the compiler (the
+`.eel` → `.beam` pipeline).
 
-## Правила языка
+## Language rules
 
-### Имена и модули
+### Names and modules
 
-- Модуль — это путь файла под `src/`: `src/a/b/c.eel` → Erlang-модуль `a@b@c` (разделитель `@`, как у Gleam).
-- `from a.b.c import f` → вызов `a@b@c:f(...)`; `from a.b.c import f, g as h` — несколько имён и псевдоним (`h` → `a@b@c:g`); `import *` и `import X` — ошибка.
-- Переменные маппятся как у Gleam: первое связывание имени — `X`, каждое следующее переприсваивание — `X@1`, `X@2`… (`x = x + 1` → `X@1 = X + 1`).
+- A module is the path of its file under `src/`: `src/a/b/c.eel` → the Erlang module `a@b@c` (the
+  `@` separator, as in Gleam).
+- `from a.b.c import f` → the call `a@b@c:f(...)`; `from a.b.c import f, g as h` — several names and
+  an alias (`h` → `a@b@c:g`); `import *` and `import X` are errors.
+- Variables map as in Gleam: the first binding of a name is `X`, every further rebinding is `X@1`,
+  `X@2`, … (`x = x + 1` → `X@1 = X + 1`).
 
-### Значения
+### Values
 
-- Строка `"..."` (двойные кавычки) → бинарник `<<"..."/utf8>>`; атом `'ok'` (одинарные кавычки) → атом — кавычки различают строку и атом.
-- `True`/`False` → `true`/`false`; `None` → `nil`; `int`/`float` → Erlang number.
-- кортеж `(a, b)` → `{a, b}`; список `[a, b]` → `[a, b]`; словарь `{'k': v}` → `#{k => v}` (атом-ключ), `{"k": v}` → `#{"k" => v}` (бинарный ключ).
+- A string `"..."` (double quotes) → the binary `<<"..."/utf8>>`; an atom `'ok'` (single quotes) →
+  an atom — the quotes tell a string from an atom.
+- `True`/`False` → `true`/`false`; `None` → `nil`; `int`/`float` → an Erlang number.
+- A tuple `(a, b)` → `{a, b}`; a list `[a, b]` → `[a, b]`; a dict `{'k': v}` → `#{k => v}` (atom key),
+  `{"k": v}` → `#{"k" => v}` (binary key).
 
-### Операторы
+### Operators
 
-- `+ - * < <= > >=` — как у Gleam (те же формы); `!=` → `/=`.
-- `==` → Erlang `==` (коэрцирующее, `1 == 1.0` true — Python-семантика); `is`/`is not` — ошибка компиляции.
-- `and`/`or`/`not` → `andalso`/`orelse`/`not`, операнды только bool (иное — `badarg`).
-- `// % **` — Python-семантика через хелперы (int и float): `%` → `eel_mod` (`rem` с поправкой на знак делителя; для float — `math:fmod`), `//` → `eel_floordiv` (`div` с поправкой; для float — `math:floor(A / B)`), `**` → `_eel_pow` (целочисленное при int**int(≥0), иначе `math:pow`). На ноль — падение (`badarith`). Имена хелперов зарезервированы.
-- `/` — сырое Erlang `/` (float-деление; на ноль — `badarith`).
+- `+ - * < <= > >=` — as in Gleam (the same forms); `!=` → `/=`.
+- `==` → Erlang `==` (coercing, `1 == 1.0` is true — Python semantics); `is`/`is not` are compile errors.
+- `and`/`or`/`not` → `andalso`/`orelse`/`not`, operands must be bool (anything else — `badarg`).
+- `// % **` — Python semantics through helpers (int and float): `%` → `eel_mod` (`rem` corrected for
+  the divisor's sign; for floats — `math:fmod`), `//` → `eel_floordiv` (`div` corrected; for floats —
+  `math:floor(A / B)`), `**` → `_eel_pow` (integer for int**int(≥0), otherwise `math:pow`). Division
+  by zero crashes (`badarith`). Helper names are reserved.
+- `/` — raw Erlang `/` (float division; by zero — `badarith`).
 
-### Классы-типы
+### Class types
 
-- `class T(AtomPrefixed): x: int` — аннотации только документация; класс в рантайм не эмитится. Конструктор `T(…)` **инлайнится** в кортеж `{t, …}` (тег — имя класса в snake_case, как у Gleam; функции-конструктора нет); число аргументов конструктора и образца `case T(x):` проверяется против числа полей.
-- Встроенные (прелюдия как у Gleam): `Ok(x)` → `{ok, x}`, `Error(e)` → `{error, e}`; образцы
-  `case Ok(v):`/`case Error(e):` — те же кортежи. Оба имени **переопределяемы**: `class Ok(AtomPrefixed)`
-  (и так же `Error`) заменяет прелюдию — работает пользовательская версия со своим числом полей
-  (тег остаётся `ok`/`error`, форма `{ok, …}`); повторное определение пользовательского класса с тем же
-  именем — по-прежнему ошибка.
-- `class R(NativeRecord)` и `class M(Map)` — нативный рекорд OTP29 и map; точное отображение не подтверждено (пока — ошибка компиляции).
+- `class T(AtomPrefixed): x: int` — annotations are documentation only; the class is never emitted
+  into the runtime. The constructor `T(…)` is **inlined** into the tuple `{t, …}` (the tag is the
+  class name in snake_case, as in Gleam; there is no constructor function); the number of arguments
+  of a constructor and of the pattern `case T(x):` is checked against the number of fields.
+- Built in (the prelude, as in Gleam): `Ok(x)` → `{ok, x}`, `Error(e)` → `{error, e}`; the patterns
+  `case Ok(v):`/`case Error(e):` are the same tuples. Both names are **redefinable**: `class Ok(AtomPrefixed)`
+  (and `Error` likewise) replaces the prelude — the user's version with its own field count is used
+  (the tag stays `ok`/`error`, the form `{ok, …}`); defining a user class with the same name twice is
+  still an error.
+- `class R(NativeRecord)` and `class M(Map)` — the native OTP 29 record and map; the exact mapping is
+  unconfirmed (a compile error for now).
 
-### Неизменяемость и присваивание
+### Immutability and assignment
 
-- `for`, `while`, `del`, `+= -= *= /=` и присваивание по индексу/атрибуту — ошибка компиляции (см. Проверки).
-- Переприсваивание имени разрешено: новое Erlang-имя по схеме `X@N` (параметр — первая привязка `X`). Неопределённое имя — ошибка компиляции.
-- Деструктуризация (`head, *rest = …`, `a, b = t`, присваивание с образцом `Ctor(…) = …`) — образцы, см. `eel-patterns`.
-- `my_map |= {'k': v}` → `maps:merge(M, D)`; не-map — `badmap` (let it crash).
+- `for`, `while`, `del`, `+= -= *= /=` and assignment through an index/attribute are compile errors
+  (see Checks).
+- Rebinding a name is allowed: a new Erlang name by the `X@N` scheme (the parameter is the first
+  binding `X`). An undefined name is a compile error.
+- Destructuring (`head, *rest = …`, `a, b = t`, the pattern assignment `Ctor(…) = …`) — patterns, see
+  `eel-patterns`.
+- `my_map |= {'k': v}` → `maps:merge(M, D)`; a non-map — `badmap` (let it crash).
 
-### Ветвления
+### Branching
 
-- `if c: a else: b` → `case C of true -> A; false -> B end`: истинно только `true`; любое другое значение роняет процесс (`case_clause`) — «let it crash».
-- `match v: case p1: … case p2: …` → `case V of … end` без fallthrough: ни один образец не совпал — рантайм падает с `{case_clause, V}`.
-- Образцы (`|`, guards, захват, `_`, списки/кортежи/словари, конструкторы) и их компиляция — в `eel-patterns` (patterns.md).
-- Переменные, связанные внутри ветки, не утекают наружу (scope ветки); `if` без `else` — ошибка компиляции.
-- В обычной позиции каждая ветка `if`/`match` заканчивается присваиванием одной и той же переменной (проверка компилятора) — ветки генерируются как `case`, и его значение присваивается этой переменной.
-- В **хвостовой позиции** (последний оператор тела функции или клетки ноутбука) хвостовое присваивание не обязательно: ветки могут быть любыми выражениями, и функция возвращает значение `case`. Если при этом все ветки всё равно присваивают одну и ту же переменную, она по-прежнему связывается снаружи.
-- `_` — wildcard; образцы — литералы, классы, списки/кортежи/словари — как в Python.
+- `if c: a else: b` → `case C of true -> A; false -> B end`: only `true` is truthy; any other value
+  crashes the process (`case_clause`) — "let it crash".
+- `match v: case p1: … case p2: …` → `case V of … end` with no fallthrough: when no pattern matched,
+  the runtime crashes with `{case_clause, V}`.
+- Patterns (`|`, guards, capture, `_`, lists/tuples/dicts, constructors) and their compilation live in
+  `eel-patterns` (patterns.md).
+- Variables bound inside a branch do not leak out (branch scope); `if` without `else` is a compile error.
+- In a normal position every branch of `if`/`match` ends with an assignment to the same variable (a
+  compiler check) — the branches become a `case` and its value is assigned to that variable.
+- In a **tail position** (the last statement of a function body or of a notebook cell) the tail
+  assignment is not required: branches may be any expressions and the function returns the `case`
+  value. If all branches still assign the same variable, it is bound outside as before.
+- `_` is the wildcard; patterns are literals, classes, lists/tuples/dicts — as in Python.
 
-### Функции, лямбды, включения
+### Functions, lambdas, comprehensions
 
-- `def f(a, b): …` → `f(A, B) -> …`; значение функции — последний оператор тела (присваивание — тоже значение). Экспортируются все функции модуля.
-- **Декораторы** — только над функциями, синтаксис Python: `@dec`, `@mod.dec`, `@dec(args)`,
-  `@mod.dec(args)`; применяются **один раз** (как в Python), цепочка — изнутри наружу.
-  В модуле тело уходит в приватную `f@impl/N`, `f/N` — обёртка над значением из
-  `persistent_term`, а `eel_on_load/0` (атрибут `-on_load`) применяет декораторы при
-  загрузке (перезагрузка пересчитывает). В ноутбуке — placeholder через process dictionary;
-  вызовы в теле идут через декоратор. Декоратор — функция арности 1; имя разрешается так:
-  переменная/вложенная функция из scope → вызов через переменную, импортированное имя →
-  `fun mod:dec/1`, иначе — функция модуля (проверяется, что она есть и её арность 1; иначе
-  ошибка компиляции с номером строки `@`). `@mod.dec` — `fun mod:dec/1` без требования импорта:
-  вызов модуля по имени и так не требует импорта.
-- **Вложенный `def`** — обычная питоновская вложенная функция: компилируется в `fun` и привязывается
-  к имени как значение (как `lambda`, но с именем и телом-операторами). Рекурсия работает (`named_fun`),
-  взаимная рекурсия двух вложенных функций — нет (вызов до определения — ошибка компиляции).
-  Имя — обычная переменная: второе `def f` в том же теле затеняет первое (`F` → `F@1`), арность не
-  различает; вложенное имя перекрывает и функцию модуля/клетки. Захват — по значению в момент
-  определения (как у `lambda`). Декораторы над вложенным `def` применяются сразу при определении
-  (`F = Dec(fun …)`, изнутри наружу); рекурсивный вызов внутри декорированной вложенной функции идёт
-  в её тело, минуя декоратор (у модульных функций — через декоратор).
-- **Арность — часть идентичности функции** (как в Gleam): `def fib(x)` и `def fib(x, c, n)` — разные функции `fib/1` и `fib/3`. В модуле это две Erlang-функции, порядок определений любой; дубль пары (имя, арность) — ошибка. В ноутбуке вызов разрешается только на уже определённую арность (fun не допускает forward-reference) — определение должно идти раньше вызова, иначе ошибка компиляции с подсказкой.
-- `lambda x: e` → `fun(X) -> E end`; замыкание захватывает значение (как у Gleam), а не позднюю привязку Python: переприсваивание имени после лямбды не меняет уже захваченное значение.
-- `[e for x in l if c]` → `[E || X <- L, C]`; `{k: v for …}` → map comprehension (OTP 26+). Генераторы, фильтры и вложенность переносятся 1:1 в том же порядке; образец-цель генератора пропускает несовпавшие элементы — как в Python, так и в Erlang. Фильтр — `true` сохраняет, иное пропускает (семантика Erlang; в отличие от `if`, который падает). Множеств в eel нет → set comprehension — ошибка компиляции.
-- Итерация словаря: `for k in m` → `K <- eel_iter(M)` — map даёт ключи, список даёт элементы, иное — `bad_generator` (let it crash). Все генераторы list/dict-включений идут через `eel_iter` (единая семантика: словарь → ключи, список → элементы). Пары — явно: `for k, v in m.items()` → map-генератор `K := V <- M` (без `maps:to_list`; не-map — `bad_generator`).
-- **Методы** — только у структур стандартной библиотеки, только неизменяющие; сторонний код методов
-  определять не может (объектов и классов с методами в языке нет). Список — whitelist в компиляторе:
-  неизвестное имя или арность — ошибка компиляции. Тип получателя в рантайме **не** проверяется
-  компилятором (динамика): вызов — это вызов функции OTP, и несовпадение типа роняет процесс
-  (let it crash). У методов с проверкой типа причина названа:
-  `{bad_receiver, <метод>, <значение>}` (`'ok'.startswith(…)` → `{bad_receiver,startswith,ok}`);
-  методы словаря отдают ошибки `maps:*` (`{badmap, V}`). Значения и их методы:
-  - `str` (бинарник): `startswith(p)`, `endswith(p)`, `lower()`, `upper()`, `strip()`, `lstrip()`,
+- `def f(a, b): …` → `f(A, B) -> …`; a function's value is its last statement (an assignment counts
+  as a value). Every function of the module is exported.
+- **Decorators** — on functions only, Python syntax: `@dec`, `@mod.dec`, `@dec(args)`, `@mod.dec(args)`;
+  applied **once** (as in Python), a chain from the inside out. In a module the body moves into a
+  private `f@impl/N`, `f/N` wraps the value from `persistent_term`, and `eel_on_load/0` (the `-on_load`
+  attribute) applies the decorators at load time (a reload recomputes). In the notebook a placeholder
+  goes through the process dictionary; calls inside the body go through the decorator. A decorator is
+  a function of arity 1; its name resolves like this: a variable/nested function from scope → a call
+  through the variable, an imported name → `fun mod:dec/1`, otherwise a module function (which is
+  checked to exist with arity 1; otherwise a compile error with the `@` line). `@mod.dec` is
+  `fun mod:dec/1` with no import requirement: a call of a module by name does not need an import
+  anyway.
+- **A nested `def`** is an ordinary Python nested function: it compiles to a `fun` bound to a name as
+  a value (like `lambda`, but with a name and a body of statements). Recursion works (`named_fun`);
+  mutual recursion between two nested functions does not (a call before the definition is a compile
+  error). The name is an ordinary variable: a second `def f` in the same body shadows the first
+  (`F` → `F@1`) and the arity does not distinguish them; a nested name also shadows a module/cell
+  function. Capture is by value at the definition point (as with `lambda`). Decorators on a nested
+  `def` are applied immediately at the definition (`F = Dec(fun …)`, inside out); a recursive call
+  inside a decorated nested function goes into its body, bypassing the decorator (for module
+  functions it goes through the decorator).
+- **Arity is part of a function's identity** (as in Gleam): `def fib(x)` and `def fib(x, c, n)` are the
+  different functions `fib/1` and `fib/3`. In a module they are two Erlang functions, defined in any
+  order; a duplicate (name, arity) pair is an error. In the notebook a call resolves only to an
+  already defined arity (a fun does not allow forward references) — the definition must come before
+  the call, otherwise a compile error with a hint.
+- `lambda x: e` → `fun(X) -> E end`; the closure captures a value (as in Gleam), not Python's late
+  binding: rebinding the name after the lambda does not change the value already captured.
+- `[e for x in l if c]` → `[E || X <- L, C]`; `{k: v for …}` → a map comprehension (OTP 26+).
+  Generators, filters and nesting are transferred 1:1 in the same order; a generator's pattern target
+  skips non-matching elements — both in Python and in Erlang. A filter keeps on `true` and skips
+  otherwise (Erlang semantics; unlike `if`, which crashes). Eel has no sets → a set comprehension is a
+  compile error.
+- Dict iteration: `for k in m` → `K <- eel_iter(M)` — a map yields keys, a list yields elements,
+  anything else is a `bad_generator` (let it crash). Every list/dict comprehension generator goes
+  through `eel_iter` (one semantics: dict → keys, list → elements). Pairs are explicit:
+  `for k, v in m.items()` → the map generator `K := V <- M` (no `maps:to_list`; a non-map — `bad_generator`).
+- **Methods** — only on standard-library structures, non-mutating only; third-party code cannot define
+  methods (the language has no objects or classes with methods). The list is a whitelist in the
+  compiler: an unknown name or arity is a compile error. The receiver's type is **not** checked by the
+  compiler (dynamic): a method call is a call to an OTP function, and a type mismatch crashes the
+  process (let it crash). For methods that do check the type the reason is named:
+  `{bad_receiver, <method>, <value>}` (`'ok'.startswith(…)` → `{bad_receiver,startswith,ok}`); dict
+  methods surface `maps:*` errors (`{badmap, V}`). The values and their methods:
+  - `str` (a binary): `startswith(p)`, `endswith(p)`, `lower()`, `upper()`, `strip()`, `lstrip()`,
     `rstrip()`, `split(sep)`, `split()`, `join(parts)`, `replace(old, new)`, `splitlines()` —
-    `string:*`/`binary:*`; получатель проверяется на `is_binary` (иначе `badarg`), потому что
-    `string:*` принял бы и chardata-список; не та строка (например, атом `'ab'`) — `{bad_receiver,…}`.
-    Строковые аргументы — строки (`"ab"`), не атомы.
-    `split()` (без аргумента) схлопывает серии пробельных; `splitlines()` знает `\r\n`, `\n`, `\r`
-    (прочие разделители Unicode `str.splitlines` — вне первой сборки) и не даёт пустого хвоста:
-    `"a\n".splitlines()` → `["a"]`, `"".splitlines()` → `[]` — как в Python.
-  - `dict` (map): `keys()`, `values()`, `items()`, `get(k)` (нет ключа — `nil`), `get(k, d)` — `maps:*`.
-  - `list`/`tuple`: `count(x)` — по `=:=` (строго, как образцы: `1` не равно `1.0`).
-  - `join` проверяет части: только строки, иначе `{bad_argument, join, Часть}` — `iolist_to_binary`
-    иначе молча превратил бы целые в байты.
-  - Мутирующие методы Python (`append`, `sort`, `reverse`, `update`, `pop`, …) не существуют: мутации нет.
-  - `set` — нельзя: в eel нет значений-множеств (set comprehension — ошибка).
-  `items()` остаётся особым случаем во включениях: `for k, v in m.items()` → map-генератор `K := V <- M`
-  (не-map — `bad_generator`), выражение `m.items()` → `maps:to_list(M)` (не-map — `badmap`).
+    `string:*`/`binary:*`; the receiver is checked with `is_binary` (otherwise `badarg`), because
+    `string:*` would also accept a chardata list; a non-string (say the atom `'ab'`) →
+    `{bad_receiver,…}`. String arguments are strings (`"ab"`), not atoms.
+    `split()` (no argument) collapses runs of whitespace; `splitlines()` knows `\r\n`, `\n`, `\r`
+    (the other Unicode separators of `str.splitlines` are outside the first release) and produces no
+    empty tail: `"a\n".splitlines()` → `["a"]`, `"".splitlines()` → `[]` — as in Python.
+  - `dict` (a map): `keys()`, `values()`, `items()`, `get(k)` (a missing key gives `nil`), `get(k, d)` —
+    `maps:*`.
+  - `list`/`tuple`: `count(x)` — by `=:=` (strict, as patterns are: `1` is not `1.0`).
+  - `join` checks its parts: strings only, otherwise `{bad_argument, join, Part}` — `iolist_to_binary`
+    would otherwise silently turn integers into bytes.
+  - Python's mutating methods (`append`, `sort`, `reverse`, `update`, `pop`, …) do not exist: there is
+    no mutation.
+  - `set` — impossible: eel has no set values (a set comprehension is an error).
+  `items()` remains a special case inside comprehensions: `for k, v in m.items()` → the map generator
+  `K := V <- M` (a non-map — `bad_generator`), the expression `m.items()` → `maps:to_list(M)` (a
+  non-map — `badmap`).
 
-### Процессы и сообщения
+### Processes and messages
 
-- `receive()` — следующее сообщение из ящика, блокирует (`receive X -> X end`).
-- `match receive(): case p: … ` — **селективный** приём: клаузы компилируются в Erlang `receive`
-  целиком, поэтому движок сам перебирает ящик, guards работают, а несовпавшее сообщение остаётся
-  в ящике. Ни один образец не совпал — ждём (как Erlang, без «let it crash»). Правила веток те же,
-  что у `match` (одинаковая переменная-цель в обычной позиции, значение `receive` в хвостовой).
-- `case Timeout(ms): … ` — ветка таймаута, компилируется в `after ms -> …`; обязана быть последней,
-  guard у неё запрещён, допустима и как единственная клауза (`receive after T -> …`).
-  `Timeout(…)` — маркер только внутри `match receive():`; в остальных местах это обычный
-  класс-образец. Ограничение грамматики Python: неопровержимый образец (`_` или захват имени)
-  обязан быть последним `case`, поэтому в одной ветке с `Timeout` его ставить нельзя — перед
-  `Timeout` нужен опровержимый образец (`case Ok(v):`) или только `Timeout`.
-- `send(pid, msg)` → `Pid ! Msg`; `self()` → свой pid; `spawn(lambda: …)` → новый процесс
-  (`erlang:spawn/1` от fun), возвращает pid. Имена `send`/`self`/`spawn`/`receive` — встроенные
-  и, как прочие, переопределяемы своим `def` (разрешение имени — в бэкенде, см. ниже).
-- Не входит: `spawn_link`, `monitor`, links, OTP-поведения, `after` вне `match receive():`.
+- `receive()` is the next message from the mailbox; it blocks (`receive X -> X end`).
+- `match receive(): case p: … ` is a **selective** receive: the clauses compile into an Erlang
+  `receive` as a whole, so the runtime itself scans the mailbox, guards work, and a message that did
+  not match stays in the mailbox. When no pattern matches we wait (as Erlang does, with no "let it
+  crash"). The branch rules are the same as for `match` (the same target variable in a normal
+  position, the `receive` value in a tail position).
+- `case Timeout(ms): … ` is the timeout branch, compiled into `after ms -> …`; it must be the last one,
+  a guard on it is forbidden, and it may be the only clause (`receive after T -> …`). `Timeout(…)` is a
+  marker only inside `match receive():`; elsewhere it is an ordinary class pattern. A limitation of
+  Python's grammar: an irrefutable pattern (`_` or a name capture) must be the last `case`, so it
+  cannot share a branch with `Timeout` — before `Timeout` you need a refutable pattern
+  (`case Ok(v):`) or only `Timeout`.
+- `send(pid, msg)` → `Pid ! Msg`; `self()` → your own pid; `spawn(lambda: …)` → a new process
+  (`erlang:spawn/1` on a fun), returning a pid. The names `send`/`self`/`spawn`/`receive` are built in
+  and, like the others, redefinable with your own `def` (name resolution happens in the backend, see
+  below).
+- Out of scope: `spawn_link`, `monitor`, links, OTP behaviours, `after` outside `match receive():`.
 
-### Встроенные функции
+### Built-in functions
 
-- `print(x)` — печать в stdout, ровно один позиционный аргумент; `print()`, `print(a, b)` и
-  `print(x, sep=…)` — ошибки компиляции. Возвращает `nil` (как `None` в Python) — годится в
-  выражении.
-- **Встроенные имена переопределяемы** (как в Python, по имени): `def print(x)`, `def zip(a, b)`,
-  `def enumerate(xs)` дают обычные функции, и в этой области встроенная больше не используется —
-  даже если пользовательская определена с другой арностью (тогда `print(1)` — ошибка
-  «function print/1 is not defined (have: print/2)»). Встроенная — это **запасной** вариант
-  разрешения имени: бэкенд сначала смотрит в scope, определения и импорты. Зарезервированы только
-  имена хелперов (`eel_print/1`, `eel_zip/2`, …). Как значение (`f = print`) встроенная
-  функция не поддерживается.
-- Формат — питоновский: строка — как текст (`print("hi")` → `hi`), атом — имя без кавычек
-  (`ok`, `true`, `nil`; питоновские `True`/`False`/`None` не подставляются), число — число,
-  список — `[1, a]`, кортеж — `(1, 2)` (одноэлементный `(1,)`, пустой `()`), словарь — `{a: 1}`
-  с ключами в порядке сортировки (в BEAM порядка нет), fun/pid/ref — Erlang-представление.
-  Строки без кавычек и внутри контейнеров: `print(["hi"])` → `[hi]`. Float — `float_to_binary(F, [short])`
-  (`1.0` → `1.0`); редкие формы вроде `1.0e-5` против питоновского `1e-05` — расхождение.
-- `zip(a, b)` и `enumerate(xs[, start])` — неленивые, возвращают список: `zip` → `[{a, b}, …]`
-  до конца короткого списка (`lists:zip/3` с `trim`, как в Python; ровно два аргумента),
-  `enumerate` → `[{N, x}, …]` с `N` от `start` (по умолчанию 0; `lists:enumerate/2`). Принимают
-  **только списки**: иное (в том числе словарь) — `{bad_argument, zip|enumerate, Значение}`;
-  `for` при этом перебирает словарь по ключам — расхождение осознанное. Хелперы `eel_zip/2`,
-  `eel_enumerate/2` генерируются по требованию; имена функций и хелперов зарезервированы.
-  В шапке включений — обычные генераторы: `for i, x in enumerate(xs)`, `for a, b in zip(xs, ys)`.
-- `range(stop)`, `range(start, stop)`, `range(start, stop, step)` — питоновская семантика, неленивая:
-  возвращает список `[start, start+step, …]` без `stop`. Только целые: не число — `{bad_argument, range, V}`;
-  `step == 0` — `{bad_argument, range, 0}` (как ValueError в Python). Хелпер `eel_range/3`
-  (start, stop, step) рекурсивный: `lists:seq` не годится — он падает на «пустых» диапазонах
-  (`lists:seq(5, 0, 1)`, `lists:seq(1, 9, -1)`), где Python даёт `[]`. В шапке включений работает
-  как обычный генератор: `for i in range(10)`.
-- В модуле печать — сгенерированные по требованию хелперы `eel_print/1` и `eel_str/1`
-  (+ `eel_str_tuple/1`, `eel_str_map/1`); имена зарезервированы. В ноутбуке напечатанное
-  отдаётся до значения клетки, а значение `nil` не печатается (как `None` в IPython).
+- `print(x)` — output to stdout, exactly one positional argument; `print()`, `print(a, b)` and
+  `print(x, sep=…)` are compile errors. It returns `nil` (like `None` in Python) — usable in an
+  expression.
+- **Built-in names are redefinable** (as in Python, by name): `def print(x)`, `def zip(a, b)`,
+  `def enumerate(xs)` give ordinary functions, and in that scope the builtin is no longer used — even
+  if the user's function has a different arity (then `print(1)` is the error "function print/1 is not
+  defined (have: print/2)"). A builtin is the **fallback** of name resolution: the backend looks in
+  the scope, the definitions and the imports first. Only helper names are reserved (`eel_print/1`,
+  `eel_zip/2`, …). A builtin is not a value (`f = print` is not supported).
+- The display is Python-like: a string as text (`print("hi")` → `hi`), an atom as a name without
+  quotes (`ok`, `true`, `nil`; Python's `True`/`False`/`None` are not substituted), a number as a
+  number, a list as `[1, a]`, a tuple as `(1, 2)` (single-element `(1,)`, empty `()`), a dict as
+  `{a: 1}` with keys in sorted order (the BEAM has no order), a fun/pid/ref as its Erlang
+  representation. Strings are unquoted everywhere, including inside containers: `print(["hi"])` →
+  `[hi]`. Floats use `float_to_binary(F, [short])` (`1.0` → `1.0`); rare forms like `1.0e-5` versus
+  Python's `1e-05` are a known difference.
+- `zip(a, b)` and `enumerate(xs[, start])` are eager and return a list: `zip` → `[{a, b}, …]` up to the
+  end of the shorter list (`lists:zip/3` with `trim`, as in Python; exactly two arguments),
+  `enumerate` → `[{N, x}, …]` with `N` from `start` (0 by default; `lists:enumerate/2`). They accept
+  **lists only**: anything else (a dict included) is `{bad_argument, zip|enumerate, Value}`; `for` on
+  the other hand iterates a dict by keys — a deliberate difference. The helpers `eel_zip/2`,
+  `eel_enumerate/2` are generated on demand; the function and helper names are reserved. In a
+  comprehension head they are ordinary generators: `for i, x in enumerate(xs)`,
+  `for a, b in zip(xs, ys)`.
+- `range(stop)`, `range(start, stop)`, `range(start, stop, step)` — Python semantics, eager: it returns
+  the list `[start, start+step, …]` without `stop`. Integers only: a non-number is
+  `{bad_argument, range, V}`; `step == 0` is `{bad_argument, range, 0}` (Python's ValueError). The
+  `eel_range/3` helper (start, stop, step) is recursive: `lists:seq` does not fit — it crashes on
+  "empty" ranges (`lists:seq(5, 0, 1)`, `lists:seq(1, 9, -1)`) where Python gives `[]`. In a
+  comprehension head it works as an ordinary generator: `for i in range(10)`.
+- In a module, printing uses the generated on-demand helpers `eel_print/1` and `eel_str/1` (plus
+  `eel_str_tuple/1`, `eel_str_map/1`); the names are reserved. In the notebook the printed text is
+  delivered before the cell's value, and a `nil` value is not printed (as `None` in IPython).
 
-## Компилятор
+## The compiler
 
 ```
-src/a/b.eel ──ast.parse──▶ Python AST ──▶ IR ──▶ проверки ──▶ abstract forms ──compile:forms──▶ .beam
+src/a/b.eel ──ast.parse──▶ Python AST ──▶ IR ──▶ checks ──▶ abstract forms ──compile:forms──▶ .beam
 ```
 
-- **Фронтенд** — стоковый `ast.parse` из CPython 3.15. Разбор и позиции достаются бесплатно; `compile()` не вызывается, чтобы питоновские проверки не мешали нашей семантике.
-- **IR** — собственное представление (структуры с номером строки `.eel`). Соответствует слою `TypedExpr`/`TypedModule` у Gleam (`compiler-core/src/ast/typed.rs` — дерево, которое обходит генератор кода), но **без типов**: место инференса занимают проверки. Это безопасно для паритета: генератор Erlang у Gleam выведенные типы почти не читает (только при печати `-spec`), форму кода выбирает вариант узла — то есть синтаксис. Поэтому eel не кладёт в формы типовую информацию: аннотации остаются документацией, `-spec`/`-type` не генерируются. Набор узлов — по категориям `TypedExpr`, чтобы обход бэкенда повторял генератор Gleam. Фронтенд за IR не виден: когда появится синтаксис сверх Python, заменится только фронтенд, бэкенд не тронется.
-- **Сообщения об ошибках — английские** (`eel: путь:строка: text`, нижний регистр, без точки);
-  так же и ошибки `compile:forms` после разбора в escript.
-- **Проверки** — разделены: фронтенд отклоняет запрещённый синтаксис (`for`/`while`/`del`/мутация, whitelist узлов), бэкенд проверяет «ветка заканчивается присваиванием той же переменной», `checks.py` — дубли определений.
-- **Бэкенд** — как `erlang-generation` у Gleam 1.19: builder поверх Erlang Abstract Format, каждая форма несёт аннотацию строки `.eel`, поэтому stack traces указывают в исходник eel. Формы передаются в Erlang **ETF-блобом** (`eel/etf.py`), а не текстом: `binary_to_term/1` не парсит грамматику, поэтому декодирование на порядок дешевле `file:consult` (замер: 40 модулей — 79 мс против 5 мс). Читаемый текст `.abstr` пишется только по флагу `--dump-forms`. Атрибут `compile` повторяет Gleam (`no_auto_import, nowarn_ignored, nowarn_unused_vars, nowarn_unused_function, nowarn_nomatch, inline`).
-- **Сборка** — `eel_compile.escript` работает **сервером**: читает из stdin запросы
-  `{EtfPath, ErlFlag}.` и отвечает `OK` / `ERR <base64 текста>`. Формы — один ETF-блоб
-  `[{Base, Forms, SourcePath}, …]` (`_eel_artefacts/forms.etf`), зовётся `compile:forms`
-  с `[return, debug_info, {source, Path}]` (без `report_*`: stdout — канал протокола).
-  `.beam` кладётся в ebin, рядом генерируется `<app>.app`; `.erl` — только по флагу `--erl`
-  (`erl_pp` тех же форм). `CompilerProcess` в Python держит один escript на процесс и переиспользует
-  его между сборками: повторная сборка не поднимает Erlang-VM (замер: 1.1 с → 0.45 с).
-  Одноразовый CLI от переиспользования не выигрывает — там один старт VM на вызов.
-- **Демон компилятора** — фоновый escript, переживающий CLI-вызовы: первая сборка поднимает его,
-  дальше команды только шлют запросы по unix-сокету
-  `$XDG_CACHE_HOME/eel/compiler-<sha1(путь к escript)>.sock` (рядом `.pid` и `.log`; ключ по пути
-  escript — у разных установок свои демоны). Измерено на 40 модулях: первая сборка 794 мс (старт VM),
-  дальше 307 мс против 672 мс без демона; один модуль — 124 мс против 596 мс. Запросы — Erlang-термы
-  построчно: `{compile, EtfPath, ErlFlag}`, `{ping}`, `{stop}`; ответы `OK` / `ERR <base64>`.
-  Живёт, пока не выполнят `eel daemon stop` (idle-таймаута нет). Версия протокола сверяется:
-  при расхождении демон перезапускается; протухший сокет снимается. `--no-daemon` и недоступный
-  демон → тихий откат на escript внутри процесса, сборка не падает.
-- **Инкрементальная сборка** — компилируются только изменившиеся модули: манифест
-  `_eel_artefacts/build.json` хранит `{format, builder, modules: {имя: sha256}}`, где `builder` —
-  хэш исходников самого компилятора (не ручная версия). Модуль пересобирается, если хэш исходника
-  другой, пропал `.beam` или запрошен (`--erl`/`--dump-forms`) отсутствующий артефакт; хэш от
-  содержимого, а не mtime, — `git checkout` и `touch` ложных пересборок не дают. Удалённые `.eel`
-  убирают свои `.beam`/`.erl`/`.abstr` из вывода. Когда компилировать нечего, запрос к демону
-  не отправляется вовсе. Манифест пишется только после успешной компиляции; битый или чужой
-  (другой `format`/`builder`) — полная пересборка. `--force` — пересобрать всё.
-  Замер (40 модулей, демон поднят): без изменений 119 мс, правка одного модуля 120 мс,
-  `--force` 326 мс.
-- **Сервер сборки** — живой **Python**-процесс (`python -m eel.server`), который принимает
-  сборки по unix-сокету `$XDG_CACHE_HOME/eel/build-<sha1(путь установки)>.sock`; протокол —
-  JSON-строки `{"op": "build"|"ping"|"stop"}` (сервер и клиент оба на Python — Erlang-термы тут
-  лишние). Слежения за файлами нет: сборка идёт только по запросу, зато не платит за старт
-  интерпретатора и импорт компилятора. `eel build` идёт сначала **тонким клиентом**
-  (`eel/client.py`: socket/json/pathlib, без импорта компилятора), и лишь при недоступности
-  сервера собирает внутри процесса; сервер поднимается автоматически при первой сборке.
-  **Жизненные циклы связаны**: сервер поднимает демон компилятора сразу при старте (не при первой
-  сборке) и гасит его на любом выходе — по `{stop}`, по `SIGTERM`/`SIGINT` и в `finally` сервера;
-  escript дополнительно стережёт родителя по EOF на stdin (сервер держит трубу открытой), поэтому
-  демон умирает даже если сервер убили `SIGKILL`-ом. `build()` в библиотеке демон **не** поднимает
-  (`CompilerDaemon.compile(autostart=False)`): нет живого демона — сборка идёт escript'ом внутри
-  процесса. Так демон компилятора существует ровно столько же, сколько сервер сборки.
-  `--no-daemon` — без фоновых процессов вовсе.
-  Замеры (40 модулей): голый `python -c pass` 25 мс; старт python + импорт клиента 60–70 мс;
-  CLI-вызов при живом сервере 70–85 мс; запрос по сокету 7–8 мс; сборка после правки одного
-  модуля по сокету 4–6 мс. Отсюда правило: цикл «править → собрать» должен идти через сокет,
-  а не через новый процесс.
+- **Frontend** — the stock `ast.parse` from CPython 3.15. Parsing and positions come for free;
+  `compile()` is not called, so Python's own checks do not get in the way of our semantics.
+- **IR** — our own representation (structs carrying the `.eel` line). It corresponds to Gleam's
+  `TypedExpr`/`TypedModule` layer (`compiler-core/src/ast/typed.rs` — the tree the code generator
+  walks), but **without types**: checks take the place of inference. This is safe for parity: Gleam's
+  Erlang generator barely reads the inferred types (only when printing `-spec`); the shape of the code
+  is chosen by the node variant — that is, by the syntax. Eel therefore puts no type information into
+  the forms: annotations stay documentation and `-spec`/`-type` are not generated. The node set follows
+  the `TypedExpr` categories so that the backend walk repeats Gleam's generator. The frontend is
+  invisible behind the IR: when syntax beyond Python arrives, only the frontend is replaced and the
+  backend stays.
+- **Error messages are English** (`eel: path:line: text`, lowercase, no trailing period); so are the
+  `compile:forms` errors after parsing them in the escript.
+- **Checks** are split: the frontend rejects forbidden syntax (`for`/`while`/`del`/mutation, a node
+  whitelist), the backend checks "the branch ends with an assignment to the same variable", and
+  `checks.py` — duplicate definitions.
+- **Backend** — like Gleam 1.19's `erlang-generation`: a builder on top of the Erlang Abstract Format,
+  where every form carries the `.eel` line annotation, so stack traces point into the eel source. Forms
+  are handed to Erlang as an **ETF blob** (`eel/etf.py`) rather than as text: `binary_to_term/1` does
+  not parse a grammar, so decoding is an order of magnitude cheaper than `file:consult` (measured on
+  40 modules: 79 ms versus 5 ms). Readable `.abstr` text is written only with the `--dump-forms` flag.
+  The `compile` attribute repeats Gleam's (`no_auto_import, nowarn_ignored, nowarn_unused_vars,
+  nowarn_unused_function, nowarn_nomatch, inline`).
+- **Build** — `eel_compile.escript` runs as a **server**: it reads `{EtfPath, ErlFlag}.` requests from
+  stdin and answers `OK` / `ERR <base64 of the text>`. The forms are one ETF blob
+  `[{Base, Forms, SourcePath}, …]` (`_eel_artefacts/forms.etf`); `compile:forms` is called with
+  `[return, debug_info, {source, Path}]` (no `report_*`: stdout is the protocol channel). The `.beam`
+  goes into ebin and `<app>.app` is generated next to it; `.erl` only with the `--erl` flag (`erl_pp`
+  of the same forms). `CompilerProcess` in Python keeps one escript per process and reuses it across
+  builds: a repeated build does not start an Erlang VM again (measured: 1.1 s → 0.45 s). A one-shot CLI
+  gains nothing from the reuse — there is one VM start per invocation.
+- **Compiler daemon** — a background escript that survives CLI invocations: the first build starts it,
+  after which commands only send requests over the unix socket
+  `$XDG_CACHE_HOME/eel/compiler-<sha1(escript path)>.sock` (with `.pid` and `.log` next to it; the key
+  is the escript path, so different installations get their own daemons). Measured on 40 modules: the
+  first build 794 ms (VM start), afterwards 307 ms versus 672 ms with no daemon; a single module —
+  124 ms versus 596 ms. Requests are Erlang terms, one per line: `{compile, EtfPath, ErlFlag}`,
+  `{ping}`, `{stop}`; answers are `OK` / `ERR <base64>`. It lives until `eel daemon stop` is run
+  (there is no idle timeout). The protocol version is verified: on a mismatch the daemon is restarted;
+  a stale socket is removed. `--no-daemon` and an unreachable daemon → a silent fallback to an escript
+  inside the process; the build never fails because of it.
+- **Incremental build** — only changed modules are compiled: the manifest `_eel_artefacts/build.json`
+  holds `{format, builder, modules: {name: sha256}}`, where `builder` is the hash of the compiler's own
+  sources (not a hand-maintained version). A module is rebuilt when its source hash differs, its
+  `.beam` is missing, or a requested artefact (`--erl`/`--dump-forms`) is missing; the hash is over
+  content, not mtime, so `git checkout` and `touch` cause no false rebuilds. Removed `.eel` files drop
+  their `.beam`/`.erl`/`.abstr` from the output. When there is nothing to compile, no request is sent
+  to the daemon at all. The manifest is written only after a successful compilation; a corrupt or
+  foreign one (another `format`/`builder`) means a full rebuild. `--force` rebuilds everything.
+  Measured (40 modules, daemon up): 119 ms with no changes, 120 ms after editing one module, 326 ms
+  with `--force`.
+- **Build server** — a live **Python** process (`python -m eel.server`) that accepts builds over the
+  unix socket `$XDG_CACHE_HOME/eel/build-<sha1(install path)>.sock`; the protocol is JSON lines
+  `{"op": "build"|"ping"|"stop"}` (both server and client are Python — Erlang terms would be out of
+  place here). Nothing watches the filesystem: a build happens only on request, but it does not pay
+  for interpreter startup or the compiler import. `eel build` first goes through a **thin client**
+  (`eel/client.py`: socket/json/pathlib, no compiler import) and only compiles inside the process when
+  the server is unreachable; the server starts automatically on the first build.
+  **The lifetimes are tied**: the server starts the compiler daemon immediately at startup (not on the
+  first build) and stops it on any exit — on `{stop}`, on `SIGTERM`/`SIGINT`, and in the server's
+  `finally`; the escript additionally watches its parent through stdin EOF (the server keeps the pipe
+  open), so the daemon dies even if the server is killed with `SIGKILL`. A library `build()` does
+  **not** start the daemon (`CompilerDaemon.compile(autostart=False)`): with no live daemon the build
+  runs an escript inside the process. This way the compiler daemon lives exactly as long as the build
+  server. `--no-daemon` means no background processes at all.
+  Measured (40 modules): bare `python -c pass` 25 ms; python startup plus client import 60–70 ms; a
+  CLI call with a live server 70–85 ms; a socket request 7–8 ms; a build after editing one module over
+  the socket 4–6 ms. Hence the rule: the "edit → build" loop should go through the socket, not through
+  a new process.
 
-Соответствие с Gleam обязательно только на нижнем слое — abstract format: builder повторяет `erlang-generation`, для одинаковых синтаксических узлов eel строит те же формы, что Gleam; выше (Python AST, IR) — свои слои.
+Parity with Gleam is mandatory only at the lowest layer — the abstract format: the builder repeats
+`erlang-generation`, and for identical syntax nodes eel builds the same forms as Gleam; above that
+(Python AST, IR) the layers are our own.
 
-## Командная строка
+## Command line
 
-`python -m eel build [DIR]` — подкоманды как у Gleam; первая сборка знает только `build`. Компилирует дерево `src/` в `build/dev/erlang/<app>/ebin`, `<app>` — имя каталога проекта; артефакты (ETF-блоб и, по флагам, `.abstr`/`.erl`) — в `build/dev/erlang/<app>/_eel_artefacts`.
+`python -m eel build [DIR]` — subcommands as in Gleam; the first release knows only `build`. It
+compiles the `src/` tree into `build/dev/erlang/<app>/ebin`, where `<app>` is the project directory
+name; the artefacts (the ETF blob and, by flag, `.abstr`/`.erl`) go into
+`build/dev/erlang/<app>/_eel_artefacts`.
 
 ## Jupyter
 
-Ноутбук без кастомного kernel: ячейка остаётся Python-текстом (автокомплит/линт даёт Python-LSP),
-а выполнение перехватывает ipykernel-хук `eel.notebook`: `ast_transformer` подменяет тело на
-`pass`, `post_run_cell` компилирует исходник в shell-режиме и исполняет в persistent Erlang-REPL.
+A notebook without a custom kernel: a cell stays Python text (autocomplete and linting come from the
+Python LSP), while execution is intercepted by the `eel.notebook` ipykernel hook: `ast_transformer`
+replaces the body with `pass`, and `post_run_cell` compiles the source in shell mode and runs it in a
+persistent Erlang REPL.
 
-- **Shell-режим** (`session.py`): клетка → Erlang-выражения (не модуль); `def` → именованный fun
-  `F = fun F(X) -> … end` (рекурсия работает); `_taken`/`_scope`/классы/импорты живут в session
-  (маппинг `X@N` продолжается через ячейки). Повторный запуск клетки безопасен: классы
-  переопределяются, переприсваивание даёт новое имя `X@N`.
-- **REPL** (`repl.py` + `repl.escript`): persistent процесс, `erl_eval:exprs` принимает формы
-  напрямую, bindings живут между ячейками; вывод — результат последнего выражения (определения
-  вывод не дают). Хелперы `_eel_pow`/`eel_iter` предзаданы в REPL как fun-значения, и
-  shell-режим зовёт их по переменной (в модульной сборке — локальные функции). Перед выводом
-  каждого включения печатается его эрланговский эквивалент (`erl: [X * 2 || X <- eel_iter(L)]`) —
-  `erl_pp` соответствующей формы; цели включений получают локальные имена (`X`, не `X@N`).
+- **Shell mode** (`session.py`): a cell → Erlang expressions (not a module); `def` → a named fun
+  `F = fun F(X) -> … end` (recursion works); `_taken`/`_scope`/classes/imports live in the session
+  (the `X@N` mapping continues across cells). Re-running a cell is safe: classes are redefined and a
+  rebinding yields a new name `X@N`.
+- **REPL** (`repl.py` + `repl.escript`): a persistent process; `erl_eval:exprs` takes forms directly
+  and bindings live between cells; the output is the result of the last expression (definitions
+  produce none). The helpers `_eel_pow`/`eel_iter` are pre-bound in the REPL as fun values, and shell
+  mode calls them through a variable (in a module build they are local functions). Before the result
+  of every comprehension its Erlang equivalent is printed
+  (`erl: [X * 2 || X <- eel_iter(L)]`) — `erl_pp` of the corresponding form; comprehension targets get
+  local names (`X`, not `X@N`).
 
-## Паритет с Gleam
+## Parity with Gleam
 
-- Требование goal doc — одинаковый сгенерированный код. Механизм: установленный `gleam` 1.19.2 (та же версия, что в локальном клоне `gleam/`; в репозиторий он не входит) компилирует эквивалентный `.gleam`-модуль; beam несёт abstract code (`debug_info`), формы достаются `beam_lib:chunks(Beam, [abstract_code])` и сравниваются с формами eel после нормализации аннотаций строк.
-- 10–20 таких тестов (pytest); один тест — пара эквивалентных модулей eel/gleam.
-- Пары есть не у всех конструкций: `|=`-слияние, `.items()`, неисчерпываемый match и включения не имеют аналога в Gleam — их поведение проверяется обычными тестами.
-- Пары на match — только исчерпываемые: Gleam добавляет fallthrough-клаузу, которой у eel нет по дизайну.
+- The goal document requires identical generated code. The mechanism: an installed `gleam` 1.19.2 (the
+  same version as in the local `gleam/` clone, which is not part of the repository) compiles an
+  equivalent `.gleam` module; the beam carries abstract code (`debug_info`), the forms come from
+  `beam_lib:chunks(Beam, [abstract_code])` and are compared with eel's forms after normalising line
+  annotations.
+- 10–20 such tests (pytest); one test is a pair of equivalent eel/gleam modules.
+- Not every construct has a pair: the `|=` merge, `.items()`, a non-exhaustive match and comprehensions
+  have no Gleam counterpart — their behaviour is covered by plain tests.
+- Match pairs are exhaustive only: Gleam adds a fallthrough clause that eel deliberately does not have.

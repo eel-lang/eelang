@@ -1,4 +1,4 @@
-"""Persistent Erlang-REPL: подпроцесс escript, обмен абстрактными формами."""
+"""A persistent Erlang REPL: an escript subprocess exchanging abstract forms."""
 
 from __future__ import annotations
 
@@ -31,16 +31,16 @@ class ErlangRepl:
             if not line:
                 raise RuntimeError("repl process exited")
             if line.startswith("OUT "):
-                # напечатанное клеткой уходит в stdout до значения
+                # whatever the cell printed goes to stdout before the value
                 sys.stdout.write(base64.b64decode(line[4:]).decode("utf-8"))
                 sys.stdout.flush()
                 continue
             return line.rstrip("\n")
 
     def eval_forms(self, forms: list) -> tuple[str, str]:
-        """Отправляет список форм, возвращает ("ok" | "error", текст значения/ошибки).
+        """Send a list of forms and return ("ok" | "error", the value or error text).
 
-        Напечатанное `print` выводится в stdout до возврата значения.
+        What `print` printed is written to stdout before the value is returned.
         """
         line = self._send(forms)
         if line.startswith("OK "):
@@ -50,7 +50,7 @@ class ErlangRepl:
         raise RuntimeError(f"unexpected repl reply: {line!r}")
 
     def pp(self, form) -> str:
-        """Erlang-исходник формы (через erl_pp), для печати эквивалента."""
+        """The Erlang source of a form (through erl_pp), for printing the equivalent."""
         line = self._send((Atom("$pp"), form))
         if not line.startswith("PP "):
             raise RuntimeError(f"unexpected repl reply: {line!r}")

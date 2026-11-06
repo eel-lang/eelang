@@ -1,11 +1,11 @@
-"""Фронтенд: Python AST → IR.
+"""Frontend: Python AST → IR.
 
-Стоковый ``ast.parse`` из CPython 3.15; ``compile()`` не вызывается, чтобы
-питоновские проверки не мешали семантике eel (см. specs/architecture.md).
+The stock ``ast.parse`` from CPython 3.15; ``compile()`` is not called, so Python's
+checks do not get in the way of eel's semantics (see specs/architecture.md).
 
-Атомы и строки различаются по кавычкам исходника: ``'ok'`` (одинарные) — атом,
-``"ok"`` (двойные) — строка. Списки и кортежи в match-образцах различаются по
-скобкам. ``ast`` ни то, ни другое не хранит, поэтому фронтенд снимает их токенизатором.
+Atoms and strings are told apart by the source quotes: ``'ok'`` (single) is an atom,
+``"ok"`` (double) is a string. Lists and tuples in match patterns are told apart by
+their brackets. ``ast`` keeps neither, so the frontend recovers them with the tokenizer.
 """
 
 from __future__ import annotations
@@ -38,19 +38,19 @@ _CMP = {
 _BOOL = {ast.And: "And", ast.Or: "Or"}
 _UNARY = {ast.USub: "USub", ast.UAdd: "UAdd", ast.Not: "Not"}
 
-# Встроенные конструкторы (прелюдия как у Gleam): Result = Ok(a) | Error(e).
+# Built-in constructors (the prelude, as in Gleam): Result = Ok(a) | Error(e).
 BUILTIN_CLASSES = {"Ok": ("value",), "Error": ("value",)}
 
-#: Базовый класс пользовательских типов (тег-атом в кортеже).
+#: The base class of user types (the tag atom in the tuple).
 BASE_CLASS = "AtomPrefixed"
 
-# Маркер присваивания с образцом: `Ctor(args) = expr` переписывается в
-# `__pattern_match__(Ctor(args), expr)`, потому что CPython не принимает call-цель.
+# The pattern-assignment marker: `Ctor(args) = expr` is rewritten into
+# `__pattern_match__(Ctor(args), expr)`, because CPython rejects a call target.
 PATTERN_MARKER = "__pattern_match__"
 
 
 def snake_case(name: str) -> str:
-    """Точный порт ``to_snake_case`` у Gleam: ``CustomType`` → ``custom_type``."""
+    """An exact port of Gleam's ``to_snake_case``: ``CustomType`` → ``custom_type``."""
     out = []
     boundary = True
     for ch in name:
@@ -79,7 +79,7 @@ def parse_module(source: str, path: str, name: str) -> ir.Module:
         if isinstance(node, ast.FunctionDef):
             functions.append(_function(node, toks, classes))
         elif isinstance(node, (ast.ClassDef, ast.Import, ast.ImportFrom)):
-            continue  # класс/импорт — только резолвинг имён
+            continue  # classes/imports only resolve names
         else:
             raise EelError(
                 f"{path}:{node.lineno}: only def/class/from…import are allowed at the top level"
@@ -111,7 +111,7 @@ def _collect_imports(tree: ast.Module) -> dict:
 def _collect_classes(tree: ast.Module) -> dict:
     classes = dict(BUILTIN_CLASSES)
     tags = {snake_case(name): name for name in BUILTIN_CLASSES}
-    builtin_names = set(BUILTIN_CLASSES)  # их можно переопределить своим class
+    builtin_names = set(BUILTIN_CLASSES)  # these may be overridden by a user class
     for node in tree.body:
         if isinstance(node, ast.ClassDef):
             if node.decorator_list:
@@ -134,7 +134,7 @@ def _collect_classes(tree: ast.Module) -> dict:
                 )
             tags[tag] = node.name
             classes[node.name] = fields
-            builtin_names.discard(node.name)  # дальше это уже пользовательский класс
+            builtin_names.discard(node.name)  # from now on it is a user class
     return classes
 
 
@@ -166,8 +166,8 @@ def _base_name(node: ast.ClassDef) -> str:
 def rewrite_pattern_assignments(source: str) -> str:
     """`Ctor(args) = expr` → `__pattern_match__(Ctor(args), expr)`.
 
-    CPython не принимает call-цель присваивания, поэтому образцы в позиции
-    присваивания переписываются в вызов-маркер. Число строк сохраняется.
+    CPython rejects a call as an assignment target, so patterns in the assignment
+    position are rewritten into a marker call. The line count is preserved.
     """
     try:
         tokens = list(tokenize.generate_tokens(io.StringIO(source).readline))
@@ -242,7 +242,7 @@ def _as_pattern_assign(node: ast.AST, toks: dict, classes: dict):
 
 
 def _check_pattern_names(pat, seen=None) -> set:
-    """Повтор имени в одном образце — ошибка (иначе Erlang молча сравнил бы разные переменные)."""
+    """A repeated name in one pattern is an error (Erlang would silently compare variables)."""
     if seen is None:
         seen = set()
     if isinstance(pat, (ir.PName, ir.PStar)):
@@ -298,9 +298,9 @@ def _expr_to_pattern(node: ast.AST, toks: dict, classes: dict):
 
 
 class _SourceChars:
-    """Символ исходника в позиции узла: кавычка строки (`'`/`"`) или скобка (`[`/`(`/`{`).
+    """The source character at a node's position: a string quote (`'`/`"`) or a bracket (`[`/`(`/`{`).
 
-    Позиция AST (`col_offset`) — байтовое смещение UTF-8, поэтому индекс берём по байтам.
+    The AST position (`col_offset`) is a UTF-8 byte offset, so the index is taken by bytes.
     """
 
     def __init__(self, source: str):
@@ -323,7 +323,7 @@ def _decorators(node: ast.FunctionDef, toks: dict, classes: dict) -> tuple:
 
 
 def _decorator(node: ast.AST, toks: dict, classes: dict):
-    """Выражение в позиции декоратора: `dec`, `mod.dec`, `dec(args)`, `mod.dec(args)`."""
+    """An expression in a decorator position: `dec`, `mod.dec`, `dec(args)`, `mod.dec(args)`."""
     if isinstance(node, ast.Name):
         return ir.FunRef(name=node.id, line=node.lineno)
     if isinstance(node, ast.Attribute):
@@ -367,7 +367,7 @@ def _function(node: ast.FunctionDef, toks: dict, classes: dict) -> ir.Function:
 
 
 def _nested_def(node: ast.FunctionDef, toks: dict, classes: dict) -> ir.NestedDef:
-    """`def` в теле функции: замыкание-значение, а не функция модуля."""
+    """A `def` inside a function body: a closure value, not a module function."""
     a = node.args
     if a.posonlyargs or a.kwonlyargs or a.vararg or a.kwarg or a.defaults:
         raise EelError(
@@ -481,7 +481,7 @@ def _statement(node: ast.stmt, toks: dict, classes: dict):
                 )
             )
         if after_timeout is not None and not cases:
-            pass  # голый `receive after T -> …` тоже допустим
+            pass  # a bare `receive after T -> …` is allowed too
         elif not cases:
             raise EelError(f"{node.lineno}: match without case clauses")
         return ir.Match(
@@ -527,7 +527,7 @@ def _target_elt(node: ast.AST) -> object:
 
 
 def _timeout_clause(pattern: ast.AST) -> ast.AST | None:
-    """`case Timeout(ms):` → выражение ms; иначе None (обычный образец)."""
+    """`case Timeout(ms):` → the ms expression; otherwise None (an ordinary pattern)."""
     if not isinstance(pattern, ast.MatchClass):
         return None
     if not isinstance(pattern.cls, ast.Name) or pattern.cls.id != "Timeout":
@@ -565,7 +565,7 @@ def _match_pattern(node: ast.AST, toks: dict, classes: dict) -> object:
             line=node.lineno,
         )
     if isinstance(node, ast.MatchSequence):
-        bracket = toks.get((node.lineno, node.col_offset), "(")  # `1, 2` — кортеж
+        bracket = toks.get((node.lineno, node.col_offset), "(")  # `1, 2` is a tuple
         items = tuple(_match_pattern(p, toks, classes) for p in node.patterns)
         if bracket == "[":
             return ir.PList(items=items, line=node.lineno)
