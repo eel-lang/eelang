@@ -3,7 +3,7 @@ title: Eel — Python's syntax, Erlang's semantics
 description: Eel compiles .eel files straight to the BEAM: Python's syntax with Gleam's model — immutable by default, no loops, let it crash.
 brand: Eel
 status: Status: Alpha
-github: https://github.com/squea-lang/eel
+github: https://github.com/eel-lang/eelang
 footer: Eel · Python syntax, Erlang semantics.
 ---
 
