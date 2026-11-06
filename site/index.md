@@ -73,15 +73,12 @@ _never mandatory_
 Static typing is fully optional. When you reach for it, it is there to make the code clearer and
 more expressive.
 
-### 04 · All data types equally
+### 04 · All data types equally supported
 _no second-class data_
 
 Maps, records, native records and the rest get the same level of support — and optional types make
 all of them convenient.
 
-```text
-map · record · native record
-```
 
 ### 05 · OTP first-class
 _not an afterthought_
@@ -217,7 +214,7 @@ _planned surface · not in the compiler yet_
 - `m.keys()` — keys, in no particular order
 - `m.items()` — pairs, for comprehensions
 
-## This is an early alpha.<br>_The code is 100% vibe-coded._
+## This is an early alpha.<br>_100% vibe-coded._
 
 It compiles real modules today, and it is not something you put in production yet. The honest list
 of what that buys you and what it costs:
