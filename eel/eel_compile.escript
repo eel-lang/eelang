@@ -1,18 +1,18 @@
 #!/usr/bin/env escript
 %%! -noshell
-%% Компиляция Erlang abstract forms eel (см. specs/architecture.md).
+%% Compiling eel Erlang abstract forms (see specs/architecture.md).
 %%
-%% Два режима:
+%% Two modes:
 %%   escript eel_compile.escript
-%%       stdin-цикл: запрос на строку, ответ на строку (escript внутри Python-процесса)
+%%       stdin loop: a request per line, a reply per line (an escript inside a Python process)
 %%   escript eel_compile.escript --daemon <SocketPath> <PidFile>
-%%       демон: слушает unix-сокет, работает, пока не придёт {stop}
+%%       daemon: listens on a unix socket and runs until {stop} arrives
 %%
-%% Запросы (Erlang-термы, по одному на строку):
-%%   {compile, EtfPath, ErlFlag}.  → OK | ERR <base64 текста>
+%% Requests (Erlang terms, one per line):
+%%   {compile, EtfPath, ErlFlag}.  → OK | ERR <base64 of the text>
 %%   {ping}.                       → OK <base64 "version=… compiled=…">
-%%   {stop}.                       → OK, снять сокет и выйти (только в режиме демона)
-%% Формы — ETF-блоб `[{Base, Forms, SourcePath}, …]` (см. eel/etf.py).
+%%   {stop}.                       → OK, remove the socket and exit (daemon mode only)
+%% The forms are an ETF blob `[{Base, Forms, SourcePath}, …]` (see eel/etf.py).
 
 -define(PROTOCOL, "2").
 
@@ -25,7 +25,7 @@ main(Args) ->
     io:format(standard_error, "unexpected arguments: ~p~n", [Args]),
     halt(2).
 
-%% --- stdin-режим ---
+%% --- stdin mode ---
 
 loop(Compiled) ->
     case io:get_line("") of
@@ -42,7 +42,7 @@ loop(Compiled) ->
             end
     end.
 
-%% --- режим демона ---
+%% --- daemon mode ---
 
 daemon(SocketPath, PidFile) ->
     Options = [
@@ -57,7 +57,7 @@ daemon(SocketPath, PidFile) ->
         {ok, Listen} ->
             filelib:ensure_dir(PidFile),
             ok = file:write_file(PidFile, os:getpid()),
-            %% родитель (сервер сборки) держит нашу stdin трубой: закрылась — родитель умер
+            %% the parent (the build server) holds our stdin as a pipe: closed means it died
             _Watchdog = spawn(fun watch_parent/0),
             accept(Listen, SocketPath, PidFile, 0);
         {error, Reason} ->
@@ -66,7 +66,7 @@ daemon(SocketPath, PidFile) ->
             halt(2)
     end.
 
-%% демон живёт только вместе с родителем: EOF на stdin — родителя больше нет
+%% the daemon lives only with its parent: EOF on stdin means the parent is gone
 watch_parent() ->
     case io:get_line("") of
         eof -> halt(0);
@@ -106,7 +106,7 @@ serve(Socket, Compiled) ->
             Compiled
     end.
 
-%% --- запросы ---
+%% --- requests ---
 
 handle(Line, Compiled) ->
     case parse_request(Line) of
@@ -136,7 +136,7 @@ parse_request(Line) ->
             error
     end.
 
-%% stdin-режим отдаёт строку, сокет — binary
+%% stdin mode yields a string, the socket a binary
 chars(Line) when is_binary(Line) -> binary_to_list(Line);
 chars(Line) -> Line.
 
@@ -146,7 +146,7 @@ ok_line(Text) ->
 error_line(Text) ->
     "ERR " ++ base64:encode_to_string(unicode:characters_to_binary(Text)) ++ "\n".
 
-%% --- компиляция ---
+%% --- compilation ---
 
 compile_jobs(EtfPath, ErlFlag) ->
     case file:read_file(EtfPath) of
@@ -166,7 +166,7 @@ compile_all(Jobs, ErlFlag) ->
 compile_each([], _ErlFlag) ->
     ok;
 compile_each([{Base, Forms, Source} | Rest], ErlFlag) ->
-    %% без report_*: stdout/сокет — канал протокола, ошибки возвращаются данными
+    %% no report_*: stdout/the socket is the protocol channel, errors come back as data
     Options = [return, debug_info, {source, Source}],
     case compile:forms(Forms, Options) of
         {ok, _Mod, Binary} ->
@@ -174,7 +174,7 @@ compile_each([{Base, Forms, Source} | Rest], ErlFlag) ->
         {ok, _Mod, Binary, _Warnings} ->
             continue(Rest, ErlFlag, write(Base, Binary, Forms, ErlFlag));
         {error, Errors, _Warnings} ->
-            %% контракт ошибок: `путь:строка: текст`, без дампа терма
+            %% the error contract: `path:line: text`, never a term dump
             {error, format_errors(Source, Errors)};
         _Other ->
             {error, io_lib:format("~ts: compilation failed", [Source])}

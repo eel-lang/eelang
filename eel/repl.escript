@@ -1,10 +1,10 @@
 #!/usr/bin/env escript
 %%! -noshell
-%% Persistent eel REPL: читает список абстрактных форм (как Erlang-терм),
-%% вычисляет erl_eval:exprs с живыми bindings и отвечает строкой `OK Value` / `ERR Reason`.
-%% По запросу `{'$pp', Form}` возвращает `PP <base64>` — erl_pp формы (для печати эквивалента).
-%% Хелперы (_eel_pow, eel_iter, eel_print) предзаданы как fun-значения.
-%% Вывод print копится в process dictionary и уходит в ответе строкой `OUT <base64>`.
+%% A persistent eel REPL: it reads a list of abstract forms (as an Erlang term),
+%% evaluates erl_eval:exprs with live bindings and answers `OK Value` / `ERR Reason`.
+%% A `{'$pp', Form}` request returns `PP <base64>` — erl_pp of the form (to print the equivalent).
+%% The helpers (_eel_pow, eel_iter, eel_print) are pre-bound as fun values.
+%% print output accumulates in the process dictionary and travels as an `OUT <base64>` line.
 
 main(_) ->
     B0 = erl_eval:new_bindings(),
@@ -58,7 +58,7 @@ eval(Forms, Bindings) ->
             loop(Bindings)
     end.
 
-%% Напечатанное клеткой — до строки ответа, отдельным фреймом (payload в base64).
+%% What a cell printed comes before the reply line, in its own frame (payload in base64).
 flush_out() ->
     case get(eel_out) of
         undefined -> ok;
@@ -75,7 +75,7 @@ parse_term(Chars) ->
         {error, E, _} -> {error, E}
     end.
 
-%% int ** int (>= 0) — целочисленно, иначе math:pow (как в модульном бэкенде).
+%% int ** int (>= 0) stays integral, otherwise math:pow (as in the module backend).
 eel_pow(A, B) when is_integer(A), is_integer(B), B >= 0 -> eel_pow_loop(A, B, 1);
 eel_pow(A, B) -> math:pow(A, B).
 
@@ -83,7 +83,7 @@ eel_pow_loop(_, 0, Acc) -> Acc;
 eel_pow_loop(A, N, Acc) when N rem 2 =:= 0 -> eel_pow_loop(A * A, N div 2, Acc);
 eel_pow_loop(A, N, Acc) -> eel_pow_loop(A, N - 1, Acc * A).
 
-%% print: питоновское представление значения (строки — как есть, атомы — без кавычек).
+%% print: the Python-like display of a value (strings as is, atoms unquoted).
 eel_print(X) ->
     put(eel_out, [$\n, eel_str(X) | case get(eel_out) of undefined -> []; L -> L end]),
     nil.
@@ -101,7 +101,7 @@ eel_str_tuple([]) -> <<"()">>;
 eel_str_tuple([One]) -> [$(, eel_str(One), <<",)">>];
 eel_str_tuple(Items) -> [$(, lists:join(<<", ">>, [eel_str(X) || X <- Items]), $)].
 
-%% zip: два списка, обрезка по короткому (как Python); enumerate: пары (N, X) с Start.
+%% zip: two lists, trimmed to the shorter one (as in Python); enumerate: (N, X) pairs from Start.
 eel_zip(A, B) when is_list(A), is_list(B) -> lists:zip(A, B, trim);
 eel_zip(A, _) when not is_list(A) -> erlang:error({bad_argument, zip, A});
 eel_zip(_, B) -> erlang:error({bad_argument, zip, B}).
@@ -112,7 +112,7 @@ eel_enumerate(Start, _) when not is_integer(Start) ->
     erlang:error({bad_argument, enumerate, Start});
 eel_enumerate(_, List) -> erlang:error({bad_argument, enumerate, List}).
 
-%% range: питоновская семантика (стоп не включается), пустые диапазоны — [].
+%% range: Python semantics (the stop is excluded), empty ranges are [].
 eel_range(Start, _, _) when not is_integer(Start) -> erlang:error({bad_argument, range, Start});
 eel_range(_, Stop, _) when not is_integer(Stop) -> erlang:error({bad_argument, range, Stop});
 eel_range(_, _, Step) when not is_integer(Step) -> erlang:error({bad_argument, range, Step});
@@ -121,7 +121,7 @@ eel_range(Start, Stop, Step) when Step > 0, Start >= Stop -> [];
 eel_range(Start, Stop, Step) when Step < 0, Start =< Stop -> [];
 eel_range(Start, Stop, Step) -> [Start | eel_range(Start + Step, Stop, Step)].
 
-%% join: части — только строки, иначе {bad_argument, join, Часть} (как в модульном бэкенде).
+%% join: strings only, otherwise {bad_argument, join, Part} (as in the module backend).
 eel_join(_Sep, []) -> [];
 eel_join(_Sep, [H]) when is_binary(H) -> H;
 eel_join(Sep, [H | T]) when is_binary(H) -> [H, Sep | eel_join(Sep, T)];
@@ -131,11 +131,11 @@ eel_str_map([]) -> <<"{}">>;
 eel_str_map(Pairs) ->
     [${, lists:join(<<", ">>, [[eel_str(K), <<": ">>, eel_str(V)] || {K, V} <- Pairs]), $}].
 
-%% map -> ключи, список -> как есть (иначе bad_generator).
+%% map -> keys, list -> as is (anything else is a bad_generator).
 eel_iter(M) when is_map(M) -> maps:keys(M);
 eel_iter(L) -> L.
 
-%% % и // — питоновская семантика для int и float.
+%% % and // — Python semantics for int and float.
 eel_mod(A, B) when is_integer(A), is_integer(B) -> (A rem B + B) rem B;
 eel_mod(A, B) -> math:fmod(math:fmod(A, B) + B, B).
 
