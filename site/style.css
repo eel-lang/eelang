@@ -167,14 +167,14 @@ h2 .muted{color:var(--faint)}
 
 /* ---------- six squares ---------- */
 .squares{display:grid;grid-template-columns:repeat(3,1fr);border-top:1px solid var(--line)}
-.square{position:relative;aspect-ratio:1/1;padding:24px;display:flex;flex-direction:column;
+.square{position:relative;padding:22px 24px;display:flex;flex-direction:column;
   border-right:1px solid var(--line);border-bottom:1px solid var(--line);background:var(--canvas);
   transition:background .16s}
 .square:nth-child(3n){border-right:0}
 .square:nth-last-child(-n+3){border-bottom:0}
 .square:hover{background:#fffdfe}
 .idx{font-family:var(--mono);font-stretch:88%;font-size:.62rem;letter-spacing:.1em;color:var(--pink-strong)}
-.square h3{margin:22px 0 4px;font-family:var(--display);font-weight:700;font-size:1.16rem;letter-spacing:-.025em;
+.square h3{margin:16px 0 4px;font-family:var(--display);font-weight:700;font-size:1.16rem;letter-spacing:-.025em;
   font-stretch:95%}
 .square .sub{margin:0 0 10px;font-family:var(--mono);font-stretch:88%;font-size:.53rem;letter-spacing:.08em;
   text-transform:uppercase;color:var(--faint)}
@@ -271,7 +271,7 @@ footer nav a:hover{color:var(--pink-strong)}
   .big-head{grid-template-columns:1fr;align-items:start;padding:32px 24px 22px}
   .big-head p{justify-self:start}
   .squares{grid-template-columns:1fr 1fr}
-  .square{aspect-ratio:auto;min-height:280px;border-right:1px solid var(--line)}
+  .square{border-right:1px solid var(--line)}
   .square:nth-child(3n){border-right:1px solid var(--line)}
   .square:nth-child(2n){border-right:0}
   .square:nth-last-child(-n+3){border-bottom:1px solid var(--line)}
@@ -297,7 +297,7 @@ footer nav a:hover{color:var(--pink-strong)}
   .std-block:last-child{border-bottom:0}
   .status{display:none}
   .squares{grid-template-columns:1fr}
-  .square{min-height:0;aspect-ratio:auto;border-right:0}
+  .square{border-right:0}
   .square:nth-child(2n){border-right:0}
   .square:nth-last-child(-n+2){border-bottom:1px solid var(--line)}
   .square:last-child{border-bottom:0}
