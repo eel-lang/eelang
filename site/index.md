@@ -3,7 +3,7 @@ title: Eel — Python's syntax, Erlang's semantics
 description: Eel compiles .eel files straight to the BEAM: Python's syntax with Gleam's model — immutable by default, no loops, let it crash.
 brand: Eel
 status: Status: Alpha
-github: https://github.com/pwtail/squeal
+github: https://github.com/squea-lang/eel
 footer: Eel · Python syntax, Erlang semantics.
 ---
 
@@ -29,7 +29,7 @@ Built on: Erlang/OTP 29 · CPython 3.15 · Inspired by: Gleam
 [Read the syntax overview →](#syntax)
 
 ### fib.eel
-_one function with a match, instead of Erlang's multiple function clauses_
+_compiled · one function with a match instead of Erlang's multiple clauses_
 
 ```python
 def fib(n, current, next):
@@ -91,56 +91,68 @@ _BEAM ↔ CPython_
 One of the tasks is to bring the BEAM and CPython ecosystems closer, and to enable projects
 like Hornbeam.
 
-## The syntax you need,<br>_baked into Python._
+## The syntax is almost Python
 
 Every construct below is compiled, not interpreted: the compiler turns this Python into Erlang
 abstract forms. Pick a category and read the code.
 
 ### Values · values.eel
-Quotes decide the type. Tuples, lists and dicts keep their Erlang shapes.
+Numbers, floats, strings, atoms, booleans and `None`. Lists, tuples and dicts keep their Erlang shapes.
 
 ```python
-def pair():
-    ('ok', "ok", (1, 2), [1, 2], {'k': 1})
-# {ok, <<"ok">>, {1, 2}, [1, 2], #{k => 1}}
+def values():
+    (42, 1.5, "hi", 'ok', True, False, None)
+
+
+def collections():
+    ([1, 2, 3], (1, 2), {'a': 1}, {"b": 2})
 ```
 
 ### Operators · operators.eel
-Arithmetic keeps Python's semantics; booleans compile to `andalso` and `orelse`.
+Python semantics for `//`, `%`, `**` and `==`; booleans compile to `andalso` and `orelse`.
 
 ```python
-def calc(a, b):
-    (a // b, a % b, a ** 2, a == b, not (a < b))
+def ops():
+    (7 // 2, -7 // 2, -7 % 2, 2 ** 10, 1 == 1.0, "a" < "b")
 ```
 
 ### Control flow · control.eel
-`match` is an expression: every branch assigns the same variable.
+`if` is true only for `true`; `match` handles or-patterns, guards and a wildcard.
 
 ```python
-def classify(n):
+def branch(n):
     match n:
-        case 0:
-            r = 'zero'
-        case _ if n < 0:
-            r = 'negative'
+        case 1 | 2:
+            r = 'one or two'
+        case big if big > 10:
+            r = 'big'
         case _:
-            r = 'positive'
+            r = 'other'
+    r
+
+
+def compare(a, b):
+    if a < b:
+        r = 'yes'
+    else:
+        r = 'no'
     r
 ```
 
 ### Patterns · patterns.eel
-Destructuring, constructor patterns and guards compile to real Erlang patterns.
+Destructuring with a star, and list patterns inside `match`.
 
 ```python
-def first_two(xs):
-    a, b, *rest = xs
-    (a, b)
+def head_tail(xs):
+    head, *rest = xs
+    (head, rest)
 
-def swap(p):
-    match p:
-        case (x, y):
-            q = (y, x)
-    q
+
+def only_head(xs):
+    match xs:
+        case [h, *t]:
+            r = (h, t)
+    r
 ```
 
 ### Functions · functions.eel
@@ -150,17 +162,37 @@ def swap(p):
 def twice(f, x):
     f(f(x))
 
-def bump(n):
+
+def inc(n):
     twice(lambda x: x + 1, n)
 ```
 
-### Classes · classes.eel
-A class compiles to a tagged tuple, and its constructor is inlined.
+### Decorators · decorators.eel
+Applied once, like Python — a chain wraps from the inside out.
 
 ```python
-class Point(StartingWithAtom):
+def plus1(fn):
+    lambda x: fn(x) + 1
+
+
+@plus1
+@plus1
+def z(x):
+    x
+
+
+def run():
+    z(3)
+```
+
+### Classes · classes.eel
+A class becomes a tagged tuple, and its constructor is inlined.
+
+```python
+class Point(AtomPrefixed):
     x: int
     y: int
+
 
 def shift(p, dx):
     match p:
@@ -170,24 +202,26 @@ def shift(p, dx):
 ```
 
 ### Comprehensions · comprehensions.eel
-List and dict comprehensions become Erlang comprehensions, filters included.
+Nested generators, filters, and dict comprehensions through `.items()`.
 
 ```python
-def evens(xs):
-    [x * 2 for x in xs if x % 2 == 0]
+def grid():
+    [x + y for x in [1, 2] for y in [10, 20]]
 
-def by_id(pairs):
-    {k: v for k, v in pairs}
+
+def doubled(m):
+    {k: v * 2 for k, v in m.items()}
 ```
 
 ### Modules · modules.eel
 The module is the path; imports are Python imports with Gleam's rules.
 
 ```python
-from my.app.math import add, mul as times
+from a.b.c import helper
 
-def total(a, b):
-    times(add(a, b), 2)
+
+def call():
+    helper()
 ```
 
 ## OOP-styled _standard library_
@@ -218,8 +252,8 @@ complicates nothing — outside the standard library, OOP is not allowed anywher
 
 ## This is an early alpha.<br>_100% vibe-coded._
 
-It compiles real modules today, and it is not something you put in production yet: the code was
-written mostly with DeepSeek 4 Flash, in a vibe-coding loop.
+It compiles real modules today, however it is not something you put in production yet. Also, the code
+was written mostly with DeepSeek 4 Flash, in a vibe-coding loop.
 
 ### Plus
 - **A small codebase you can fork** — the compiler is a handful of Python modules: read it in an

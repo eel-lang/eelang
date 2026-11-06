@@ -22,7 +22,7 @@
       </span>
     </a>
     <div class="head-end">
-      <a class="gh" href="https://github.com/pwtail/squeal" aria-label="Eel on GitHub" title="GitHub">
+      <a class="gh" href="https://github.com/squea-lang/eel" aria-label="Eel on GitHub" title="GitHub">
         <svg class="octocat" viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path fill="currentColor" d="M12 .297c-6.63 0-12 5.373-12 12 0 5.303 3.438 9.8 8.205 11.385.6.113.82-.258.82-.577 0-.285-.01-1.04-.015-2.04-3.338.724-4.042-1.61-4.042-1.61C4.422 18.07 3.633 17.7 3.633 17.7c-1.087-.744.084-.729.084-.729 1.205.084 1.838 1.236 1.838 1.236 1.07 1.835 2.809 1.305 3.495.998.108-.776.417-1.305.76-1.605-2.665-.3-5.466-1.332-5.466-5.93 0-1.31.465-2.38 1.235-3.22-.135-.303-.54-1.523.105-3.176 0 0 1.005-.322 3.3 1.23.96-.267 1.98-.399 3-.405 1.02.006 2.04.138 3 .405 2.28-1.552 3.285-1.23 3.285-1.23.645 1.653.24 2.873.12 3.176.765.84 1.23 1.91 1.23 3.22 0 4.61-2.805 5.625-5.475 5.92.42.36.81 1.096.81 2.22 0 1.606-.015 2.896-.015 3.286 0 .315.21.69.825.57C20.565 22.092 24 17.592 24 12.297c0-6.627-5.373-12-12-12"/></svg>
       </a>
     </div>
@@ -62,7 +62,7 @@
 <span class="ln" aria-hidden="true">8</span>
 <span class="ln" aria-hidden="true">9</span><span class="k">def</span> fib(n):
 <span class="ln" aria-hidden="true">10</span>    fib(n, <span class="n">0</span>, <span class="n">1</span>)</pre>
-<p class="viewer-caption">one function with a match, instead of Erlang&#x27;s multiple function clauses</p>
+<p class="viewer-caption">compiled · one function with a match instead of Erlang&#x27;s multiple clauses</p>
 </div>
         </div>
       </div>
@@ -121,7 +121,7 @@ sep.join(lines)</pre>
   <!-- SYNTAX -->
   <section id="syntax">
     <div class="big-head">
-      <h2>The syntax you need,<br><span class="muted">baked into Python.</span></h2>
+      <h2>The syntax is almost Python</h2>
       <p>Every construct below is compiled, not interpreted: the compiler turns this Python into Erlang abstract forms. Pick a category and read the code.</p>
     </div>
 
@@ -132,6 +132,7 @@ sep.join(lines)</pre>
         <button class="api-tab" id="tab-control-flow" role="tab" aria-selected="false" aria-controls="syn-control-flow" tabindex="-1" type="button"><span class="dot" aria-hidden="true"></span>Control flow</button>
         <button class="api-tab" id="tab-patterns" role="tab" aria-selected="false" aria-controls="syn-patterns" tabindex="-1" type="button"><span class="dot" aria-hidden="true"></span>Patterns</button>
         <button class="api-tab" id="tab-functions" role="tab" aria-selected="false" aria-controls="syn-functions" tabindex="-1" type="button"><span class="dot" aria-hidden="true"></span>Functions</button>
+        <button class="api-tab" id="tab-decorators" role="tab" aria-selected="false" aria-controls="syn-decorators" tabindex="-1" type="button"><span class="dot" aria-hidden="true"></span>Decorators</button>
         <button class="api-tab" id="tab-classes" role="tab" aria-selected="false" aria-controls="syn-classes" tabindex="-1" type="button"><span class="dot" aria-hidden="true"></span>Classes</button>
         <button class="api-tab" id="tab-comprehensions" role="tab" aria-selected="false" aria-controls="syn-comprehensions" tabindex="-1" type="button"><span class="dot" aria-hidden="true"></span>Comprehensions</button>
         <button class="api-tab" id="tab-modules" role="tab" aria-selected="false" aria-controls="syn-modules" tabindex="-1" type="button"><span class="dot" aria-hidden="true"></span>Modules</button>
@@ -140,47 +141,59 @@ sep.join(lines)</pre>
       <div class="api-panels">
         <div class="api-panel" id="syn-values" role="tabpanel" aria-labelledby="tab-values">
           <div class="api-head">
-            <p>Quotes decide the type. Tuples, lists and dicts keep their Erlang shapes.</p>
+            <p>Numbers, floats, strings, atoms, booleans and <code>None</code>. Lists, tuples and dicts keep their Erlang shapes.</p>
             <span class="api-file">values.eel</span>
           </div>
-<pre><span class="k">def</span> pair():
-    (<span class="s">&#x27;ok&#x27;</span>, <span class="s">&quot;ok&quot;</span>, (<span class="n">1</span>, <span class="n">2</span>), [<span class="n">1</span>, <span class="n">2</span>], {<span class="s">&#x27;k&#x27;</span>: <span class="n">1</span>})
-<span class="c"># {ok, &lt;&lt;&quot;ok&quot;&gt;&gt;, {1, 2}, [1, 2], #{k =&gt; 1}}</span></pre>
+<pre><span class="k">def</span> values():
+    (<span class="n">42</span>, <span class="n">1.5</span>, <span class="s">&quot;hi&quot;</span>, <span class="s">&#x27;ok&#x27;</span>, <span class="k">True</span>, <span class="k">False</span>, <span class="k">None</span>)
+
+
+<span class="k">def</span> collections():
+    ([<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>], (<span class="n">1</span>, <span class="n">2</span>), {<span class="s">&#x27;a&#x27;</span>: <span class="n">1</span>}, {<span class="s">&quot;b&quot;</span>: <span class="n">2</span>})</pre>
         </div>        <div class="api-panel" id="syn-operators" role="tabpanel" aria-labelledby="tab-operators" hidden>
           <div class="api-head">
-            <p>Arithmetic keeps Python&#x27;s semantics; booleans compile to <code>andalso</code> and <code>orelse</code>.</p>
+            <p>Python semantics for <code>//</code>, <code>%</code>, <code>**</code> and <code>==</code>; booleans compile to <code>andalso</code> and <code>orelse</code>.</p>
             <span class="api-file">operators.eel</span>
           </div>
-<pre><span class="k">def</span> calc(a, b):
-    (a // b, a % b, a ** <span class="n">2</span>, a == b, <span class="k">not</span> (a &lt; b))</pre>
+<pre><span class="k">def</span> ops():
+    (<span class="n">7</span> // <span class="n">2</span>, -<span class="n">7</span> // <span class="n">2</span>, -<span class="n">7</span> % <span class="n">2</span>, <span class="n">2</span> ** <span class="n">10</span>, <span class="n">1</span> == <span class="n">1.0</span>, <span class="s">&quot;a&quot;</span> &lt; <span class="s">&quot;b&quot;</span>)</pre>
         </div>        <div class="api-panel" id="syn-control-flow" role="tabpanel" aria-labelledby="tab-control-flow" hidden>
           <div class="api-head">
-            <p><code>match</code> is an expression: every branch assigns the same variable.</p>
+            <p><code>if</code> is true only for <code>true</code>; <code>match</code> handles or-patterns, guards and a wildcard.</p>
             <span class="api-file">control.eel</span>
           </div>
-<pre><span class="k">def</span> classify(n):
+<pre><span class="k">def</span> branch(n):
     <span class="k">match</span> n:
-        <span class="k">case</span> <span class="n">0</span>:
-            r = <span class="s">&#x27;zero&#x27;</span>
-        <span class="k">case</span> _ <span class="k">if</span> n &lt; <span class="n">0</span>:
-            r = <span class="s">&#x27;negative&#x27;</span>
+        <span class="k">case</span> <span class="n">1</span> | <span class="n">2</span>:
+            r = <span class="s">&#x27;one or two&#x27;</span>
+        <span class="k">case</span> big <span class="k">if</span> big &gt; <span class="n">10</span>:
+            r = <span class="s">&#x27;big&#x27;</span>
         <span class="k">case</span> _:
-            r = <span class="s">&#x27;positive&#x27;</span>
+            r = <span class="s">&#x27;other&#x27;</span>
+    r
+
+
+<span class="k">def</span> compare(a, b):
+    <span class="k">if</span> a &lt; b:
+        r = <span class="s">&#x27;yes&#x27;</span>
+    <span class="k">else</span>:
+        r = <span class="s">&#x27;no&#x27;</span>
     r</pre>
         </div>        <div class="api-panel" id="syn-patterns" role="tabpanel" aria-labelledby="tab-patterns" hidden>
           <div class="api-head">
-            <p>Destructuring, constructor patterns and guards compile to real Erlang patterns.</p>
+            <p>Destructuring with a star, and list patterns inside <code>match</code>.</p>
             <span class="api-file">patterns.eel</span>
           </div>
-<pre><span class="k">def</span> first_two(xs):
-    a, b, *rest = xs
-    (a, b)
+<pre><span class="k">def</span> head_tail(xs):
+    head, *rest = xs
+    (head, rest)
 
-<span class="k">def</span> swap(p):
-    <span class="k">match</span> p:
-        <span class="k">case</span> (x, y):
-            q = (y, x)
-    q</pre>
+
+<span class="k">def</span> only_head(xs):
+    <span class="k">match</span> xs:
+        <span class="k">case</span> [h, *t]:
+            r = (h, t)
+    r</pre>
         </div>        <div class="api-panel" id="syn-functions" role="tabpanel" aria-labelledby="tab-functions" hidden>
           <div class="api-head">
             <p><code>def</code>, <code>lambda</code> and closures — and arity is part of a function&#x27;s identity.</p>
@@ -189,16 +202,35 @@ sep.join(lines)</pre>
 <pre><span class="k">def</span> twice(f, x):
     f(f(x))
 
-<span class="k">def</span> bump(n):
+
+<span class="k">def</span> inc(n):
     twice(<span class="k">lambda</span> x: x + <span class="n">1</span>, n)</pre>
+        </div>        <div class="api-panel" id="syn-decorators" role="tabpanel" aria-labelledby="tab-decorators" hidden>
+          <div class="api-head">
+            <p>Applied once, like Python — a chain wraps from the inside out.</p>
+            <span class="api-file">decorators.eel</span>
+          </div>
+<pre><span class="k">def</span> plus1(fn):
+    <span class="k">lambda</span> x: fn(x) + <span class="n">1</span>
+
+
+@plus1
+@plus1
+<span class="k">def</span> z(x):
+    x
+
+
+<span class="k">def</span> run():
+    z(<span class="n">3</span>)</pre>
         </div>        <div class="api-panel" id="syn-classes" role="tabpanel" aria-labelledby="tab-classes" hidden>
           <div class="api-head">
-            <p>A class compiles to a tagged tuple, and its constructor is inlined.</p>
+            <p>A class becomes a tagged tuple, and its constructor is inlined.</p>
             <span class="api-file">classes.eel</span>
           </div>
-<pre><span class="k">class</span> Point(StartingWithAtom):
+<pre><span class="k">class</span> Point(AtomPrefixed):
     x: int
     y: int
+
 
 <span class="k">def</span> shift(p, dx):
     <span class="k">match</span> p:
@@ -207,23 +239,25 @@ sep.join(lines)</pre>
     q</pre>
         </div>        <div class="api-panel" id="syn-comprehensions" role="tabpanel" aria-labelledby="tab-comprehensions" hidden>
           <div class="api-head">
-            <p>List and dict comprehensions become Erlang comprehensions, filters included.</p>
+            <p>Nested generators, filters, and dict comprehensions through <code>.items()</code>.</p>
             <span class="api-file">comprehensions.eel</span>
           </div>
-<pre><span class="k">def</span> evens(xs):
-    [x * <span class="n">2</span> <span class="k">for</span> x <span class="k">in</span> xs <span class="k">if</span> x % <span class="n">2</span> == <span class="n">0</span>]
+<pre><span class="k">def</span> grid():
+    [x + y <span class="k">for</span> x <span class="k">in</span> [<span class="n">1</span>, <span class="n">2</span>] <span class="k">for</span> y <span class="k">in</span> [<span class="n">10</span>, <span class="n">20</span>]]
 
-<span class="k">def</span> by_id(pairs):
-    {k: v <span class="k">for</span> k, v <span class="k">in</span> pairs}</pre>
+
+<span class="k">def</span> doubled(m):
+    {k: v * <span class="n">2</span> <span class="k">for</span> k, v <span class="k">in</span> m.items()}</pre>
         </div>        <div class="api-panel" id="syn-modules" role="tabpanel" aria-labelledby="tab-modules" hidden>
           <div class="api-head">
             <p>The module is the path; imports are Python imports with Gleam&#x27;s rules.</p>
             <span class="api-file">modules.eel</span>
           </div>
-<pre><span class="k">from</span> my.app.math <span class="k">import</span> add, mul <span class="k">as</span> times
+<pre><span class="k">from</span> a.b.c <span class="k">import</span> helper
 
-<span class="k">def</span> total(a, b):
-    times(add(a, b), <span class="n">2</span>)</pre>
+
+<span class="k">def</span> call():
+    helper()</pre>
         </div>
       </div>
     </div>
@@ -272,7 +306,7 @@ sep.join(lines)</pre>
   <section id="alpha">
     <div class="big-head">
       <h2>This is an early alpha.<br><span class="muted">100% vibe-coded.</span></h2>
-      <p>It compiles real modules today, and it is not something you put in production yet: the code was written mostly with DeepSeek 4 Flash, in a vibe-coding loop.</p>
+      <p>It compiles real modules today, however it is not something you put in production yet. Also, the code was written mostly with DeepSeek 4 Flash, in a vibe-coding loop.</p>
     </div>
 
     <div class="tradeoffs">
