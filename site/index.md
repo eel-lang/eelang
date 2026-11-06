@@ -44,7 +44,7 @@ def fib(n):
     fib(n, 0, 1)
 ```
 
-## What Eel aims for
+## What _Eel_ aims for
 
 Eel is inspired by Gleam, but its goals and founding principles differ in a few important ways.
 
@@ -190,7 +190,7 @@ def total(a, b):
     times(add(a, b), 2)
 ```
 
-## OOP-styled standard library
+## OOP-styled _standard library_
 _planned surface · not in the compiler yet_
 
 ### Strings
