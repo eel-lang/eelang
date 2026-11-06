@@ -39,10 +39,7 @@
 
       <a class="after-link" href="#syntax">Read the syntax overview →</a>
 
-      <div class="hero-meta">
-        <span class="label">Built on</span>
-        <span class="mark-item">Erlang/OTP <span>29</span></span><span class="mark-item">CPython <span>3.15</span></span><span class="inspired"><span class="strip-tag">inspired by</span><span class="mark-item">Gleam</span></span>
-      </div>
+
     </div>
 
     <div class="hero-right">
@@ -87,10 +84,6 @@
         <h3>Great stdlib</h3>
         <p class="sub">batteries, with methods</p>
         <p class="desc">A stdlib that is pleasant to use, with OOP-style methods on the core data structures.</p>
-<pre class="chip">dic.get(my_key)
-my_list.map(my_func)
-name.startswith(prefix)
-sep.join(lines)</pre>
       </article>
       <article class="square">
         <span class="idx">03</span>
@@ -121,7 +114,7 @@ sep.join(lines)</pre>
   <!-- SYNTAX -->
   <section id="syntax">
     <div class="big-head">
-      <h2>The syntax is almost Python</h2>
+      <h2>The syntax<br><span class="muted">that is almost Python</span></h2>
       <p>Every construct below is compiled, not interpreted: the compiler turns this Python into Erlang abstract forms. Pick a category and read the code.</p>
     </div>
 
@@ -131,6 +124,7 @@ sep.join(lines)</pre>
         <button class="api-tab" id="tab-operators" role="tab" aria-selected="false" aria-controls="syn-operators" tabindex="-1" type="button"><span class="dot" aria-hidden="true"></span>Operators</button>
         <button class="api-tab" id="tab-control-flow" role="tab" aria-selected="false" aria-controls="syn-control-flow" tabindex="-1" type="button"><span class="dot" aria-hidden="true"></span>Control flow</button>
         <button class="api-tab" id="tab-patterns" role="tab" aria-selected="false" aria-controls="syn-patterns" tabindex="-1" type="button"><span class="dot" aria-hidden="true"></span>Patterns</button>
+        <button class="api-tab" id="tab-processes" role="tab" aria-selected="false" aria-controls="syn-processes" tabindex="-1" type="button"><span class="dot" aria-hidden="true"></span>Processes</button>
         <button class="api-tab" id="tab-functions" role="tab" aria-selected="false" aria-controls="syn-functions" tabindex="-1" type="button"><span class="dot" aria-hidden="true"></span>Functions</button>
         <button class="api-tab" id="tab-decorators" role="tab" aria-selected="false" aria-controls="syn-decorators" tabindex="-1" type="button"><span class="dot" aria-hidden="true"></span>Decorators</button>
         <button class="api-tab" id="tab-classes" role="tab" aria-selected="false" aria-controls="syn-classes" tabindex="-1" type="button"><span class="dot" aria-hidden="true"></span>Classes</button>
@@ -147,7 +141,6 @@ sep.join(lines)</pre>
 <pre><span class="k">def</span> values():
     (<span class="n">42</span>, <span class="n">1.5</span>, <span class="s">&quot;hi&quot;</span>, <span class="s">&#x27;ok&#x27;</span>, <span class="k">True</span>, <span class="k">False</span>, <span class="k">None</span>)
 
-
 <span class="k">def</span> collections():
     ([<span class="n">1</span>, <span class="n">2</span>, <span class="n">3</span>], (<span class="n">1</span>, <span class="n">2</span>), {<span class="s">&#x27;a&#x27;</span>: <span class="n">1</span>}, {<span class="s">&quot;b&quot;</span>: <span class="n">2</span>})</pre>
         </div>        <div class="api-panel" id="syn-operators" role="tabpanel" aria-labelledby="tab-operators" hidden>
@@ -159,21 +152,21 @@ sep.join(lines)</pre>
     (<span class="n">7</span> // <span class="n">2</span>, -<span class="n">7</span> // <span class="n">2</span>, -<span class="n">7</span> % <span class="n">2</span>, <span class="n">2</span> ** <span class="n">10</span>, <span class="n">1</span> == <span class="n">1.0</span>, <span class="s">&quot;a&quot;</span> &lt; <span class="s">&quot;b&quot;</span>)</pre>
         </div>        <div class="api-panel" id="syn-control-flow" role="tabpanel" aria-labelledby="tab-control-flow" hidden>
           <div class="api-head">
-            <p><code>if</code> is true only for <code>true</code>; <code>match</code> handles or-patterns, guards and a wildcard.</p>
+            <p>As the last expression, <code>match</code> and <code>if</code> return their branch value — no target variable needed.</p>
             <span class="api-file">control.eel</span>
           </div>
 <pre><span class="k">def</span> branch(n):
+    <span class="c"># last expression: the branch value is the result</span>
     <span class="k">match</span> n:
         <span class="k">case</span> <span class="n">1</span> | <span class="n">2</span>:
-            r = <span class="s">&#x27;one or two&#x27;</span>
+            <span class="s">&#x27;one or two&#x27;</span>
         <span class="k">case</span> big <span class="k">if</span> big &gt; <span class="n">10</span>:
-            r = <span class="s">&#x27;big&#x27;</span>
+            <span class="s">&#x27;big&#x27;</span>
         <span class="k">case</span> _:
-            r = <span class="s">&#x27;other&#x27;</span>
-    r
-
+            <span class="s">&#x27;other&#x27;</span>
 
 <span class="k">def</span> compare(a, b):
+    <span class="c"># assigning works too, and reads the same</span>
     <span class="k">if</span> a &lt; b:
         r = <span class="s">&#x27;yes&#x27;</span>
     <span class="k">else</span>:
@@ -188,12 +181,23 @@ sep.join(lines)</pre>
     head, *rest = xs
     (head, rest)
 
-
 <span class="k">def</span> only_head(xs):
     <span class="k">match</span> xs:
         <span class="k">case</span> [h, *t]:
             r = (h, t)
     r</pre>
+        </div>        <div class="api-panel" id="syn-processes" role="tabpanel" aria-labelledby="tab-processes" hidden>
+          <div class="api-head">
+            <p><code>match receive()</code> blocks for a message; <code>send</code> and recursion make the loop.</p>
+            <span class="api-file">processes.eel</span>
+          </div>
+<pre><span class="k">def</span> worker():
+    <span class="k">match</span> receive():
+        <span class="k">case</span> (<span class="s">&#x27;ping&#x27;</span>, reply_to):
+            send(reply_to, <span class="s">&#x27;pong&#x27;</span>)
+            worker()
+        <span class="k">case</span> <span class="s">&#x27;stop&#x27;</span>:
+            <span class="s">&#x27;stopped&#x27;</span></pre>
         </div>        <div class="api-panel" id="syn-functions" role="tabpanel" aria-labelledby="tab-functions" hidden>
           <div class="api-head">
             <p><code>def</code>, <code>lambda</code> and closures — and arity is part of a function&#x27;s identity.</p>
@@ -201,7 +205,6 @@ sep.join(lines)</pre>
           </div>
 <pre><span class="k">def</span> twice(f, x):
     f(f(x))
-
 
 <span class="k">def</span> inc(n):
     twice(<span class="k">lambda</span> x: x + <span class="n">1</span>, n)</pre>
@@ -213,12 +216,10 @@ sep.join(lines)</pre>
 <pre><span class="k">def</span> plus1(fn):
     <span class="k">lambda</span> x: fn(x) + <span class="n">1</span>
 
-
 @plus1
 @plus1
 <span class="k">def</span> z(x):
     x
-
 
 <span class="k">def</span> run():
     z(<span class="n">3</span>)</pre>
@@ -230,7 +231,6 @@ sep.join(lines)</pre>
 <pre><span class="k">class</span> Point(AtomPrefixed):
     x: int
     y: int
-
 
 <span class="k">def</span> shift(p, dx):
     <span class="k">match</span> p:
@@ -245,7 +245,6 @@ sep.join(lines)</pre>
 <pre><span class="k">def</span> grid():
     [x + y <span class="k">for</span> x <span class="k">in</span> [<span class="n">1</span>, <span class="n">2</span>] <span class="k">for</span> y <span class="k">in</span> [<span class="n">10</span>, <span class="n">20</span>]]
 
-
 <span class="k">def</span> doubled(m):
     {k: v * <span class="n">2</span> <span class="k">for</span> k, v <span class="k">in</span> m.items()}</pre>
         </div>        <div class="api-panel" id="syn-modules" role="tabpanel" aria-labelledby="tab-modules" hidden>
@@ -254,7 +253,6 @@ sep.join(lines)</pre>
             <span class="api-file">modules.eel</span>
           </div>
 <pre><span class="k">from</span> a.b.c <span class="k">import</span> helper
-
 
 <span class="k">def</span> call():
     helper()</pre>
@@ -266,7 +264,7 @@ sep.join(lines)</pre>
   <section class="stdlib" id="stdlib">
     <div class="std-head">
       <h2>OOP-styled <span class="muted">standard library</span></h2>
-      <p class="std-note">OOP-styling is an exotic feature of Eel: it makes the standard library pleasant to use, and it complicates nothing — outside the standard library, OOP is not allowed anywhere.</p>
+      <p class="std-note">OOP-styling is a special feature of Eel: it makes the standard library pleasant to use, without complicating anything — outside the standard library, &quot;OOP style&quot; is not allowed.</p>
     </div>
 
     <div class="std-grid">
@@ -281,23 +279,20 @@ sep.join(lines)</pre>
         </ul>
       </div>
       <div class="std-block">
-        <h3 class="std-label">Lists</h3>
+        <h3 class="std-label">Maps</h3>
         <ul>
-          <li><code>xs.map(f)</code><span>apply a function to every element</span></li>
-          <li><code>xs.filter(pred)</code><span>keep the elements that match</span></li>
-          <li><code>xs.fold(acc, f)</code><span>reduce to a single value</span></li>
-          <li><code>xs.take(n)</code><span>the first n elements</span></li>
-          <li><code>xs.zip(ys)</code><span>pairs, like Python&#x27;s zip</span></li>
+          <li><code>m.get(key)</code><span>value or nil, never an exception</span></li>
+          <li><code>m.keys()</code><span>keys, in no particular order</span></li>
+          <li><code>m.items()</code><span>pairs, for comprehensions</span></li>
         </ul>
       </div>
       <div class="std-block">
-        <h3 class="std-label">Maps</h3>
+        <h3 class="std-label">Collections</h3>
         <ul>
-          <li><code>config.get(key)</code><span>value or nil, never an exception</span></li>
-          <li><code>m.put(key, value)</code><span>a new map, the old one intact</span></li>
-          <li><code>m.merge(other)</code><span>what <code>|=</code> compiles to</span></li>
-          <li><code>m.keys()</code><span>keys, in no particular order</span></li>
-          <li><code>m.items()</code><span>pairs, for comprehensions</span></li>
+          <li><code>li.map(f)</code><span>apply a function to every element</span></li>
+          <li><code>li.filter(pred)</code><span>keep the elements that match</span></li>
+          <li><code>zip(li1, li2)</code><span>pairs, like Python&#x27;s zip</span></li>
+          <li><code>enumerate(range(5))</code><span>Python&#x27;s enumerate</span></li>
         </ul>
       </div>
     </div>

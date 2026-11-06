@@ -24,8 +24,6 @@ footer: Eel · Python syntax, Erlang semantics.
 Immutability, pattern matching, comprehensions and hierarchical modules — written in the Python
 you already know, compiled to Erlang abstract forms through the same pipeline Gleam uses.
 
-Built on: Erlang/OTP 29 · CPython 3.15 · Inspired by: Gleam
-
 [Read the syntax overview →](#syntax)
 
 ### fib.eel
@@ -61,13 +59,6 @@ _batteries, with methods_
 
 A stdlib that is pleasant to use, with OOP-style methods on the core data structures.
 
-```text
-dic.get(my_key)
-my_list.map(my_func)
-name.startswith(prefix)
-sep.join(lines)
-```
-
 ### 03 · Optional static typing
 _never mandatory_
 
@@ -91,7 +82,7 @@ _BEAM ↔ CPython_
 One of the tasks is to bring the BEAM and CPython ecosystems closer, and to enable projects
 like Hornbeam.
 
-## The syntax is almost Python
+## The syntax<br>_that is almost Python_
 
 Every construct below is compiled, not interpreted: the compiler turns this Python into Erlang
 abstract forms. Pick a category and read the code.
@@ -102,7 +93,6 @@ Numbers, floats, strings, atoms, booleans and `None`. Lists, tuples and dicts ke
 ```python
 def values():
     (42, 1.5, "hi", 'ok', True, False, None)
-
 
 def collections():
     ([1, 2, 3], (1, 2), {'a': 1}, {"b": 2})
@@ -117,21 +107,21 @@ def ops():
 ```
 
 ### Control flow · control.eel
-`if` is true only for `true`; `match` handles or-patterns, guards and a wildcard.
+As the last expression, `match` and `if` return their branch value — no target variable needed.
 
 ```python
 def branch(n):
+    # last expression: the branch value is the result
     match n:
         case 1 | 2:
-            r = 'one or two'
+            'one or two'
         case big if big > 10:
-            r = 'big'
+            'big'
         case _:
-            r = 'other'
-    r
-
+            'other'
 
 def compare(a, b):
+    # assigning works too, and reads the same
     if a < b:
         r = 'yes'
     else:
@@ -147,12 +137,24 @@ def head_tail(xs):
     head, *rest = xs
     (head, rest)
 
-
 def only_head(xs):
     match xs:
         case [h, *t]:
             r = (h, t)
     r
+```
+
+### Processes · processes.eel
+`match receive()` blocks for a message; `send` and recursion make the loop.
+
+```python
+def worker():
+    match receive():
+        case ('ping', reply_to):
+            send(reply_to, 'pong')
+            worker()
+        case 'stop':
+            'stopped'
 ```
 
 ### Functions · functions.eel
@@ -161,7 +163,6 @@ def only_head(xs):
 ```python
 def twice(f, x):
     f(f(x))
-
 
 def inc(n):
     twice(lambda x: x + 1, n)
@@ -174,12 +175,10 @@ Applied once, like Python — a chain wraps from the inside out.
 def plus1(fn):
     lambda x: fn(x) + 1
 
-
 @plus1
 @plus1
 def z(x):
     x
-
 
 def run():
     z(3)
@@ -192,7 +191,6 @@ A class becomes a tagged tuple, and its constructor is inlined.
 class Point(AtomPrefixed):
     x: int
     y: int
-
 
 def shift(p, dx):
     match p:
@@ -208,7 +206,6 @@ Nested generators, filters, and dict comprehensions through `.items()`.
 def grid():
     [x + y for x in [1, 2] for y in [10, 20]]
 
-
 def doubled(m):
     {k: v * 2 for k, v in m.items()}
 ```
@@ -219,15 +216,14 @@ The module is the path; imports are Python imports with Gleam's rules.
 ```python
 from a.b.c import helper
 
-
 def call():
     helper()
 ```
 
 ## OOP-styled _standard library_
 
-OOP-styling is an exotic feature of Eel: it makes the standard library pleasant to use, and it
-complicates nothing — outside the standard library, OOP is not allowed anywhere.
+OOP-styling is a special feature of Eel: it makes the standard library pleasant to use, without
+complicating anything — outside the standard library, "OOP style" is not allowed.
 
 ### Strings
 - `name.startswith(prefix)` — prefix test, bytes included
@@ -236,19 +232,16 @@ complicates nothing — outside the standard library, OOP is not allowed anywher
 - `path.replace(from, to)` — replace every occurrence
 - `sep.join(items)` — join a list back into one string
 
-### Lists
-- `xs.map(f)` — apply a function to every element
-- `xs.filter(pred)` — keep the elements that match
-- `xs.fold(acc, f)` — reduce to a single value
-- `xs.take(n)` — the first n elements
-- `xs.zip(ys)` — pairs, like Python's zip
-
 ### Maps
-- `config.get(key)` — value or nil, never an exception
-- `m.put(key, value)` — a new map, the old one intact
-- `m.merge(other)` — what `|=` compiles to
+- `m.get(key)` — value or nil, never an exception
 - `m.keys()` — keys, in no particular order
 - `m.items()` — pairs, for comprehensions
+
+### Collections
+- `li.map(f)` — apply a function to every element
+- `li.filter(pred)` — keep the elements that match
+- `zip(li1, li2)` — pairs, like Python's zip
+- `enumerate(range(5))` — Python's enumerate
 
 ## This is an early alpha.<br>_100% vibe-coded._
 
