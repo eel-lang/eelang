@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="color-scheme" content="light">
 <meta name="theme-color" content="#ffffff">
-<title>Eel — Python's syntax, Erlang's semantics</title>
-<meta name="description" content="Eel compiles .ee files straight to the BEAM: Python's syntax with Gleam's model — immutable by default, no loops, let it crash.">
+<title>Eel — Python&#x27;s syntax, Erlang&#x27;s semantics</title>
+<meta name="description" content="Eel compiles .eel files straight to the BEAM: Python&#x27;s syntax with Gleam&#x27;s model — immutable by default, no loops, let it crash.">
 <link rel="icon" href="assets/eel.png" type="image/png">
 <link rel="stylesheet" href="style.css">
 </head>
@@ -31,36 +31,28 @@
 
 <div class="frame">
 <main id="top">
-
   <!-- HERO -->
   <section class="hero">
     <div class="hero-left">
-      <h1>A <span class="muted">Python&#8209;shaped</span> language for the <span class="muted">BEAM</span>.</h1>
-      <p class="hero-sub">Immutability, pattern matching, comprehensions and hierarchical modules —
-        written in the Python you already know, compiled to Erlang abstract forms through the same
-        pipeline Gleam uses.</p>
+      <h1>A <span class="muted">Python-shaped</span> language for the <span class="muted">BEAM</span>.</h1>
+      <p class="hero-sub">Immutability, pattern matching, comprehensions and hierarchical modules — written in the Python you already know, compiled to Erlang abstract forms through the same pipeline Gleam uses.</p>
 
-      <p class="install-label">Build a project from a checkout</p>
-      <div class="slab">
-        <span class="cash">$</span> python3.15 -m squeal build my_app
-        <button class="tool" type="button" data-copy="install-cmd" aria-label="Copy the build command">copy</button>
-      </div>
-      <span id="install-cmd" hidden>python3.15 -m squeal build my_app</span>
-
-      <div class="tabs-mini"><span class="on">CLI</span><span>Jupyter</span></div>
       <a class="after-link" href="#syntax">Then read the syntax overview →</a>
+
+      <div class="hero-meta">
+        <span class="label">Built on</span>
+        <span class="mark-item">Erlang/OTP <span>29</span></span><span class="mark-item">CPython <span>3.15</span></span><span class="strip-tag">inspired by</span><span class="mark-item">Gleam</span>
+      </div>
     </div>
 
     <div class="hero-right">
       <div class="viewer" data-tabs>
         <div class="viewer-tabs" role="tablist" aria-label="Eel examples">
-          <button class="vtab" id="tab-fib" role="tab" aria-selected="true" aria-controls="panel-fib" type="button">fib.ee</button>
-          <button class="vtab" id="tab-hello" role="tab" aria-selected="false" aria-controls="panel-hello" tabindex="-1" type="button">hello.ee</button>
-          <button class="vtab" id="tab-classes" role="tab" aria-selected="false" aria-controls="panel-classes" tabindex="-1" type="button">classes.ee</button>
+          <button class="vtab" id="tab-0" role="tab" aria-selected="true" aria-controls="panel-0" type="button">fib.eel</button>
         </div>
         <div class="viewer-body">
-          <div class="viewer-panel" id="panel-fib" role="tabpanel" aria-labelledby="tab-fib">
-<pre><span class="ln" aria-hidden="true">1</span><span class="k">def</span> <span class="fn">fib</span>(n, current, next):
+          <div class="viewer-panel" id="panel-0" role="tabpanel" aria-labelledby="tab-0">
+<pre><span class="ln" aria-hidden="true">1</span><span class="k">def</span> fib(n, current, next):
 <span class="ln" aria-hidden="true">2</span>    <span class="k">match</span> n:
 <span class="ln" aria-hidden="true">3</span>        <span class="k">case</span> <span class="n">0</span>:
 <span class="ln" aria-hidden="true">4</span>            current
@@ -68,125 +60,76 @@
 <span class="ln" aria-hidden="true">6</span>        <span class="k">case</span> _ <span class="k">if</span> n &gt; <span class="n">0</span>:
 <span class="ln" aria-hidden="true">7</span>            fib(n - <span class="n">1</span>, next, current + next)
 <span class="ln" aria-hidden="true">8</span>
-<span class="ln" aria-hidden="true">9</span>
-<span class="ln" aria-hidden="true">10</span><span class="k">def</span> <span class="fn">fib</span>(n):
-<span class="ln" aria-hidden="true">11</span>    fib(n, <span class="n">0</span>, <span class="n">1</span>)</pre>
-            <p class="viewer-caption">proposed · not in the compiler yet</p>
-          </div>
-
-          <div class="viewer-panel" id="panel-hello" role="tabpanel" aria-labelledby="tab-hello" hidden>
-<pre><span class="ln" aria-hidden="true">1</span><span class="k">def</span> <span class="fn">hello</span>():
-<span class="ln" aria-hidden="true">2</span>    <span class="s">"hi"</span></pre>
-            <p class="viewer-caption">compiled · erl -eval 'hello:hello()' → &lt;&lt;"hi"&gt;&gt;</p>
-          </div>
-
-          <div class="viewer-panel" id="panel-classes" role="tabpanel" aria-labelledby="tab-classes" hidden>
-<pre><span class="ln" aria-hidden="true">1</span><span class="k">class</span> <span class="fn">Point</span>(StartingWithAtom):
-<span class="ln" aria-hidden="true">2</span>    x: <span class="fn">int</span>
-<span class="ln" aria-hidden="true">3</span>    y: <span class="fn">int</span>
-<span class="ln" aria-hidden="true">4</span>
-<span class="ln" aria-hidden="true">5</span>
-<span class="ln" aria-hidden="true">6</span><span class="k">def</span> <span class="fn">shift</span>(p, dx):
-<span class="ln" aria-hidden="true">7</span>    <span class="k">match</span> p:
-<span class="ln" aria-hidden="true">8</span>        <span class="k">case</span> Point(x, y):
-<span class="ln" aria-hidden="true">9</span>            q = Point(x + dx, y)
-<span class="ln" aria-hidden="true">10</span>    q</pre>
-            <p class="viewer-caption">compiled · Point(1, 2) becomes {point, 1, 2}</p>
-          </div>
+<span class="ln" aria-hidden="true">9</span><span class="k">def</span> fib(n):
+<span class="ln" aria-hidden="true">10</span>    fib(n, <span class="n">0</span>, <span class="n">1</span>)</pre>
+<p class="viewer-caption">one function with a match, instead of Erlang&#x27;s multiple function clauses</p>
+</div>
         </div>
       </div>
     </div>
   </section>
-
-  <!-- BUILT ON -->
-  <section class="strip">
-    <span class="label">Built on</span>
-    <div class="marks">
-      <span class="mark-item">Erlang/OTP <span>29</span></span>
-      <span class="mark-item">Gleam <span>1.19 parity</span></span>
-      <span class="mark-item">CPython <span>3.15</span></span>
-      <span class="mark-item">Jupyter <span>ipykernel</span></span>
-    </div>
-  </section>
-
-  <!-- SIX PRINCIPLES -->
-  <section id="language">
+  <!-- SQUARES -->
+  <section id="goals">
     <div class="big-head">
-      <h2>Built on Gleam,<br><span class="muted">Eel follows these principles.</span></h2>
-      <p>These are the directions the language is being built against. Some are already in the
-        compiler; the rest are on the roadmap.</p>
+      <h2>What Eel aims for</h2>
+      <p>Eel is inspired by Gleam, but its goals and founding principles differ in a few important ways.</p>
     </div>
 
     <div class="squares">
       <article class="square">
         <span class="idx">01</span>
-        <h3>IDE support</h3>
+        <h3>Great IDE support</h3>
         <p class="sub">static analysis, first-class</p>
-        <p class="desc">A great static-analysis experience in the IDE is one of the goals — and the
-          main target is PyCharm.</p>
-        <pre class="chip">target · PyCharm</pre>
+        <p class="desc">A great static-analysis experience in the IDE is one of the goals — and the main target is PyCharm.</p>
       </article>
-
       <article class="square">
         <span class="idx">02</span>
         <h3>Great stdlib</h3>
         <p class="sub">batteries, with methods</p>
-        <p class="desc">A stdlib that is pleasant to use, with OOP-style methods on the core data
-          structures.</p>
-        <pre class="chip">config.get(key)
+        <p class="desc">A stdlib that is pleasant to use, with OOP-style methods on the core data structures.</p>
+<pre class="chip">dic.get(my_key)
+my_list.map(my_func)
 name.startswith(prefix)</pre>
       </article>
-
       <article class="square">
         <span class="idx">03</span>
         <h3>Optional static typing</h3>
         <p class="sub">never mandatory</p>
-        <p class="desc">Static typing is fully optional. When you reach for it, it is there to make
-          the code clearer and more expressive.</p>
-        <pre class="chip">x: int   <span class="c"># optional</span></pre>
+        <p class="desc">Static typing is fully optional. When you reach for it, it is there to make the code clearer and more expressive.</p>
       </article>
-
       <article class="square">
         <span class="idx">04</span>
         <h3>All data types equally</h3>
         <p class="sub">no second-class data</p>
-        <p class="desc">Maps, records, native records and the rest get the same level of support —
-          and optional types make all of them convenient.</p>
-        <pre class="chip">map · record · native record</pre>
+        <p class="desc">Maps, records, native records and the rest get the same level of support — and optional types make all of them convenient.</p>
+<pre class="chip">map · record · native record</pre>
       </article>
-
       <article class="square">
         <span class="idx">05</span>
         <h3>OTP first-class</h3>
         <p class="sub">not an afterthought</p>
         <p class="desc">Working with OTP matters as much as a good standard library.</p>
-        <pre class="chip">OTP · first-class</pre>
       </article>
-
       <article class="square">
         <span class="idx">06</span>
-        <h3>Python ecosystem friendly</h3>
+        <h3>Python-friendly</h3>
         <p class="sub">BEAM ↔ CPython</p>
-        <p class="desc">One of the tasks is to bring the BEAM and CPython ecosystems closer, and to
-          popularise projects like Hornbeam.</p>
-        <pre class="chip">hornbeam</pre>
+        <p class="desc">One of the tasks is to bring the BEAM and CPython ecosystems closer, and to enable projects like Hornbeam.</p>
       </article>
     </div>
   </section>
-
-  <!-- SYNTAX OVERVIEW -->
+  <!-- SYNTAX -->
   <section id="syntax">
     <div class="big-head">
       <h2>The syntax you need,<br><span class="muted">baked into Python.</span></h2>
-      <p>Every construct below is compiled, not interpreted: the compiler turns this Python into
-        Erlang abstract forms. Pick a category and read the code.</p>
+      <p>Every construct below is compiled, not interpreted: the compiler turns this Python into Erlang abstract forms. Pick a category and read the code.</p>
     </div>
 
     <div class="syntax" data-tabs>
       <div class="api-tabs" role="tablist" aria-label="Syntax examples" aria-orientation="vertical">
         <button class="api-tab" id="tab-values" role="tab" aria-selected="true" aria-controls="syn-values" type="button"><span class="dot" aria-hidden="true"></span>Values</button>
         <button class="api-tab" id="tab-operators" role="tab" aria-selected="false" aria-controls="syn-operators" tabindex="-1" type="button"><span class="dot" aria-hidden="true"></span>Operators</button>
-        <button class="api-tab" id="tab-control" role="tab" aria-selected="false" aria-controls="syn-control" tabindex="-1" type="button"><span class="dot" aria-hidden="true"></span>Control flow</button>
+        <button class="api-tab" id="tab-control-flow" role="tab" aria-selected="false" aria-controls="syn-control-flow" tabindex="-1" type="button"><span class="dot" aria-hidden="true"></span>Control flow</button>
         <button class="api-tab" id="tab-patterns" role="tab" aria-selected="false" aria-controls="syn-patterns" tabindex="-1" type="button"><span class="dot" aria-hidden="true"></span>Patterns</button>
         <button class="api-tab" id="tab-functions" role="tab" aria-selected="false" aria-controls="syn-functions" tabindex="-1" type="button"><span class="dot" aria-hidden="true"></span>Functions</button>
         <button class="api-tab" id="tab-classes" role="tab" aria-selected="false" aria-controls="syn-classes" tabindex="-1" type="button"><span class="dot" aria-hidden="true"></span>Classes</button>
@@ -198,109 +141,94 @@ name.startswith(prefix)</pre>
         <div class="api-panel" id="syn-values" role="tabpanel" aria-labelledby="tab-values">
           <div class="api-head">
             <p>Quotes decide the type. Tuples, lists and dicts keep their Erlang shapes.</p>
-            <span class="api-file">values.ee</span>
+            <span class="api-file">values.eel</span>
           </div>
-<pre><span class="k">def</span> <span class="fn">pair</span>():
-    (<span class="a">'ok'</span>, <span class="s">"ok"</span>, (<span class="n">1</span>, <span class="n">2</span>), [<span class="n">1</span>, <span class="n">2</span>], {<span class="a">'k'</span>: <span class="n">1</span>})
-<span class="c"># {ok, &lt;&lt;"ok"&gt;&gt;, {1, 2}, [1, 2], #{k =&gt; 1}}</span></pre>
-        </div>
-
-        <div class="api-panel" id="syn-operators" role="tabpanel" aria-labelledby="tab-operators" hidden>
+<pre><span class="k">def</span> pair():
+    (<span class="s">&#x27;ok&#x27;</span>, <span class="s">&quot;ok&quot;</span>, (<span class="n">1</span>, <span class="n">2</span>), [<span class="n">1</span>, <span class="n">2</span>], {<span class="s">&#x27;k&#x27;</span>: <span class="n">1</span>})
+<span class="c"># {ok, &lt;&lt;&quot;ok&quot;&gt;&gt;, {1, 2}, [1, 2], #{k =&gt; 1}}</span></pre>
+        </div>        <div class="api-panel" id="syn-operators" role="tabpanel" aria-labelledby="tab-operators" hidden>
           <div class="api-head">
-            <p>Arithmetic keeps Python's semantics; booleans compile to <code>andalso</code> and <code>orelse</code>.</p>
-            <span class="api-file">operators.ee</span>
+            <p>Arithmetic keeps Python&#x27;s semantics; booleans compile to <code>andalso</code> and <code>orelse</code>.</p>
+            <span class="api-file">operators.eel</span>
           </div>
-<pre><span class="k">def</span> <span class="fn">calc</span>(a, b):
+<pre><span class="k">def</span> calc(a, b):
     (a // b, a % b, a ** <span class="n">2</span>, a == b, <span class="k">not</span> (a &lt; b))</pre>
-        </div>
-
-        <div class="api-panel" id="syn-control" role="tabpanel" aria-labelledby="tab-control" hidden>
+        </div>        <div class="api-panel" id="syn-control-flow" role="tabpanel" aria-labelledby="tab-control-flow" hidden>
           <div class="api-head">
             <p><code>match</code> is an expression: every branch assigns the same variable.</p>
-            <span class="api-file">control.ee</span>
+            <span class="api-file">control.eel</span>
           </div>
-<pre><span class="k">def</span> <span class="fn">classify</span>(n):
+<pre><span class="k">def</span> classify(n):
     <span class="k">match</span> n:
         <span class="k">case</span> <span class="n">0</span>:
-            r = <span class="a">'zero'</span>
+            r = <span class="s">&#x27;zero&#x27;</span>
         <span class="k">case</span> _ <span class="k">if</span> n &lt; <span class="n">0</span>:
-            r = <span class="a">'negative'</span>
+            r = <span class="s">&#x27;negative&#x27;</span>
         <span class="k">case</span> _:
-            r = <span class="a">'positive'</span>
+            r = <span class="s">&#x27;positive&#x27;</span>
     r</pre>
-        </div>
-
-        <div class="api-panel" id="syn-patterns" role="tabpanel" aria-labelledby="tab-patterns" hidden>
+        </div>        <div class="api-panel" id="syn-patterns" role="tabpanel" aria-labelledby="tab-patterns" hidden>
           <div class="api-head">
             <p>Destructuring, constructor patterns and guards compile to real Erlang patterns.</p>
-            <span class="api-file">patterns.ee</span>
+            <span class="api-file">patterns.eel</span>
           </div>
-<pre><span class="k">def</span> <span class="fn">first_two</span>(xs):
+<pre><span class="k">def</span> first_two(xs):
     a, b, *rest = xs
     (a, b)
 
-<span class="k">def</span> <span class="fn">swap</span>(p):
+<span class="k">def</span> swap(p):
     <span class="k">match</span> p:
         <span class="k">case</span> (x, y):
             q = (y, x)
     q</pre>
-        </div>
-
-        <div class="api-panel" id="syn-functions" role="tabpanel" aria-labelledby="tab-functions" hidden>
+        </div>        <div class="api-panel" id="syn-functions" role="tabpanel" aria-labelledby="tab-functions" hidden>
           <div class="api-head">
-            <p><code>def</code>, <code>lambda</code> and closures — and arity is part of a function's identity.</p>
-            <span class="api-file">functions.ee</span>
+            <p><code>def</code>, <code>lambda</code> and closures — and arity is part of a function&#x27;s identity.</p>
+            <span class="api-file">functions.eel</span>
           </div>
-<pre><span class="k">def</span> <span class="fn">twice</span>(f, x):
+<pre><span class="k">def</span> twice(f, x):
     f(f(x))
 
-<span class="k">def</span> <span class="fn">bump</span>(n):
+<span class="k">def</span> bump(n):
     twice(<span class="k">lambda</span> x: x + <span class="n">1</span>, n)</pre>
-        </div>
-
-        <div class="api-panel" id="syn-classes" role="tabpanel" aria-labelledby="tab-classes" hidden>
+        </div>        <div class="api-panel" id="syn-classes" role="tabpanel" aria-labelledby="tab-classes" hidden>
           <div class="api-head">
             <p>A class compiles to a tagged tuple, and its constructor is inlined.</p>
-            <span class="api-file">classes.ee</span>
+            <span class="api-file">classes.eel</span>
           </div>
-<pre><span class="k">class</span> <span class="fn">Point</span>(StartingWithAtom):
-    x: <span class="fn">int</span>
-    y: <span class="fn">int</span>
+<pre><span class="k">class</span> Point(StartingWithAtom):
+    x: int
+    y: int
 
-<span class="k">def</span> <span class="fn">shift</span>(p, dx):
+<span class="k">def</span> shift(p, dx):
     <span class="k">match</span> p:
         <span class="k">case</span> Point(x, y):
             q = Point(x + dx, y)
     q</pre>
-        </div>
-
-        <div class="api-panel" id="syn-comprehensions" role="tabpanel" aria-labelledby="tab-comprehensions" hidden>
+        </div>        <div class="api-panel" id="syn-comprehensions" role="tabpanel" aria-labelledby="tab-comprehensions" hidden>
           <div class="api-head">
             <p>List and dict comprehensions become Erlang comprehensions, filters included.</p>
-            <span class="api-file">comprehensions.ee</span>
+            <span class="api-file">comprehensions.eel</span>
           </div>
-<pre><span class="k">def</span> <span class="fn">evens</span>(xs):
+<pre><span class="k">def</span> evens(xs):
     [x * <span class="n">2</span> <span class="k">for</span> x <span class="k">in</span> xs <span class="k">if</span> x % <span class="n">2</span> == <span class="n">0</span>]
 
-<span class="k">def</span> <span class="fn">by_id</span>(pairs):
+<span class="k">def</span> by_id(pairs):
     {k: v <span class="k">for</span> k, v <span class="k">in</span> pairs}</pre>
-        </div>
-
-        <div class="api-panel" id="syn-modules" role="tabpanel" aria-labelledby="tab-modules" hidden>
+        </div>        <div class="api-panel" id="syn-modules" role="tabpanel" aria-labelledby="tab-modules" hidden>
           <div class="api-head">
-            <p>The module is the path; imports are Python imports with Gleam's rules.</p>
-            <span class="api-file">modules.ee</span>
+            <p>The module is the path; imports are Python imports with Gleam&#x27;s rules.</p>
+            <span class="api-file">modules.eel</span>
           </div>
 <pre><span class="k">from</span> my.app.math <span class="k">import</span> add, mul <span class="k">as</span> times
 
-<span class="k">def</span> <span class="fn">total</span>(a, b):
+<span class="k">def</span> total(a, b):
     times(add(a, b), <span class="n">2</span>)</pre>
         </div>
       </div>
     </div>
   </section>
-
-  <!-- THE REST OF THE STANDARD LIBRARY -->
+  <!-- STANDARD LIBRARY -->
   <section class="stdlib" id="stdlib">
     <div class="std-head">
       <h2>OOP-styled standard library</h2>
@@ -318,7 +246,6 @@ name.startswith(prefix)</pre>
           <li><code>sep.join(items)</code><span>join a list back into one string</span></li>
         </ul>
       </div>
-
       <div class="std-block">
         <h3 class="std-label">Lists</h3>
         <ul>
@@ -326,10 +253,9 @@ name.startswith(prefix)</pre>
           <li><code>xs.filter(pred)</code><span>keep the elements that match</span></li>
           <li><code>xs.fold(acc, f)</code><span>reduce to a single value</span></li>
           <li><code>xs.take(n)</code><span>the first n elements</span></li>
-          <li><code>xs.zip(ys)</code><span>pairs, like Python's zip</span></li>
+          <li><code>xs.zip(ys)</code><span>pairs, like Python&#x27;s zip</span></li>
         </ul>
       </div>
-
       <div class="std-block">
         <h3 class="std-label">Maps</h3>
         <ul>
@@ -340,16 +266,13 @@ name.startswith(prefix)</pre>
           <li><code>m.items()</code><span>pairs, for comprehensions</span></li>
         </ul>
       </div>
-
     </div>
   </section>
-
   <!-- EARLY ALPHA -->
   <section id="alpha">
     <div class="big-head">
       <h2>This is an early alpha.<br><span class="muted">The code is 100% vibe-coded.</span></h2>
-      <p>It compiles real modules today, and it is not something you put in production yet. The
-        honest list of what that buys you and what it costs:</p>
+      <p>It compiles real modules today, and it is not something you put in production yet. The honest list of what that buys you and what it costs:</p>
     </div>
 
     <div class="tradeoffs">
@@ -359,59 +282,50 @@ name.startswith(prefix)</pre>
           <li>
             <span class="mark" aria-hidden="true">+</span>
             <span><strong>A small codebase you can fork</strong>
-              <small>The compiler is a handful of Python modules — read it in an afternoon, fork it,
-                and bend it to your own project.</small></span>
+              <small>the compiler is a handful of Python modules: read it in an afternoon, fork it, and bend it to your own project.</small></span>
           </li>
         </ul>
       </div>
-
       <div class="tradeoff minus">
         <h3 class="tradeoff-label">minus</h3>
         <ul>
           <li>
             <span class="mark" aria-hidden="true">−</span>
             <span><strong>No type checker</strong>
-              <small>Annotations are documentation. Eel does not check them — outside tools own
-                that, as in Python.</small></span>
+              <small>annotations are documentation. Eel does not check them; outside tools own that, as in Python.</small></span>
           </li>
           <li>
             <span class="mark" aria-hidden="true">−</span>
             <span><strong>No static analysis yet</strong>
-              <small>The IDE experience is a goal, not a feature: the analyzer is planned, and PyCharm
-                support does not exist today.</small></span>
+              <small>the IDE experience is a goal, not a feature: the analyzer is planned, and PyCharm support does not exist today.</small></span>
           </li>
           <li>
             <span class="mark" aria-hidden="true">−</span>
             <span><strong>The standard library is a sketch</strong>
-              <small>OOP-style methods on the core types are designed, not implemented — today you work
-                with bare Erlang forms.</small></span>
+              <small>OOP-style methods on the core types are designed, not implemented; today you work with bare Erlang forms.</small></span>
           </li>
           <li>
             <span class="mark" aria-hidden="true">−</span>
             <span><strong>Pre-release, nothing to install</strong>
-              <small>Runs from a checkout on Python 3.15 and OTP 29: no package, no versioned releases,
-                no stability promise.</small></span>
+              <small>runs from a checkout on Python 3.15 and OTP 29: no package, no versioned releases, no stability promise.</small></span>
           </li>
           <li>
             <span class="mark" aria-hidden="true">−</span>
             <span><strong>Written with AI, end to end</strong>
-              <small>Expect uneven code, thin tests in places and APIs that move. The parity suite with
-                Gleam is the part that keeps it honest.</small></span>
+              <small>expect uneven code, thin tests in places and APIs that move. The parity suite with Gleam is the part that keeps it honest.</small></span>
           </li>
         </ul>
       </div>
     </div>
   </section>
-
 </main>
 </div>
-
 
 <footer>
   <div class="inner">
     <p><strong>Eel</strong> · Python syntax, Erlang semantics.</p>
     <nav aria-label="Footer">
-      <a href="#language">Language</a>
+      <a href="#goals">Goals</a>
       <a href="#syntax">Syntax</a>
       <a href="#stdlib">Stdlib</a>
       <a href="#alpha">Alpha</a>

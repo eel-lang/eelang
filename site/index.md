@@ -1,10 +1,9 @@
 ---
 title: Eel — Python's syntax, Erlang's semantics
-description: Eel compiles .ee files straight to the BEAM: Python's syntax with Gleam's model — immutable by default, no loops, let it crash.
+description: Eel compiles .eel files straight to the BEAM: Python's syntax with Gleam's model — immutable by default, no loops, let it crash.
 brand: Eel
 status: Status: Alpha
 github: https://github.com/pwtail/squeal
-install: python3.15 -m squeal build my_app
 footer: Eel · Python syntax, Erlang semantics.
 ---
 
@@ -16,7 +15,7 @@ footer: Eel · Python syntax, Erlang semantics.
   - `<br>` — принудительный перенос строки внутри заголовка.
   - `###` — блок внутри секции: квадрат из шести принципов, таб в обзоре синтаксиса,
     плитка в stdlib-сетке, пункт плюсов/минусов.
-  - Блок кода с первой строкой-подписью (`### Values · values.ee`) — панель кода с именем файла.
+  - Блок кода с первой строкой-подписью (`### Values · values.eel`) — панель кода с именем файла.
   - `#якорь` в ссылке — id секции; ссылки в футере строятся из H2-секций, текст — из `footer:`.
 -->
 
@@ -25,18 +24,12 @@ footer: Eel · Python syntax, Erlang semantics.
 Immutability, pattern matching, comprehensions and hierarchical modules — written in the Python
 you already know, compiled to Erlang abstract forms through the same pipeline Gleam uses.
 
-**Build a project from a checkout**
-
-```text
-$ python3.15 -m squeal build my_app
-```
-
-CLI · Jupyter
+Built on: Erlang/OTP 29 · CPython 3.15 · Inspired by: Gleam
 
 [Then read the syntax overview →](#syntax)
 
-### fib.ee
-_proposed · not in the compiler yet_
+### fib.eel
+_one function with a match, instead of Erlang's multiple function clauses_
 
 ```python
 def fib(n, current, next):
@@ -47,52 +40,21 @@ def fib(n, current, next):
         case _ if n > 0:
             fib(n - 1, next, current + next)
 
-
 def fib(n):
     fib(n, 0, 1)
 ```
 
-### hello.ee
-_compiled · erl -eval 'hello:hello()' → <<"hi">>_
+## What Eel aims for
 
-```python
-def hello():
-    "hi"
-```
+Eel is inspired by Gleam, but its goals and founding principles differ in a few important ways.
 
-### classes.ee
-_compiled · Point(1, 2) becomes {point, 1, 2}_
-
-```python
-class Point(StartingWithAtom):
-    x: int
-    y: int
-
-
-def shift(p, dx):
-    match p:
-        case Point(x, y):
-            q = Point(x + dx, y)
-    q
-```
-
-## Built on
-
-Erlang/OTP 29 · Gleam 1.19 parity · CPython 3.15 · Jupyter ipykernel
-
-## Built on Gleam,<br>_Eel follows these principles._
-
-These are the directions the language is being built against. Some are already in the compiler;
-the rest are on the roadmap.
-
-### 01 · IDE support
+### 01 · Great IDE support
 _static analysis, first-class_
 
 A great static-analysis experience in the IDE is one of the goals — and the main target is PyCharm.
 
-```text
-target · PyCharm
-```
+In its first version Eel is almost plain Python, so syntax highlighting and autocomplete work
+before any Eel-specific tooling exists.
 
 ### 02 · Great stdlib
 _batteries, with methods_
@@ -100,7 +62,8 @@ _batteries, with methods_
 A stdlib that is pleasant to use, with OOP-style methods on the core data structures.
 
 ```text
-config.get(key)
+dic.get(my_key)
+my_list.map(my_func)
 name.startswith(prefix)
 ```
 
@@ -109,10 +72,6 @@ _never mandatory_
 
 Static typing is fully optional. When you reach for it, it is there to make the code clearer and
 more expressive.
-
-```text
-x: int   # optional
-```
 
 ### 04 · All data types equally
 _no second-class data_
@@ -129,26 +88,18 @@ _not an afterthought_
 
 Working with OTP matters as much as a good standard library.
 
-```text
-OTP · first-class
-```
-
-### 06 · Python ecosystem friendly
+### 06 · Python-friendly
 _BEAM ↔ CPython_
 
-One of the tasks is to bring the BEAM and CPython ecosystems closer, and to popularise projects
+One of the tasks is to bring the BEAM and CPython ecosystems closer, and to enable projects
 like Hornbeam.
-
-```text
-hornbeam
-```
 
 ## The syntax you need,<br>_baked into Python._
 
 Every construct below is compiled, not interpreted: the compiler turns this Python into Erlang
 abstract forms. Pick a category and read the code.
 
-### Values · values.ee
+### Values · values.eel
 Quotes decide the type. Tuples, lists and dicts keep their Erlang shapes.
 
 ```python
@@ -157,7 +108,7 @@ def pair():
 # {ok, <<"ok">>, {1, 2}, [1, 2], #{k => 1}}
 ```
 
-### Operators · operators.ee
+### Operators · operators.eel
 Arithmetic keeps Python's semantics; booleans compile to `andalso` and `orelse`.
 
 ```python
@@ -165,7 +116,7 @@ def calc(a, b):
     (a // b, a % b, a ** 2, a == b, not (a < b))
 ```
 
-### Control flow · control.ee
+### Control flow · control.eel
 `match` is an expression: every branch assigns the same variable.
 
 ```python
@@ -180,14 +131,13 @@ def classify(n):
     r
 ```
 
-### Patterns · patterns.ee
+### Patterns · patterns.eel
 Destructuring, constructor patterns and guards compile to real Erlang patterns.
 
 ```python
 def first_two(xs):
     a, b, *rest = xs
     (a, b)
-
 
 def swap(p):
     match p:
@@ -196,26 +146,24 @@ def swap(p):
     q
 ```
 
-### Functions · functions.ee
+### Functions · functions.eel
 `def`, `lambda` and closures — and arity is part of a function's identity.
 
 ```python
 def twice(f, x):
     f(f(x))
 
-
 def bump(n):
     twice(lambda x: x + 1, n)
 ```
 
-### Classes · classes.ee
+### Classes · classes.eel
 A class compiles to a tagged tuple, and its constructor is inlined.
 
 ```python
 class Point(StartingWithAtom):
     x: int
     y: int
-
 
 def shift(p, dx):
     match p:
@@ -224,24 +172,22 @@ def shift(p, dx):
     q
 ```
 
-### Comprehensions · comprehensions.ee
+### Comprehensions · comprehensions.eel
 List and dict comprehensions become Erlang comprehensions, filters included.
 
 ```python
 def evens(xs):
     [x * 2 for x in xs if x % 2 == 0]
 
-
 def by_id(pairs):
     {k: v for k, v in pairs}
 ```
 
-### Modules · modules.ee
+### Modules · modules.eel
 The module is the path; imports are Python imports with Gleam's rules.
 
 ```python
 from my.app.math import add, mul as times
-
 
 def total(a, b):
     times(add(a, b), 2)
