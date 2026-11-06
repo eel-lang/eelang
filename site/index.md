@@ -44,7 +44,7 @@ def fib(n):
     fib(n, 0, 1)
 ```
 
-## What _Eel_ aims for
+## Eel's objectives
 
 Eel is inspired by Gleam, but its goals and founding principles differ in a few important ways.
 
