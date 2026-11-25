@@ -12,6 +12,8 @@ import tempfile
 from eel.compiler import compile_source
 from eel.term import Atom
 
+from platform_support import BUILD_FLAGS, cli_build
+
 ERL = shutil.which("erl")
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 
@@ -69,10 +71,7 @@ def test_semantics_in_erl():
         "def d2():\n    {\"a\": 1}\n"
         "def atom():\n    'ok'\n"
     )
-    subprocess.run(
-        [sys.executable, "-m", "eel", "build", str(tmp)],
-        cwd=ROOT, check=True, capture_output=True,
-    )
+    cli_build(tmp)
     ebin = tmp / "build" / "dev" / "erlang" / tmp.name / "ebin"
 
     calls = [
@@ -144,10 +143,7 @@ def test_assignment_semantics_in_erl():
         "def tupd(t):\n    a, b = t\n    a + b\n"
         "def merge(m):\n    m |= {'k': 1}\n    m\n"
     )
-    subprocess.run(
-        [sys.executable, "-m", "eel", "build", str(tmp)],
-        cwd=ROOT, check=True, capture_output=True,
-    )
+    cli_build(tmp)
     ebin = tmp / "build" / "dev" / "erlang" / tmp.name / "ebin"
     expr = (
         'io:format("~p ~p ~p ~p ~p~n", [v:reassign(), v:destructure([1,2,3]), '
@@ -216,10 +212,7 @@ def test_branching_semantics_and_crash():
         "def cap(v):\n    match v:\n        case n:\n            value = n\n    value\n"
         "def crashy(v):\n    match v:\n        case 1:\n            value = 'ok'\n    value\n"
     )
-    subprocess.run(
-        [sys.executable, "-m", "eel", "build", str(tmp)],
-        cwd=ROOT, check=True, capture_output=True,
-    )
+    cli_build(tmp)
     ebin = tmp / "build" / "dev" / "erlang" / tmp.name / "ebin"
     expr = (
         'io:format("~p ~p ~p ~p ~p ~p ~p ~p~n", [branch:iflike(true,10,20), '
@@ -256,12 +249,10 @@ def test_cli_error_exit_code():
     src = tmp / "src"
     src.mkdir()
     (src / "bad.eel").write_text("def f():\n    for x in [1]:\n        x\n")
-    r = subprocess.run(
-        [sys.executable, "-m", "eel", "build", str(tmp)],
-        cwd=ROOT, capture_output=True, text=True,
-    )
+    r = cli_build(tmp, check=False)
     assert r.returncode == 1
-    assert r.stderr.startswith("eel: src/bad.eel:2:")
+    # the source path relative to the project, in the platform's own spelling
+    assert r.stderr.startswith(f"eel: {pathlib.Path('src') / 'bad.eel'}:2:")
     assert "Traceback" not in r.stderr
 
 
@@ -313,10 +304,7 @@ def test_builtin_result_classes_can_be_redefined():
     tmp = pathlib.Path(tempfile.mkdtemp())
     (tmp / "src").mkdir()
     (tmp / "src" / "m.eel").write_text(src)
-    subprocess.run(
-        [sys.executable, "-m", "eel", "build", str(tmp)],
-        cwd=ROOT, check=True, capture_output=True,
-    )
+    cli_build(tmp)
     ebin = tmp / "build" / "dev" / "erlang" / tmp.name / "ebin"
     out = subprocess.run(
         [ERL, "-noshell", "-pa", str(ebin), "-eval",
@@ -345,10 +333,7 @@ def test_class_semantics_in_erl():
         + "def make():\n    CustomType(1, 2)\n"
         + "def get(t):\n    match t:\n        case CustomType(x, _):\n            r = x\n    r\n"
     )
-    subprocess.run(
-        [sys.executable, "-m", "eel", "build", str(tmp)],
-        cwd=ROOT, check=True, capture_output=True,
-    )
+    cli_build(tmp)
     ebin = tmp / "build" / "dev" / "erlang" / tmp.name / "ebin"
     out = subprocess.run(
         [ERL, "-noshell", "-pa", str(ebin), "-eval",
@@ -475,10 +460,7 @@ def test_comprehension_semantics_in_erl():
         "def pat(pairs):\n    [a for (a, b) in pairs]\n"
         "def lam(y):\n    f = lambda x: x + y\n    f(1)\n"
     )
-    subprocess.run(
-        [sys.executable, "-m", "eel", "build", str(tmp)],
-        cwd=ROOT, check=True, capture_output=True,
-    )
+    cli_build(tmp)
     ebin = tmp / "build" / "dev" / "erlang" / tmp.name / "ebin"
     expr = (
         'io:format("~p ~p ~p ~p ~p ~p ~p ~p~n", [comp:lc([1,2,3]), comp:lcf([1,2,3]), '
@@ -498,10 +480,7 @@ def test_filter_non_bool_skips():
     src = tmp / "src"
     src.mkdir()
     (src / "f.eel").write_text("def f(l):\n    [x for x in l if 1]\n")
-    subprocess.run(
-        [sys.executable, "-m", "eel", "build", str(tmp)],
-        cwd=ROOT, check=True, capture_output=True,
-    )
+    cli_build(tmp)
     ebin = tmp / "build" / "dev" / "erlang" / tmp.name / "ebin"
     out = subprocess.run(
         [ERL, "-noshell", "-pa", str(ebin), "-eval", 'io:format("~p~n",[f:f([1,2])]), halt().'],
@@ -544,10 +523,7 @@ def test_nested_module_build():
     (src / "a" / "b").mkdir(parents=True)
     (src / "a" / "b" / "c.eel").write_text("def f():\n    42\n")
     (src / "main.eel").write_text("from a.b.c import f\ndef g():\n    f()\n")
-    subprocess.run(
-        [sys.executable, "-m", "eel", "build", str(tmp)],
-        cwd=ROOT, check=True, capture_output=True,
-    )
+    cli_build(tmp)
     ebin = tmp / "build" / "dev" / "erlang" / tmp.name / "ebin"
     assert (ebin / "a@b@c.beam").exists()
     out = subprocess.run(
@@ -579,8 +555,7 @@ def test_float_scientific_in_erl():
     src = tmp / "src"
     src.mkdir()
     (src / "f.eel").write_text("def f():\n    1e-5\ndef g():\n    1e10\n")
-    subprocess.run([sys.executable, "-m", "eel", "build", str(tmp)],
-                   cwd=ROOT, check=True, capture_output=True)
+    cli_build(tmp)
     ebin = tmp / "build" / "dev" / "erlang" / tmp.name / "ebin"
     out = subprocess.run(
         [ERL, "-noshell", "-pa", str(ebin), "-eval",
@@ -594,8 +569,7 @@ def test_nonascii_string_in_erl():
     src = tmp / "src"
     src.mkdir()
     (src / "s.eel").write_text('def f():\n    "привет"\n')
-    subprocess.run([sys.executable, "-m", "eel", "build", str(tmp)],
-                   cwd=ROOT, check=True, capture_output=True)
+    cli_build(tmp)
     ebin = tmp / "build" / "dev" / "erlang" / tmp.name / "ebin"
     out = subprocess.run(
         [ERL, "-noshell", "-pa", str(ebin), "-eval",
@@ -654,7 +628,7 @@ def test_build_default_dir_and_app_file():
     src.mkdir()
     (src / "hello.eel").write_text('def hello():\n    "hi"\n')
     env = {**os.environ, "PYTHONPATH": str(ROOT)}
-    subprocess.run([sys.executable, "-m", "eel", "build"],
+    subprocess.run([sys.executable, "-m", "eel", "build", *BUILD_FLAGS],
                    cwd=tmp, env=env, check=True, capture_output=True)
     ebin = tmp / "build" / "dev" / "erlang" / tmp.name / "ebin"
     assert (ebin / "hello.beam").exists()
@@ -666,8 +640,7 @@ def test_listcomp_over_dict_keys():
     src = tmp / "src"
     src.mkdir()
     (src / "lc.eel").write_text("def f(m):\n    [k for k in m]\n")
-    subprocess.run([sys.executable, "-m", "eel", "build", str(tmp)],
-                   cwd=ROOT, check=True, capture_output=True)
+    cli_build(tmp)
     ebin = tmp / "build" / "dev" / "erlang" / tmp.name / "ebin"
     out = subprocess.run(
         [ERL, "-noshell", "-pa", str(ebin), "-eval",
@@ -742,8 +715,7 @@ def test_arity_overloading_in_module():
         "def fib(N, current, next):\n    match N:\n        case 0:\n            ret = current\n"
         "        case _ if N > 0:\n            ret = fib(N - 1, next, current + next)\n    ret\n"
     )
-    subprocess.run([sys.executable, "-m", "eel", "build", str(tmp)],
-                   cwd=ROOT, check=True, capture_output=True)
+    cli_build(tmp)
     ebin = tmp / "build" / "dev" / "erlang" / tmp.name / "ebin"
     out = subprocess.run(
         [ERL, "-noshell", "-pa", str(ebin), "-eval",
@@ -787,8 +759,7 @@ def test_tail_case_semantics_in_erl():
         "def pick(c):\n    if c:\n        'yes'\n    else:\n        'no'\n"
         "def num(v):\n    match v:\n        case 1:\n            10\n        case _:\n            20\n"
     )
-    subprocess.run([sys.executable, "-m", "eel", "build", str(tmp)],
-                   cwd=ROOT, check=True, capture_output=True)
+    cli_build(tmp)
     ebin = tmp / "build" / "dev" / "erlang" / tmp.name / "ebin"
     out = subprocess.run(
         [ERL, "-noshell", "-pa", str(ebin), "-eval",
@@ -803,8 +774,7 @@ def test_float_mod_and_floordiv():
     src.mkdir()
     (src / "f.eel").write_text(
         "def m(a, b):\n    a % b\ndef d(a, b):\n    a // b\n")
-    subprocess.run([sys.executable, "-m", "eel", "build", str(tmp)],
-                   cwd=ROOT, check=True, capture_output=True)
+    cli_build(tmp)
     ebin = tmp / "build" / "dev" / "erlang" / tmp.name / "ebin"
     out = subprocess.run(
         [ERL, "-noshell", "-pa", str(ebin), "-eval",
@@ -831,8 +801,7 @@ def test_params_differing_only_by_case():
     src = tmp / "src"
     src.mkdir()
     (src / "nm.eel").write_text("def f(N, n):\n    (N, n)\n")
-    subprocess.run([sys.executable, "-m", "eel", "build", str(tmp)],
-                   cwd=ROOT, check=True, capture_output=True)
+    cli_build(tmp)
     ebin = tmp / "build" / "dev" / "erlang" / tmp.name / "ebin"
     out = subprocess.run(
         [ERL, "-noshell", "-pa", str(ebin), "-eval",
@@ -855,8 +824,7 @@ def test_decorators_in_module():
     tmp = pathlib.Path(tempfile.mkdtemp())
     (tmp / "src").mkdir()
     (tmp / "src" / "m.eel").write_text(src)
-    subprocess.run([sys.executable, "-m", "eel", "build", str(tmp)],
-                   cwd=ROOT, check=True, capture_output=True)
+    cli_build(tmp)
     ebin = tmp / "build" / "dev" / "erlang" / tmp.name / "ebin"
     out = subprocess.run(
         [ERL, "-noshell", "-pa", str(ebin), "-eval",
@@ -872,8 +840,7 @@ def test_decorator_chain_and_recursion_in_module():
         "def plus1(fn):\n    lambda x: fn(x) + 1\n\n"
         "@plus1\ndef r(n):\n    if n > 0:\n        r(n - 1)\n    else:\n        0\n\n"
         "@plus1\n@plus1\ndef z(x):\n    x\n")
-    subprocess.run([sys.executable, "-m", "eel", "build", str(tmp)],
-                   cwd=ROOT, check=True, capture_output=True)
+    cli_build(tmp)
     ebin = tmp / "build" / "dev" / "erlang" / tmp.name / "ebin"
     out = subprocess.run(
         [ERL, "-noshell", "-pa", str(ebin), "-eval",
@@ -899,8 +866,7 @@ def test_decorator_from_another_module():
     src.mkdir()
     (src / "a.eel").write_text("def dec(f):\n    lambda x: f(x) + 1\n")
     (src / "b.eel").write_text("from a import dec\n\n@dec\ndef g(x):\n    x * 2\n")
-    subprocess.run([sys.executable, "-m", "eel", "build", str(tmp)],
-                   cwd=ROOT, check=True, capture_output=True)
+    cli_build(tmp)
     ebin = tmp / "build" / "dev" / "erlang" / tmp.name / "ebin"
     out = subprocess.run(
         [ERL, "-noshell", "-pa", str(ebin), "-eval", 'io:format("~p~n", [b:g(1)]), halt().'],
@@ -914,8 +880,7 @@ def test_remote_decorator_without_import():
     src.mkdir()
     (src / "a.eel").write_text("def dec(f):\n    lambda x: f(x) + 1\n")
     (src / "zz.eel").write_text("@a.dec\ndef h(x):\n    x * 3\n")
-    subprocess.run([sys.executable, "-m", "eel", "build", str(tmp)],
-                   cwd=ROOT, check=True, capture_output=True)
+    cli_build(tmp)
     ebin = tmp / "build" / "dev" / "erlang" / tmp.name / "ebin"
     out = subprocess.run(
         [ERL, "-noshell", "-pa", str(ebin), "-eval", 'io:format("~p~n", [zz:h(1)]), halt().'],

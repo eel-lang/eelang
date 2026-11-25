@@ -6,7 +6,9 @@ import pathlib
 import shutil
 import subprocess
 
-from eel.compiler import COMPILER, build
+from eel.compiler import COMPILER
+
+from platform_support import build
 
 ERL = shutil.which("erl")
 

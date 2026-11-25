@@ -5,7 +5,6 @@ from __future__ import annotations
 import pathlib
 import shutil
 import subprocess
-import sys
 import tempfile
 
 import pytest
@@ -14,8 +13,9 @@ from eel.compiler import compile_source
 from eel.errors import EelError
 from eel.term import Atom
 
+from platform_support import cli_build
+
 ERL = shutil.which("erl")
-ROOT = pathlib.Path(__file__).resolve().parent.parent
 
 NOMATCH = (Atom("atom"), 2, Atom("nomatch"))
 
@@ -134,10 +134,7 @@ def test_methods_semantics_in_erl():
         "def chain(s):\n    s.strip().lower().split(\",\")\n"
         "def wrong(s):\n    s.lower()\n"
     )
-    subprocess.run(
-        [sys.executable, "-m", "eel", "build", str(tmp)],
-        cwd=ROOT, check=True, capture_output=True,
-    )
+    cli_build(tmp)
     ebin = tmp / "build" / "dev" / "erlang" / tmp.name / "ebin"
 
     cases = [
@@ -204,8 +201,5 @@ def _build_join() -> pathlib.Path:
         "def empty():\n    \",\".join([])\n"
         "def bad():\n    \",\".join([1, 2])\n"
     )
-    subprocess.run(
-        [sys.executable, "-m", "eel", "build", str(tmp)],
-        cwd=ROOT, check=True, capture_output=True,
-    )
+    cli_build(tmp)
     return tmp / "build" / "dev" / "erlang" / tmp.name / "ebin"

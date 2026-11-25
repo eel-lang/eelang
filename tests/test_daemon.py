@@ -13,6 +13,10 @@ from eel.compiler import DAEMON, PROTOCOL, build, daemon_pid_file, daemon_socket
 from eel.errors import EelError
 from eel.term import Atom
 
+from platform_support import needs_unix_sockets
+
+pytestmark = needs_unix_sockets
+
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 
 

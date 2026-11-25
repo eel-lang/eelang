@@ -5,7 +5,6 @@ from __future__ import annotations
 import pathlib
 import shutil
 import subprocess
-import sys
 import tempfile
 
 import pytest
@@ -14,8 +13,9 @@ from eel.compiler import compile_source
 from eel.errors import EelError
 from eel.term import Atom
 
+from platform_support import cli_build
+
 ERL = shutil.which("erl")
-ROOT = pathlib.Path(__file__).resolve().parent.parent
 
 ZERO = (Atom("integer"), 2, 0)
 ONE = (Atom("integer"), 2, 1)
@@ -79,10 +79,7 @@ def test_semantics_in_erl():
         "def bad_step():\n    range(0, 10, 0)\n"
         "def bad_float():\n    range(1.5)\n"
     )
-    subprocess.run(
-        [sys.executable, "-m", "eel", "build", str(tmp)],
-        cwd=ROOT, check=True, capture_output=True,
-    )
+    cli_build(tmp)
     ebin = tmp / "build" / "dev" / "erlang" / tmp.name / "ebin"
     calls = [
         ("a", "[0,1,2,3,4]"),
@@ -114,10 +111,7 @@ def test_range_can_be_shadowed():
     tmp = pathlib.Path(tempfile.mkdtemp())
     (tmp / "src").mkdir()
     (tmp / "src" / "m.eel").write_text(src)
-    subprocess.run(
-        [sys.executable, "-m", "eel", "build", str(tmp)],
-        cwd=ROOT, check=True, capture_output=True,
-    )
+    cli_build(tmp)
     ebin = tmp / "build" / "dev" / "erlang" / tmp.name / "ebin"
     out = subprocess.run(
         [ERL, "-noshell", "-pa", str(ebin), "-eval",

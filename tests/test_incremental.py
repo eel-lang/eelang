@@ -4,15 +4,12 @@ from __future__ import annotations
 
 import json
 import pathlib
-import subprocess
-import sys
 
 import pytest
 
 from eel import compiler
-from eel.compiler import build
 
-ROOT = pathlib.Path(__file__).resolve().parent.parent
+from platform_support import build, cli_build
 
 
 def _project(tmp_path: pathlib.Path, modules: dict[str, str]) -> pathlib.Path:
@@ -115,13 +112,7 @@ def test_cli_is_incremental_too(tmp_path):
     out = build(proj)
     before = _beams(out)
 
-    def cli(*extra):
-        return subprocess.run(
-            [sys.executable, "-m", "eel", "build", str(proj), *extra],
-            cwd=ROOT, capture_output=True, text=True, check=True,
-        )
-
-    cli()
+    cli_build(proj)
     assert _beams(out) == before
-    cli("--force")
+    cli_build(proj, "--force")
     assert _beams(out)["a.beam"] != before["a.beam"]

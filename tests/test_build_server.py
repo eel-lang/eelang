@@ -12,6 +12,10 @@ from eel import client
 from eel.compiler import DAEMON
 from eel.errors import EelError
 
+from platform_support import needs_unix_sockets
+
+pytestmark = needs_unix_sockets
+
 ROOT = pathlib.Path(__file__).resolve().parent.parent
 
 OK_SRC = 'def hello():\n    "hi"\n'

@@ -40,12 +40,13 @@ def gleam_forms(source: str, module: str, app: str) -> list:
     subprocess.run([GLEAM, "build"], cwd=tmp, check=True, capture_output=True)
     abstr = tmp / "build" / "dev" / "erlang" / app / "_gleam_artefacts" / f"{module}.abstr"
 
+    # the path goes inside Erlang source: forward slashes, or Windows backslashes read as escapes
     out = subprocess.run(
         [
             ERL,
             "-noshell",
             "-eval",
-            f'{{ok,B}}=file:read_file("{abstr}"), '
+            f'{{ok,B}}=file:read_file("{abstr.as_posix()}"), '
             f'io:format("~p.~n",[binary_to_term(B)]), halt().',
         ],
         capture_output=True,
@@ -71,7 +72,7 @@ def gleam_project_forms(sources: dict, module: str, app: str) -> list:
             ERL,
             "-noshell",
             "-eval",
-            f'{{ok,B}}=file:read_file("{abstr}"), '
+            f'{{ok,B}}=file:read_file("{abstr.as_posix()}"), '
             f'io:format("~p.~n",[binary_to_term(B)]), halt().',
         ],
         capture_output=True,

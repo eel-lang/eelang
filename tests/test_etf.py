@@ -18,8 +18,9 @@ ERL = shutil.which("erl")
 def _decode(tmp_path: pathlib.Path, term) -> str:
     blob = tmp_path / "t.etf"
     blob.write_bytes(etf.encode(term))
+    # the path goes inside Erlang source: forward slashes, or Windows backslashes read as escapes
     script = (
-        f'{{ok, B}} = file:read_file("{blob}"), T = binary_to_term(B), '
+        f'{{ok, B}} = file:read_file("{blob.as_posix()}"), T = binary_to_term(B), '
         'io:format("~w", [T]), halt().'
     )
     out = subprocess.run(
@@ -38,7 +39,7 @@ def test_round_trip_types(tmp_path):
     blob = tmp_path / "t.etf"
     blob.write_bytes(etf.encode(term))
     script = (
-        f'{{ok, B}} = file:read_file("{blob}"), '
+        f'{{ok, B}} = file:read_file("{blob.as_posix()}"), '
         '[{ok, 1, 255, -1, Big, F, Tiny, S, Empty, Tup, Nested}] = binary_to_term(B), '
         'io:format("~p", [{Big =:= 1099511627776, F =:= 2.5, Tiny =:= 1.0e-5, '
         'S =:= "привет", Empty =:= [], Tup =:= {x}, Nested =:= [1, [2]]}]), halt().'
@@ -86,8 +87,8 @@ def test_forms_from_etf_equal_text_forms(tmp_path):
     blob.write_bytes(etf.encode(forms))
 
     script = (
-        f'{{ok, FromText}} = file:consult("{text}"), '
-        f'{{ok, Raw}} = file:read_file("{blob}"), '
+        f'{{ok, FromText}} = file:consult("{text.as_posix()}"), '
+        f'{{ok, Raw}} = file:read_file("{blob.as_posix()}"), '
         'io:format("~p", [binary_to_term(Raw) =:= FromText]), halt().'
     )
     out = subprocess.run(

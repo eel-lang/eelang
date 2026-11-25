@@ -5,7 +5,6 @@ from __future__ import annotations
 import pathlib
 import shutil
 import subprocess
-import sys
 import tempfile
 
 import pytest
@@ -14,8 +13,9 @@ from eel.compiler import compile_source
 from eel.errors import EelError
 from eel.term import Atom
 
+from platform_support import cli_build
+
 ERL = shutil.which("erl")
-ROOT = pathlib.Path(__file__).resolve().parent.parent
 
 
 def _function(source: str, name: str = "m"):
@@ -41,10 +41,7 @@ def _build(source: str, module: str = "n") -> pathlib.Path:
     tmp = pathlib.Path(tempfile.mkdtemp())
     (tmp / "src").mkdir()
     (tmp / "src" / f"{module}.eel").write_text(source)
-    subprocess.run(
-        [sys.executable, "-m", "eel", "build", str(tmp)],
-        cwd=ROOT, check=True, capture_output=True,
-    )
+    cli_build(tmp)
     return tmp / "build" / "dev" / "erlang" / tmp.name / "ebin"
 
 
